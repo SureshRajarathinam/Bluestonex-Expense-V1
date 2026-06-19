@@ -1,0 +1,45 @@
+{
+  "name": "expense-management",
+  "version": "1.0.0",
+  "description": "BluestoneX Expense Reimbursement System",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^8",
+    "@sap/xsenv": "^5",
+    "express": "^4",
+    "hdb": "^0.19"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^8",
+    "better-sqlite3": "^9"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "build": "cds build --production",
+    "test": "jest --passWithNoTests"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sqlite",
+        "credentials": { "database": ":memory:" },
+        "[production]": {
+          "kind": "hana"
+        }
+      },
+      "alert-notification": {
+        "[production]": {
+          "kind": "rest",
+          "credentials": {}
+        }
+      }
+    },
+    "features": {
+      "preserve_computed": true
+    }
+  }
+}

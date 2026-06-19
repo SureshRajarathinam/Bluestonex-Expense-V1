@@ -1,0 +1,22 @@
+{
+  "requires": {
+    "auth": {
+      "kind": "mocked",
+      "[production]": {
+        "kind": "xsuaa"
+      }
+    }
+  },
+  "odata": {
+    "version": "v4"
+  },
+  "features": {
+    "fiori_preview": true,
+    "fetch_csrf": true
+  },
+  "log": {
+    "levels": {
+      "notification": "info"
+    }
+  }
+}

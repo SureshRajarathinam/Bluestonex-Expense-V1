@@ -1,0 +1,4 @@
+code,description,rate
+STD,Standard Rate (20%),0.2000
+ZR,Zero Rated (0%),0.0000
+EX,Exempt,0.0000

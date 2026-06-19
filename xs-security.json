@@ -1,0 +1,68 @@
+{
+  "xsappname": "expense-management",
+  "tenant-mode": "dedicated",
+  "description": "BluestoneX Expense Reimbursement System",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Employee",
+      "description": "Submit and view own expense claims"
+    },
+    {
+      "name": "$XSAPPNAME.Manager",
+      "description": "Approve or reject team expense claims"
+    },
+    {
+      "name": "$XSAPPNAME.Finance",
+      "description": "Finance sign-off and settlement of expense claims"
+    }
+  ],
+  "attributes": [],
+  "role-templates": [
+    {
+      "name": "Employee",
+      "description": "Employee — submit and track own claims",
+      "scope-references": [
+        "$XSAPPNAME.Employee"
+      ]
+    },
+    {
+      "name": "Manager",
+      "description": "Line Manager — approve team claims",
+      "scope-references": [
+        "$XSAPPNAME.Manager",
+        "$XSAPPNAME.Employee"
+      ]
+    },
+    {
+      "name": "Finance",
+      "description": "Finance — final approval and settlement",
+      "scope-references": [
+        "$XSAPPNAME.Finance",
+        "$XSAPPNAME.Employee"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "Expense_Employee",
+      "description": "BluestoneX Expense — Employee",
+      "role-template-references": [
+        "$XSAPPNAME.Employee"
+      ]
+    },
+    {
+      "name": "Expense_Manager",
+      "description": "BluestoneX Expense — Line Manager",
+      "role-template-references": [
+        "$XSAPPNAME.Manager"
+      ]
+    },
+    {
+      "name": "Expense_Finance",
+      "description": "BluestoneX Expense — Finance",
+      "role-template-references": [
+        "$XSAPPNAME.Finance"
+      ]
+    }
+  ]
+}

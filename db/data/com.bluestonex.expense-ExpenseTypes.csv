@@ -1,0 +1,11 @@
+code,description,requiresReceipt
+HOTEL,Hotel Accommodation,true
+FOOD,Meals & Subsistence,true
+TRAIN,Train / Rail Tickets,true
+TAXI,Taxi / Cab,true
+TOLLS,Road Tolls,false
+PARKING,Parking,true
+FLIGHT,Flight / Air Travel,true
+CAR_HIRE,Car Hire,true
+PHONE,Phone / Mobile Data,false
+OTHER,Other Business Expense,true
