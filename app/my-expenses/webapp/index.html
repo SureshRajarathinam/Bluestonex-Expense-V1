@@ -1,34 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Expenses</title>
-  <script id="sap-ui-bootstrap"
-    src="https://ui5.sap.com/1.120/resources/sap-ui-core.js"
+  <script
+    id="sap-ui-bootstrap"
+    src="https://ui5.sap.com/resources/sap-ui-core.js"
     data-sap-ui-theme="sap_horizon"
-    data-sap-ui-resourceroots='{ "com.bluestonex.expense.myexpenses": "./" }'
-    data-sap-ui-compatVersion="edge"
+    data-sap-ui-resourceroots='{"com.bluestonex.expense.myexpenses": "./"}'
+    data-sap-ui-on-init="module:sap/ui/core/ComponentSupport"
+    data-sap-ui-compat-version="edge"
     data-sap-ui-async="true"
-    data-sap-ui-appCacheBuster="./"
-    data-sap-ui-frameOptions="allow">
-  </script>
-  <script>
-    sap.ui.getCore().attachInit(function () {
-      sap.ui.require(["sap/fe/core/AppComponent"], function (Component) {
-        new sap.m.Shell({
-          app: new sap.ui.core.ComponentContainer({
-            height: "100%",
-            settings: {
-              id: "myexpenses",
-              name: "com.bluestonex.expense.myexpenses",
-              height: "100%"
-            }
-          })
-        }).placeAt("content");
-      });
-    });
+    data-sap-ui-frame-options="allow">
   </script>
 </head>
-<body class="sapUiBody" id="content"></body>
+<body class="sapUiBody">
+  <div
+    data-sap-ui-component
+    data-name="com.bluestonex.expense.myexpenses"
+    data-id="container"
+    data-settings='{"id": "myexpenses"}'
+    data-handle-validation="true"
+    data-height="100%">
+  </div>
+</body>
 </html>
