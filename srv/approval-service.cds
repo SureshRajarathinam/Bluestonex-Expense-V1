@@ -4,7 +4,7 @@ using com.bluestonex.expense as db from '../db/schema';
 //  ApprovalService — Manager app (Approve Expenses)
 // ═══════════════════════════════════════════════════════════════════════════
 @path: '/approval'
-@requires: 'Manager'
+@requires: 'authenticated-user'
 service ApprovalService {
 
   @restrict: [{ grant: ['READ', 'approveClaim', 'rejectClaim'], to: 'Manager' }]

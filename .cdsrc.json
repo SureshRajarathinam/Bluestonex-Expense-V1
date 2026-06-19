@@ -28,6 +28,13 @@
     "fiori_preview": true,
     "fetch_csrf": true
   },
+  "fiori": {
+    "preview": {
+      "ui5": {
+        "theme": "sap_horizon"
+      }
+    }
+  },
   "log": {
     "levels": {
       "notification": "info"

@@ -4,7 +4,7 @@ using com.bluestonex.expense as db from '../db/schema';
 //  FinanceService — Finance app (Finance Expenses)
 // ═══════════════════════════════════════════════════════════════════════════
 @path: '/finance'
-@requires: 'Finance'
+@requires: 'authenticated-user'
 service FinanceService {
 
   @restrict: [{ grant: ['READ', 'financeApprove', 'settleClaim', 'rejectClaim'], to: 'Finance' }]

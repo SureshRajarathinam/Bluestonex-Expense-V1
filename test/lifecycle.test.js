@@ -89,9 +89,16 @@ test('E2. cannot approve an already-settled claim (409)', async () => {
   assert.equal(r.status, 409, `got ${r.status}`);
 });
 
-test('E3. employee blocked from /approval (403)', async () => {
-  const r = await GET('/approval/TeamClaims', { auth: EMP });
-  assert.equal(r.status, 403, `got ${r.status}`);
+test('E3. /approval metadata loads for any user (app renders) but data is role-gated', async () => {
+  // $metadata must be readable by any authenticated user, else the Fiori app goes blank
+  const meta = await GET('/approval/$metadata', { auth: EMP });
+  assert.equal(meta.status, 200, `metadata should load, got ${meta.status}`);
+  // ...but the actual claim data is still restricted to managers
+  const data = await GET('/approval/TeamClaims', { auth: EMP });
+  assert.equal(data.status, 403, `employee data read should be 403, got ${data.status}`);
+  // ...and a real manager can read it
+  const mgr = await GET('/approval/TeamClaims', { auth: MGR });
+  assert.equal(mgr.status, 200, `manager data read should be 200, got ${mgr.status}`);
 });
 
 test('F. manager rejects with reason', async () => {
