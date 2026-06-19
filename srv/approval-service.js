@@ -5,6 +5,9 @@ const notification = require('./notification');
 
 const LOG = cds.log('approval-service');
 
+// Bound-action key: object {ID,...} for draft entities, raw scalar otherwise.
+const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'object' ? p.ID : p; };
+
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
@@ -12,7 +15,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
     // ─── Action: approveClaim (Manager) ────────────────────────────────────
     this.on('approveClaim', 'TeamClaims', async (req) => {
-      const { ID } = req.params[0];
+      const ID = idOf(req);
       const { comment } = req.data;
       const claim = await SELECT.one.from(ExpenseClaims, ID);
 
@@ -34,7 +37,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
     // ─── Action: rejectClaim (Manager) ─────────────────────────────────────
     this.on('rejectClaim', 'TeamClaims', async (req) => {
-      const { ID } = req.params[0];
+      const ID = idOf(req);
       const { comment } = req.data;
 
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');

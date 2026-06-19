@@ -5,6 +5,9 @@ const notification = require('./notification');
 
 const LOG = cds.log('finance-service');
 
+// Bound-action key: object {ID,...} for draft entities, raw scalar otherwise.
+const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'object' ? p.ID : p; };
+
 module.exports = class FinanceService extends cds.ApplicationService {
 
   async init() {
@@ -12,7 +15,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
 
     // ─── Action: financeApprove ────────────────────────────────────────────
     this.on('financeApprove', 'FinanceClaims', async (req) => {
-      const { ID } = req.params[0];
+      const ID = idOf(req);
       const { comment } = req.data;
       const claim = await SELECT.one.from(ExpenseClaims, ID);
 
@@ -34,7 +37,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
 
     // ─── Action: settleClaim ───────────────────────────────────────────────
     this.on('settleClaim', 'FinanceClaims', async (req) => {
-      const { ID } = req.params[0];
+      const ID = idOf(req);
       const claim = await SELECT.one.from(ExpenseClaims, ID);
 
       if (!claim) return req.error(404, 'Expense claim not found.');
@@ -53,7 +56,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
 
     // ─── Action: rejectClaim (Finance) ─────────────────────────────────────
     this.on('rejectClaim', 'FinanceClaims', async (req) => {
-      const { ID } = req.params[0];
+      const ID = idOf(req);
       const { comment } = req.data;
 
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');

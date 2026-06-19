@@ -43,6 +43,8 @@ service FinanceService {
   @readonly entity FinanceMileageClaims as projection on db.MileageClaims;
   @readonly entity ExpenseTypes         as projection on db.ExpenseTypes;
   @readonly entity VATTypes             as projection on db.VATTypes;
+  @readonly entity Employees            as projection on db.Employees
+                                           excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
 }
 
 annotate FinanceService.FinanceClaims with {

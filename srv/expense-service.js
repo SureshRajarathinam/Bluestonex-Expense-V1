@@ -2,71 +2,50 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
+const { splitVAT, mileageTotal, claimTotals } = require('./lib/calc');
 
 const LOG = cds.log('expense-service');
 
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, ExpenseItems, MileageClaims, Employees } =
-      cds.entities('com.bluestonex.expense');
+    const { ExpenseClaims, Employees } = cds.entities('com.bluestonex.expense');
 
-    // ─── Before CREATE: auto-generate claim number ─────────────────────────
-    this.before('CREATE', 'MyClaims', async (req) => {
-      const year = new Date().getFullYear();
-      const { count } = await SELECT.one`count(*) as count`.from(ExpenseClaims);
-      const seq = String((count || 0) + 1).padStart(4, '0');
-      req.data.claimNumber = `EXP-${year}-${seq}`;
-      req.data.status = 'Draft';
+    // ─── Before CREATE: defaults for a new (draft) claim ───────────────────
+    this.before('CREATE', 'MyClaims', (req) => {
+      req.data.status   = 'Draft';
       req.data.currency = req.data.currency || 'GBP';
     });
 
-    // ─── Calculate VAT split on expense items ──────────────────────────────
-    this.before(['CREATE', 'UPDATE'], 'MyClaimItems', (req) => {
-      const { grossAmount, vatType } = req.data;
-      if (grossAmount != null) {
-        const vatRate = vatType === 'STD' ? 0.20 : 0.00;
-        req.data.netAmount = parseFloat((grossAmount / (1 + vatRate)).toFixed(2));
-        req.data.vatAmount = parseFloat((grossAmount - req.data.netAmount).toFixed(2));
+    // ─── Before SAVE: the draft-correct place to compute everything ────────
+    // Fires when a draft is activated. req.data holds the full tree (items +
+    // mileageClaims), so we compute each line's VAT split, each mileage total,
+    // and the rolled-up header totals — all atomically.
+    this.before('SAVE', 'MyClaims', async (req) => {
+      const claim = req.data;
+
+      if (!claim.claimNumber) {
+        const year = new Date().getFullYear();
+        const rows = await SELECT.from(ExpenseClaims).columns('claimNumber');
+        claim.claimNumber = `EXP-${year}-${String(rows.length + 1).padStart(4, '0')}`;
       }
-    });
 
-    // ─── Compute mileage total ─────────────────────────────────────────────
-    this.before(['CREATE', 'UPDATE'], 'MyMileageClaims', (req) => {
-      const { milesCount, ratePerMile } = req.data;
-      if (milesCount != null && ratePerMile != null) {
-        req.data.totalAmount = parseFloat((milesCount * ratePerMile).toFixed(2));
+      for (const item of claim.items || []) {
+        const { netAmount, vatAmount } = splitVAT(item.grossAmount, item.vatType);
+        item.netAmount = netAmount;
+        item.vatAmount = vatAmount;
       }
-    });
+      for (const m of claim.mileageClaims || []) {
+        m.totalAmount = mileageTotal(m.milesCount, m.ratePerMile);
+      }
 
-    // ─── Recalculate claim totals after item / mileage changes ─────────────
-    const recalcClaimTotals = async (claimId) => {
-      if (!claimId) return;
-      const items   = await SELECT.from(ExpenseItems).where({ claim_ID: claimId });
-      const mileage = await SELECT.from(MileageClaims).where({ claim_ID: claimId });
-
-      const totalNet   = items.reduce((s, i) => s + (i.netAmount   || 0), 0);
-      const totalVAT   = items.reduce((s, i) => s + (i.vatAmount   || 0), 0);
-      const totalItems = items.reduce((s, i) => s + (i.grossAmount || 0), 0);
-      const totalMiles = mileage.reduce((s, m) => s + (m.totalAmount || 0), 0);
-
-      await UPDATE(ExpenseClaims, claimId).with({
-        totalNet:   parseFloat((totalNet + totalMiles).toFixed(2)),
-        totalVAT:   parseFloat(totalVAT.toFixed(2)),
-        totalGross: parseFloat((totalItems + totalMiles).toFixed(2))
-      });
-    };
-
-    this.after(['CREATE', 'UPDATE', 'DELETE'], 'MyClaimItems', async (_, req) => {
-      await recalcClaimTotals(req.data?.claim_ID);
-    });
-    this.after(['CREATE', 'UPDATE', 'DELETE'], 'MyMileageClaims', async (_, req) => {
-      await recalcClaimTotals(req.data?.claim_ID);
+      Object.assign(claim, claimTotals(claim.items, claim.mileageClaims));
     });
 
     // ─── Action: submitClaim ───────────────────────────────────────────────
     this.on('submitClaim', 'MyClaims', async (req) => {
-      const { ID } = req.params[0];
+      const p = req.params[0];
+      const ID = p && typeof p === 'object' ? p.ID : p;
       const claim = await SELECT.one.from(ExpenseClaims, ID);
 
       if (!claim) return req.error(404, 'Expense claim not found.');

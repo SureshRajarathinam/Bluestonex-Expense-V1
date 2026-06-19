@@ -35,6 +35,8 @@ service ApprovalService {
   @readonly entity TeamMileageClaims as projection on db.MileageClaims;
   @readonly entity ExpenseTypes      as projection on db.ExpenseTypes;
   @readonly entity VATTypes          as projection on db.VATTypes;
+  @readonly entity Employees         as projection on db.Employees
+                                        excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
 }
 
 annotate ApprovalService.TeamClaims with {

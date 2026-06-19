@@ -14,19 +14,22 @@
   "devDependencies": {
     "@cap-js/sqlite": "^1",
     "@sap/cds-dk": "^8",
+    "axios": "^1.18.0",
     "better-sqlite3": "^9"
   },
   "scripts": {
     "start": "cds-serve",
     "watch": "cds watch",
     "build": "cds build --production",
-    "test": "jest --passWithNoTests"
+    "test": "node --test"
   },
   "cds": {
     "requires": {
       "db": {
         "kind": "sqlite",
-        "credentials": { "database": ":memory:" },
+        "credentials": {
+          "database": ":memory:"
+        },
         "[production]": {
           "kind": "hana"
         }
