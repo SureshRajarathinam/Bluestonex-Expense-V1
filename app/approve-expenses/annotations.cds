@@ -1,8 +1,8 @@
-using ExpenseService from '../../srv/expense-service';
+using ApprovalService from '../../srv/approval-service';
 
 // ─── Approve Expenses — Manager App ─────────────────────────────────────────
 
-annotate ExpenseService.TeamClaims with @(
+annotate ApprovalService.TeamClaims with @(
 
   UI.HeaderInfo: {
     TypeName:       'Expense Claim',
@@ -25,14 +25,14 @@ annotate ExpenseService.TeamClaims with @(
     { $Type: 'UI.DataField', Value: submittedAt,   Label: 'Submitted On'  },
     {
       $Type:  'UI.DataFieldForAction',
-      Action: 'ExpenseService.approveClaim',
+      Action: 'ApprovalService.approveClaim',
       Label:  'Approve',
       Inline: true,
       ![@UI.Importance]: #High
     },
     {
       $Type:  'UI.DataFieldForAction',
-      Action: 'ExpenseService.rejectClaim',
+      Action: 'ApprovalService.rejectClaim',
       Label:  'Reject',
       Inline: true,
       ![@UI.Importance]: #High
@@ -129,7 +129,7 @@ annotate ExpenseService.TeamClaims with @(
   }
 );
 
-annotate ExpenseService.TeamClaimItems with @(
+annotate ApprovalService.TeamClaimItems with @(
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: expenseDate,      Label: 'Date'       },
     { $Type: 'UI.DataField', Value: expenseType_code, Label: 'Type'       },
@@ -143,7 +143,7 @@ annotate ExpenseService.TeamClaimItems with @(
   ]
 );
 
-annotate ExpenseService.TeamMileageClaims with @(
+annotate ApprovalService.TeamMileageClaims with @(
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: tripDate,      Label: 'Trip Date'     },
     { $Type: 'UI.DataField', Value: destination,   Label: 'Destination'   },

@@ -1,8 +1,8 @@
-using ExpenseService from '../../srv/expense-service';
+using FinanceService from '../../srv/finance-service';
 
 // ─── Finance Expenses — Finance App ─────────────────────────────────────────
 
-annotate ExpenseService.FinanceClaims with @(
+annotate FinanceService.FinanceClaims with @(
 
   UI.HeaderInfo: {
     TypeName:       'Expense Claim',
@@ -25,21 +25,21 @@ annotate ExpenseService.FinanceClaims with @(
     { $Type: 'UI.DataField', Value: managerApprovedAt, Label: 'Mgr Approved On'  },
     {
       $Type:  'UI.DataFieldForAction',
-      Action: 'ExpenseService.financeApprove',
+      Action: 'FinanceService.financeApprove',
       Label:  'Finance Approve',
       Inline: true,
       ![@UI.Importance]: #High
     },
     {
       $Type:  'UI.DataFieldForAction',
-      Action: 'ExpenseService.settleClaim',
+      Action: 'FinanceService.settleClaim',
       Label:  'Settle',
       Inline: true,
       ![@UI.Importance]: #High
     },
     {
       $Type:  'UI.DataFieldForAction',
-      Action: 'ExpenseService.rejectClaim',
+      Action: 'FinanceService.rejectClaim',
       Label:  'Reject',
       Inline: true,
       ![@UI.Importance]: #Medium
@@ -158,7 +158,7 @@ annotate ExpenseService.FinanceClaims with @(
   }
 );
 
-annotate ExpenseService.FinanceClaimItems with @(
+annotate FinanceService.FinanceClaimItems with @(
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: expenseDate,      Label: 'Date'       },
     { $Type: 'UI.DataField', Value: expenseType_code, Label: 'Type'       },
@@ -172,7 +172,7 @@ annotate ExpenseService.FinanceClaimItems with @(
   ]
 );
 
-annotate ExpenseService.FinanceMileageClaims with @(
+annotate FinanceService.FinanceMileageClaims with @(
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: tripDate,      Label: 'Trip Date'     },
     { $Type: 'UI.DataField', Value: destination,   Label: 'Destination'   },

@@ -2,6 +2,20 @@
   "requires": {
     "auth": {
       "kind": "mocked",
+      "users": {
+        "sabarinathan.chandrasekar@bluestonex.com": {
+          "password": "sab",
+          "roles": ["Employee"]
+        },
+        "manager@bluestonex.com": {
+          "password": "mgr",
+          "roles": ["Manager", "Employee"]
+        },
+        "Dan.Barton@bluestonex.com": {
+          "password": "dan",
+          "roles": ["Finance", "Employee"]
+        }
+      },
       "[production]": {
         "kind": "xsuaa"
       }

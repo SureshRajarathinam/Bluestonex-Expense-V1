@@ -10,6 +10,20 @@
       "csrfProtection": true
     },
     {
+      "source": "^/approval/(.*)$",
+      "target": "/approval/$1",
+      "destination": "expense-srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": true
+    },
+    {
+      "source": "^/finance/(.*)$",
+      "target": "/finance/$1",
+      "destination": "expense-srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": true
+    },
+    {
       "source": "^(.*)$",
       "target": "$1",
       "service": "html5-apps-repo-rt",

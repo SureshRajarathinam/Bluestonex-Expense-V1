@@ -101,3 +101,49 @@ entity MileageClaims : managed {
       ratePerMile   : Decimal(8, 4) default 0.2500;
       totalAmount   : Decimal(15, 2);
 }
+
+// ─── Field labels & value helps (propagate to all service projections) ───────
+
+annotate ExpenseClaims with {
+  claimNumber       @title: 'Claim Number';
+  claimPeriod       @title: 'Claim Period';
+  payrollArea       @title: 'Payroll Area';
+  status            @title: 'Status';
+  currency          @title: 'Currency';
+  totalNet          @title: 'Net Amount (£)'   @Measures.ISOCurrency: currency;
+  totalVAT          @title: 'VAT Amount (£)'   @Measures.ISOCurrency: currency;
+  totalGross        @title: 'Total Amount (£)' @Measures.ISOCurrency: currency;
+  managerComment    @title: 'Manager Comments';
+  financeComment    @title: 'Finance Comments';
+  submittedAt       @title: 'Submitted On';
+  managerApprovedAt @title: 'Manager Approved On';
+  managerApprovedBy @title: 'Manager Approved By';
+  financeApprovedAt @title: 'Finance Approved On';
+  financeApprovedBy @title: 'Finance Approved By';
+  settledAt         @title: 'Settled On';
+}
+
+annotate ExpenseItems with {
+  expenseDate     @title: 'Date';
+  destination     @title: 'Destination';
+  reasonForTrip   @title: 'Reason for Trip';
+  vatType         @title: 'VAT Type';
+  grossAmount     @title: 'Gross Amount (£)';
+  netAmount       @title: 'Net Amount (£)';
+  vatAmount       @title: 'VAT Amount (£)';
+  receiptAttached @title: 'Receipt Attached';
+  notes           @title: 'Notes';
+  expenseType     @title: 'Expense Type'
+                  @Common.Text: expenseType.description
+                  @Common.TextArrangement: #TextOnly;
+}
+
+annotate MileageClaims with {
+  tripDate      @title: 'Trip Date';
+  destination   @title: 'Destination';
+  reasonForTrip @title: 'Reason for Trip';
+  engineType    @title: 'Engine Type';
+  milesCount    @title: 'Miles Claimed';
+  ratePerMile   @title: 'Rate per Mile (£)';
+  totalAmount   @title: 'Total Amount (£)';
+}
