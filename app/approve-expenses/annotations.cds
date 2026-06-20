@@ -139,7 +139,8 @@ annotate ApprovalService.TeamClaimItems with @(
     { $Type: 'UI.DataField', Value: grossAmount,      Label: 'Gross (£)'  },
     { $Type: 'UI.DataField', Value: netAmount,        Label: 'Net (£)'    },
     { $Type: 'UI.DataField', Value: vatAmount,        Label: 'VAT (£)'    },
-    { $Type: 'UI.DataField', Value: receiptAttached,  Label: 'Receipt'    }
+    { $Type: 'UI.DataField', Value: receiptAttached,  Label: 'Receipt?'   },
+    { $Type: 'UI.DataField', Value: receipt,          Label: 'View Receipt' }
   ]
 );
 

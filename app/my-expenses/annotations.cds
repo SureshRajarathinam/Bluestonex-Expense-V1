@@ -114,20 +114,63 @@ annotate ExpenseService.MyClaims with @(
   }
 );
 
-// ─── Expense Items table on Object Page ──────────────────────────────────────
+// ─── Expense Items: table + item Object Page with receipt upload ─────────────
 
 annotate ExpenseService.MyClaimItems with @(
+  UI.HeaderInfo: {
+    TypeName:       'Expense Item',
+    TypeNamePlural: 'Expense Items',
+    Title:          { $Type: 'UI.DataField', Value: expenseType_code },
+    Description:    { $Type: 'UI.DataField', Value: reasonForTrip }
+  },
+
   UI.LineItem: [
-    { $Type: 'UI.DataField', Value: expenseDate,     Label: 'Date'              },
-    { $Type: 'UI.DataField', Value: expenseType_code, Label: 'Type'             },
-    { $Type: 'UI.DataField', Value: destination,     Label: 'Destination'       },
-    { $Type: 'UI.DataField', Value: reasonForTrip,   Label: 'Reason'            },
-    { $Type: 'UI.DataField', Value: vatType,         Label: 'VAT'               },
-    { $Type: 'UI.DataField', Value: grossAmount,     Label: 'Gross (£)'         },
-    { $Type: 'UI.DataField', Value: netAmount,       Label: 'Net (£)'           },
-    { $Type: 'UI.DataField', Value: vatAmount,       Label: 'VAT (£)'           },
-    { $Type: 'UI.DataField', Value: receiptAttached, Label: 'Receipt'           }
-  ]
+    { $Type: 'UI.DataField', Value: expenseDate,      Label: 'Date'        },
+    { $Type: 'UI.DataField', Value: expenseType_code, Label: 'Type'        },
+    { $Type: 'UI.DataField', Value: destination,      Label: 'Destination' },
+    { $Type: 'UI.DataField', Value: reasonForTrip,    Label: 'Reason'      },
+    { $Type: 'UI.DataField', Value: vatType,          Label: 'VAT'         },
+    { $Type: 'UI.DataField', Value: grossAmount,      Label: 'Gross (£)'   },
+    { $Type: 'UI.DataField', Value: netAmount,        Label: 'Net (£)'     },
+    { $Type: 'UI.DataField', Value: vatAmount,        Label: 'VAT (£)'     },
+    { $Type: 'UI.DataField', Value: receiptAttached,  Label: 'Receipt'     }
+  ],
+
+  UI.Facets: [
+    {
+      $Type:  'UI.ReferenceFacet',
+      Label:  'Item Details',
+      ID:     'ItemDetails',
+      Target: '@UI.FieldGroup#ItemDetails'
+    },
+    {
+      $Type:  'UI.ReferenceFacet',
+      Label:  'Receipt',
+      ID:     'ReceiptFacet',
+      Target: '@UI.FieldGroup#Receipt'
+    }
+  ],
+
+  UI.FieldGroup #ItemDetails: {
+    Data: [
+      { $Type: 'UI.DataField', Value: expenseDate      },
+      { $Type: 'UI.DataField', Value: expenseType_code },
+      { $Type: 'UI.DataField', Value: destination      },
+      { $Type: 'UI.DataField', Value: reasonForTrip    },
+      { $Type: 'UI.DataField', Value: vatType          },
+      { $Type: 'UI.DataField', Value: grossAmount      },
+      { $Type: 'UI.DataField', Value: netAmount        },
+      { $Type: 'UI.DataField', Value: vatAmount        },
+      { $Type: 'UI.DataField', Value: notes            }
+    ]
+  },
+
+  UI.FieldGroup #Receipt: {
+    Data: [
+      { $Type: 'UI.DataField', Value: receipt          },
+      { $Type: 'UI.DataField', Value: receiptAttached  }
+    ]
+  }
 );
 
 // ─── Mileage Claims table on Object Page ─────────────────────────────────────

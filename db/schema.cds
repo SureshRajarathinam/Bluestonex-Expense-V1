@@ -89,6 +89,11 @@ entity ExpenseItems : managed {
       vatAmount       : Decimal(15, 2);
       receiptAttached : Boolean default false;
       notes           : String(500);
+
+      // Receipt photo / document (per item) — SAP CAP media handling
+      receiptFileName : String(255);
+      receiptMimeType : String(100);
+      receipt         : LargeBinary;
 }
 
 entity MileageClaims : managed {
@@ -137,6 +142,14 @@ annotate ExpenseItems with {
   expenseType     @title: 'Expense Type'
                   @Common.Text: expenseType.description
                   @Common.TextArrangement: #TextOnly;
+
+  // Media handling for the receipt photo/document
+  receiptFileName @title: 'Receipt File';
+  receiptMimeType @Core.IsMediaType;
+  receipt         @title: 'Receipt'
+                  @Core.MediaType            : receiptMimeType
+                  @Core.ContentDisposition.Filename: receiptFileName
+                  @Core.ContentDisposition.Type    : 'inline';
 }
 
 annotate MileageClaims with {

@@ -123,6 +123,21 @@ test('H. submit blocked end-to-end when receipt missing above threshold (422)', 
   assert.ok(JSON.stringify(s.data?.error).toLowerCase().includes('receipt'), 'error should mention receipt');
 });
 
+test('I. receipt upload (per item) downloads back and unblocks submission', async () => {
+  const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
+  const c = await POST('/expense/MyClaims', { claimPeriod: '2026-04-01' }, { auth: EMP });
+  const id = c.data.ID;
+  const it = await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-03-10', expenseType_code: 'TAXI', reasonForTrip: 'Client', vatType: 'STD', grossAmount: 50 }, { auth: EMP });
+  const itemId = it.data.ID;
+  const up = await t.axios.put(`/expense/MyClaimItems(ID=${itemId},IsActiveEntity=false)/receipt`, PNG, { headers: { 'Content-Type': 'image/png' }, auth: EMP });
+  assert.ok(up.status < 400, `upload ${up.status}`);
+  const dl = await t.axios.get(`/expense/MyClaimItems(ID=${itemId},IsActiveEntity=false)/receipt`, { auth: EMP, responseType: 'arraybuffer' });
+  assert.equal(dl.status, 200, 'receipt downloadable');
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `submit should pass after upload, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
+});
+
 test('F. manager rejects with reason', async () => {
   const c = await POST('/expense/MyClaims', { employee_ID: EMP_SAB, claimPeriod: '2026-03-15' }, { auth: EMP });
   const id = c.data.ID;

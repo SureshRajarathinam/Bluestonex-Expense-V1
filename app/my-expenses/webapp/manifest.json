@@ -67,6 +67,11 @@
           "pattern": "MyClaims({key}):?query:",
           "name": "MyClaimsObjectPage",
           "target": "MyClaimsObjectPage"
+        },
+        {
+          "pattern": "MyClaims({key})/items({key2}):?query:",
+          "name": "MyClaimItemsObjectPage",
+          "target": "MyClaimItemsObjectPage"
         }
       ],
       "targets": {
