@@ -46,7 +46,7 @@ entity ExpensePolicy : managed {
 entity ExpenseClaims : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
-      employee            : Association to Employees @mandatory;
+      employee            : Association to Employees;  // auto-set from logged-in user
       payrollArea         : String(50);
       claimPeriod         : Date @mandatory;
 

@@ -11,11 +11,21 @@ module.exports = class ExpenseService extends cds.ApplicationService {
   async init() {
     const { ExpenseClaims, Employees } = cds.entities('com.bluestonex.expense');
 
-    // ─── Before CREATE: defaults for a new (draft) claim ───────────────────
-    this.before('CREATE', 'MyClaims', (req) => {
-      req.data.status   = 'Draft';
+    // ─── Defaults: derive the employee from the logged-in user ─────────────
+    // Employees never type their own ID — it comes from $user (the login).
+    const applyDefaults = async (req) => {
+      req.data.status   = req.data.status || 'Draft';
       req.data.currency = req.data.currency || 'GBP';
-    });
+      const emp = await SELECT.one.from(Employees).where({ email: req.user?.id });
+      if (!req.data.employee_ID && emp) {
+        req.data.employee_ID = emp.ID;
+        if (!req.data.payrollArea) req.data.payrollArea = emp.payrollArea;
+      }
+    };
+
+    // 'NEW' fires when a Fiori draft is created; 'CREATE' for non-draft inserts.
+    this.before('NEW', 'MyClaims', applyDefaults);
+    this.before('CREATE', 'MyClaims', applyDefaults);
 
     // ─── Before SAVE: the draft-correct place to compute everything ────────
     // Fires when a draft is activated. req.data holds the full tree (items +
@@ -23,6 +33,15 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     // and the rolled-up header totals — all atomically.
     this.before('SAVE', 'MyClaims', async (req) => {
       const claim = req.data;
+
+      // Fallback: ensure the employee is set even if NEW didn't run
+      if (!claim.employee_ID && req.user?.id) {
+        const emp = await SELECT.one.from(Employees).where({ email: req.user.id });
+        if (emp) {
+          claim.employee_ID = emp.ID;
+          if (!claim.payrollArea) claim.payrollArea = emp.payrollArea;
+        }
+      }
 
       if (!claim.claimNumber) {
         const year = new Date().getFullYear();
