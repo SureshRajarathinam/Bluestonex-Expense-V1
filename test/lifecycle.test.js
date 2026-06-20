@@ -101,6 +101,17 @@ test('E3. /approval metadata loads for any user (app renders) but data is role-g
   assert.equal(mgr.status, 200, `manager data read should be 200, got ${mgr.status}`);
 });
 
+test('G. served $metadata includes Fiori UI annotations (prevents blank app)', async () => {
+  for (const [path, auth] of [['/expense', EMP], ['/approval', MGR], ['/finance', FIN]]) {
+    const r = await GET(`${path}/$metadata`, { auth });
+    const xml = r.data || '';
+    assert.equal(r.status, 200, `${path} metadata status ${r.status}`);
+    assert.ok(xml.includes('LineItem'), `${path} metadata missing UI.LineItem`);
+    assert.ok(xml.includes('HeaderInfo'), `${path} metadata missing UI.HeaderInfo`);
+    assert.ok(xml.includes('Facets'), `${path} metadata missing UI.Facets`);
+  }
+});
+
 test('F. manager rejects with reason', async () => {
   const c = await POST('/expense/MyClaims', { employee_ID: EMP_SAB, claimPeriod: '2026-03-15' }, { auth: EMP });
   const id = c.data.ID;
