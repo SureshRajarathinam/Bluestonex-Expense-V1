@@ -33,10 +33,11 @@ entity Employees : managed {
 entity ExpensePolicy : managed {
   key ID              : UUID;
       policyName      : String(100);
-      mileageRate     : Decimal(8, 4) default 0.2500;
-      hotelDailyLimit : Decimal(10, 2);
-      mealDailyLimit  : Decimal(10, 2);
-      vatRate         : Decimal(5, 4) default 0.2000;
+      mileageRate      : Decimal(8, 4) default 0.2500;
+      hotelDailyLimit  : Decimal(10, 2);
+      mealDailyLimit   : Decimal(10, 2);
+      receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
+      vatRate          : Decimal(5, 4) default 0.2000;
       effectiveFrom   : Date;
       effectiveTo     : Date;
 }

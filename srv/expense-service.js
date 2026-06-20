@@ -3,6 +3,8 @@
 const cds = require('@sap/cds');
 const notification = require('./notification');
 const { splitVAT, mileageTotal, claimTotals } = require('./lib/calc');
+const { validateClaim } = require('./lib/validate');
+const { loadValidationContext, today } = require('./lib/load-claim');
 
 const LOG = cds.log('expense-service');
 
@@ -70,8 +72,14 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (claim.status !== 'Draft')
         return req.error(409, `Claim ${claim.claimNumber} cannot be submitted — current status is '${claim.status}'.`);
-      if ((claim.totalGross || 0) <= 0)
-        return req.error(422, 'Please add at least one expense item or mileage entry before submitting.');
+
+      // Rule 8 — block submission if any critical policy violation exists
+      const ctx = await loadValidationContext(ID);
+      const { errors, warnings } = validateClaim({ ...ctx, today: today() });
+      if (errors.length)
+        return req.error(422, `This claim cannot be submitted:\n• ${errors.join('\n• ')}`);
+      // Rule 7 — non-blocking warnings (e.g. possible duplicates)
+      warnings.forEach((w) => req.warn(w));
 
       await UPDATE(ExpenseClaims, ID).with({
         status: 'Submitted',

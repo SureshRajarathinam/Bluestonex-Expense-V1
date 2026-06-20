@@ -38,8 +38,8 @@ test('B. employee draft → items → activate computes totals on SAVE', async (
   assert.equal(c.data.IsActiveEntity, false, 'should be a draft');
 
   const dk = draft(claimId);
-  await POST(`/expense/MyClaims${dk}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', destination: 'Narborough', reasonForTrip: 'WoS - Office', vatType: 'STD', grossAmount: 119 }, { auth: EMP });
-  await POST(`/expense/MyClaims${dk}/items`, { expenseDate: '2026-02-25', expenseType_code: 'TRAIN', reasonForTrip: 'WoS - Office', vatType: 'STD', grossAmount: 175.25 }, { auth: EMP });
+  await POST(`/expense/MyClaims${dk}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', destination: 'Narborough', reasonForTrip: 'WoS - Office', vatType: 'STD', grossAmount: 119, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${dk}/items`, { expenseDate: '2026-02-25', expenseType_code: 'TRAIN', reasonForTrip: 'WoS - Office', vatType: 'STD', grossAmount: 175.25, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${dk}/mileageClaims`, { tripDate: '2026-02-16', destination: 'Narborough', reasonForTrip: 'WoS - Office', engineType: 'Petrol', milesCount: 359.5, ratePerMile: 0.25 }, { auth: EMP });
 
   const act = await POST(`/expense/MyClaims${dk}/ExpenseService.draftActivate`, {}, { auth: EMP });
@@ -112,12 +112,24 @@ test('G. served $metadata includes Fiori UI annotations (prevents blank app)', a
   }
 });
 
+test('H. submit blocked end-to-end when receipt missing above threshold (422)', async () => {
+  const c = await POST('/expense/MyClaims', { claimPeriod: '2026-03-20' }, { auth: EMP });
+  const id = c.data.ID;
+  // £50 taxi, no receipt → must block submission
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-03-10', expenseType_code: 'TAXI', reasonForTrip: 'Client', vatType: 'STD', grossAmount: 50, receiptAttached: false }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.equal(s.status, 422, `expected block, got ${s.status}`);
+  assert.ok(JSON.stringify(s.data?.error).toLowerCase().includes('receipt'), 'error should mention receipt');
+});
+
 test('F. manager rejects with reason', async () => {
   const c = await POST('/expense/MyClaims', { employee_ID: EMP_SAB, claimPeriod: '2026-03-15' }, { auth: EMP });
   const id = c.data.ID;
-  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-03-10', expenseType_code: 'TAXI', reasonForTrip: 'Client', vatType: 'STD', grossAmount: 30 }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-03-10', expenseType_code: 'TAXI', reasonForTrip: 'Client', vatType: 'STD', grossAmount: 30, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
-  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const sub = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(sub.status < 400, `submit ${sub.status}: ${JSON.stringify(sub.data?.error)}`);
 
   const noReason = await POST(`/approval/TeamClaims(${id})/ApprovalService.rejectClaim`, { comment: '' }, { auth: MGR });
   assert.equal(noReason.status, 422, `expected 422 got ${noReason.status}`);

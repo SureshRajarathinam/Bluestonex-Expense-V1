@@ -2,6 +2,8 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
+const { validateClaim } = require('./lib/validate');
+const { loadValidationContext, today } = require('./lib/load-claim');
 
 const LOG = cds.log('finance-service');
 
@@ -22,6 +24,12 @@ module.exports = class FinanceService extends cds.ApplicationService {
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (claim.status !== 'ManagerApproved')
         return req.error(409, `Claim ${claim.claimNumber} has not been approved by a line manager yet.`);
+
+      // Rule 10 — finance approval requires verified totals & policy compliance
+      const ctx = await loadValidationContext(ID);
+      const { errors } = validateClaim({ ...ctx, today: today() });
+      if (errors.length)
+        return req.error(422, `Claim ${claim.claimNumber} fails policy verification and cannot be finance-approved:\n• ${errors.join('\n• ')}`);
 
       await UPDATE(ExpenseClaims, ID).with({
         status: 'FinanceApproved',
