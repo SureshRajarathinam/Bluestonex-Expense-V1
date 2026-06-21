@@ -78,17 +78,8 @@ modules:
         - name: expense-management-finance-expenses
           artifacts: [ finance-expenses.zip ]
           target-path: app/
-        - name: expense-management-policy-config
-          artifacts: [ policy-config.zip ]
-          target-path: app/
-        - name: expense-management-user-admin
-          artifacts: [ user-admin.zip ]
-          target-path: app/
-        - name: expense-management-audit-log
-          artifacts: [ audit-log.zip ]
-          target-path: app/
-        - name: expense-management-system-health
-          artifacts: [ system-health.zip ]
+        - name: expense-management-admin-console
+          artifacts: [ admin-console.zip ]
           target-path: app/
 
   # ── Fiori App: My Expenses ─────────────────────────────────────────────────
@@ -127,46 +118,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Policy Configuration ────────────────────────────────────────
-  - name: expense-management-policy-config
+  # ── Fiori App: Expense Administration (Policy · Users · Audit) ─────────────
+  - name: expense-management-admin-console
     type: html5
-    path: app/policy-config
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: User Management ─────────────────────────────────────────────
-  - name: expense-management-user-admin
-    type: html5
-    path: app/user-admin
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: Audit Log ───────────────────────────────────────────────────
-  - name: expense-management-audit-log
-    type: html5
-    path: app/audit-log
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: System Health ───────────────────────────────────────────────
-  - name: expense-management-system-health
-    type: html5
-    path: app/system-health
+    path: app/admin-console
     build-parameters:
       build-result: dist
       builder: custom

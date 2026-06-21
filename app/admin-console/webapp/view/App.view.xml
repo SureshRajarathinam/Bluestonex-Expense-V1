@@ -1,0 +1,123 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.admin.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:form="sap.ui.layout.form"
+  displayBlock="true">
+
+  <Shell>
+    <App>
+      <pages>
+        <Page title="Expense Administration" titleLevel="H1">
+          <content>
+            <IconTabBar id="tabs" expandable="false" select=".onTabSelect" class="sapUiResponsiveContentPadding">
+              <items>
+
+                <!-- ── Tab 1: Policy Configuration ── -->
+                <IconTabFilter key="policy" text="Policy Configuration" icon="sap-icon://settings">
+                  <form:SimpleForm id="policyForm" editable="true" layout="ResponsiveGridLayout"
+                    labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12"
+                    columnsXL="1" columnsL="1" columnsM="1">
+                    <form:content>
+                      <core:Title text="Policy Settings" />
+                      <Label text="Policy Name" />
+                      <Input value="{policyName}" />
+                      <Label text="Mileage Rate (£/mile)" />
+                      <Input value="{path:'mileageRate', type:'sap.ui.model.odata.type.Decimal', constraints:{precision:8, scale:4}}" type="Number" />
+                      <Label text="Hotel Daily Limit (£)" />
+                      <Input value="{path:'hotelDailyLimit', type:'sap.ui.model.odata.type.Decimal', constraints:{precision:10, scale:2}}" type="Number" />
+                      <Label text="Meal Daily Limit (£)" />
+                      <Input value="{path:'mealDailyLimit', type:'sap.ui.model.odata.type.Decimal', constraints:{precision:10, scale:2}}" type="Number" />
+                      <Label text="Receipt Threshold (£)" />
+                      <Input value="{path:'receiptThreshold', type:'sap.ui.model.odata.type.Decimal', constraints:{precision:10, scale:2}}" type="Number" />
+                      <Label text="VAT Rate (e.g. 0.20)" />
+                      <Input value="{path:'vatRate', type:'sap.ui.model.odata.type.Decimal', constraints:{precision:5, scale:4}}" type="Number" />
+                    </form:content>
+                  </form:SimpleForm>
+                  <Toolbar>
+                    <ToolbarSpacer />
+                    <Button text="Cancel" press=".onCancelPolicy" />
+                    <Button text="Save" type="Emphasized" press=".onSavePolicy" />
+                  </Toolbar>
+                </IconTabFilter>
+
+                <!-- ── Tab 2: User Management ── -->
+                <IconTabFilter key="users" text="User Management" icon="sap-icon://employee">
+                  <Table id="usersTable" mode="SingleSelectMaster" items="{/Users}" growing="true" growingThreshold="50">
+                    <headerToolbar>
+                      <OverflowToolbar>
+                        <Title text="Users" level="H2" />
+                        <ToolbarSpacer />
+                        <Button icon="sap-icon://add" text="Create" press=".onCreateUser" />
+                        <Button icon="sap-icon://delete" text="Delete" press=".onDeleteUser" />
+                        <Button text="Cancel" press=".onCancelUsers" />
+                        <Button text="Save" type="Emphasized" press=".onSaveUsers" />
+                      </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                      <Column><Text text="Emp. No." /></Column>
+                      <Column><Text text="Full Name" /></Column>
+                      <Column><Text text="Email" /></Column>
+                      <Column minScreenWidth="Tablet" demandPopin="true"><Text text="Department" /></Column>
+                      <Column><Text text="Role" /></Column>
+                      <Column minScreenWidth="Tablet" demandPopin="true"><Text text="Active" /></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem>
+                        <cells>
+                          <Input value="{employeeNumber}" />
+                          <Input value="{fullName}" />
+                          <Input value="{email}" />
+                          <Input value="{department}" />
+                          <Select selectedKey="{role}" items="{path:'/Roles', templateShareable:false}">
+                            <core:Item key="{code}" text="{description}" />
+                          </Select>
+                          <CheckBox selected="{active}" />
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </IconTabFilter>
+
+                <!-- ── Tab 3: Audit Log ── -->
+                <IconTabFilter key="audit" text="Audit Log" icon="sap-icon://history">
+                  <Table id="auditTable" items="{/AuditLogs}" growing="true" growingThreshold="100">
+                    <headerToolbar>
+                      <OverflowToolbar>
+                        <Title text="Audit Log" level="H2" />
+                        <ToolbarSpacer />
+                        <Button icon="sap-icon://refresh" text="Refresh" press=".onRefreshAudit" />
+                      </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                      <Column><Text text="Timestamp" /></Column>
+                      <Column><Text text="Action" /></Column>
+                      <Column minScreenWidth="Tablet" demandPopin="true"><Text text="Object" /></Column>
+                      <Column><Text text="Reference" /></Column>
+                      <Column minScreenWidth="Tablet" demandPopin="true"><Text text="User" /></Column>
+                      <Column minScreenWidth="Desktop" demandPopin="true"><Text text="Details" /></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem>
+                        <cells>
+                          <Text text="{path:'timestamp', type:'sap.ui.model.odata.type.DateTimeOffset', formatOptions:{style:'medium'}}" />
+                          <ObjectStatus text="{action}" state="{= ${action} === 'Rejected' ? 'Error' : (${action} === 'Settled' ? 'Success' : 'Information') }" />
+                          <Text text="{objectType}" />
+                          <Text text="{objectKey}" />
+                          <Text text="{userId}" />
+                          <Text text="{details}" />
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </IconTabFilter>
+
+              </items>
+            </IconTabBar>
+          </content>
+        </Page>
+      </pages>
+    </App>
+  </Shell>
+</mvc:View>

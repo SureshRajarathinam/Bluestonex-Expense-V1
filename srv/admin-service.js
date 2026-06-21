@@ -9,7 +9,7 @@ module.exports = class AdminService extends cds.ApplicationService {
 
   async init() {
     // ─── Policy: validate sane values, then audit the change ───────────────
-    this.before('SAVE', 'Policies', (req) => {
+    this.before(['CREATE', 'UPDATE'], 'Policies', (req) => {
       const p = req.data;
       if (p.mileageRate != null && Number(p.mileageRate) <= 0)
         return req.error(422, 'Mileage rate must be greater than 0.');
@@ -20,7 +20,7 @@ module.exports = class AdminService extends cds.ApplicationService {
         return req.error(422, 'VAT rate must be between 0 and 1 (e.g. 0.20 for 20%).');
     });
 
-    this.after('SAVE', 'Policies', async (data, req) => {
+    this.after(['CREATE', 'UPDATE'], 'Policies', async (data, req) => {
       await audit.record({
         userId: req.user.id, action: 'PolicyChanged', objectType: 'ExpensePolicy',
         objectKey: data?.policyName || '',
@@ -30,13 +30,13 @@ module.exports = class AdminService extends cds.ApplicationService {
     });
 
     // ─── User: basic checks, then audit ────────────────────────────────────
-    this.before('SAVE', 'Users', (req) => {
+    this.before(['CREATE', 'UPDATE'], 'Users', (req) => {
       const u = req.data;
       if (u.email != null && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(u.email))
         return req.error(422, 'A valid email address is required.');
     });
 
-    this.after('SAVE', 'Users', async (data, req) => {
+    this.after(['CREATE', 'UPDATE'], 'Users', async (data, req) => {
       await audit.record({
         userId: req.user.id, action: 'UserChanged', objectType: 'Employee',
         objectKey: data?.employeeNumber || data?.email || '',

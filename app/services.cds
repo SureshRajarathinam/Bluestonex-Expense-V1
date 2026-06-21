@@ -4,7 +4,3 @@
 using from './my-expenses/annotations';
 using from './approve-expenses/annotations';
 using from './finance-expenses/annotations';
-using from './policy-config/annotations';
-using from './user-admin/annotations';
-using from './audit-log/annotations';
-using from './system-health/annotations';
