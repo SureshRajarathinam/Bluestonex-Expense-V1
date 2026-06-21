@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'Fix My Expenses component load error: add missing item Object Page target *)",
+      "Bash(git push *)"
+    ]
+  }
+}

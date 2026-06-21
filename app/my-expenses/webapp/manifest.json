@@ -99,6 +99,22 @@
           "options": {
             "settings": {
               "entitySet": "MyClaims",
+              "editableHeaderContent": false,
+              "navigation": {
+                "items": {
+                  "detail": { "route": "MyClaimItemsObjectPage" }
+                }
+              }
+            }
+          }
+        },
+        "MyClaimItemsObjectPage": {
+          "type": "Component",
+          "id": "MyClaimItemsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "MyClaimItems",
               "editableHeaderContent": false
             }
           }
