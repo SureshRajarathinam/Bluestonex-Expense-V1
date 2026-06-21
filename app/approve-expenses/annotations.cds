@@ -14,15 +14,16 @@ annotate ApprovalService.TeamClaims with @(
   UI.SelectionFields: [ status, claimPeriod, department ],
 
   UI.LineItem: [
-    { $Type: 'UI.DataField', Value: claimNumber,  Label: 'Claim Number'   },
-    { $Type: 'UI.DataField', Value: employeeName, Label: 'Employee'       },
-    { $Type: 'UI.DataField', Value: department,   Label: 'Department'     },
-    { $Type: 'UI.DataField', Value: claimPeriod,  Label: 'Period'         },
+    { $Type: 'UI.DataField', Value: claimNumber,  Label: 'Claim Number', ![@UI.Importance]: #High   },
+    { $Type: 'UI.DataField', Value: employeeName, Label: 'Employee',     ![@UI.Importance]: #High   },
+    { $Type: 'UI.DataField', Value: department,   Label: 'Department',   ![@UI.Importance]: #Medium },
+    { $Type: 'UI.DataField', Value: claimPeriod,  Label: 'Period',       ![@UI.Importance]: #Medium },
     { $Type: 'UI.DataField', Value: status,        Label: 'Status',
       Criticality: statusCriticality,
-      CriticalityRepresentation: #WithIcon                                 },
-    { $Type: 'UI.DataField', Value: totalGross,    Label: 'Total (£)'     },
-    { $Type: 'UI.DataField', Value: submittedAt,   Label: 'Submitted On'  },
+      CriticalityRepresentation: #WithIcon,
+      ![@UI.Importance]: #High                                                                       },
+    { $Type: 'UI.DataField', Value: totalGross,    Label: 'Total (£)',   ![@UI.Importance]: #High   },
+    { $Type: 'UI.DataField', Value: submittedAt,   Label: 'Submitted On',![@UI.Importance]: #Low    },
     {
       $Type:  'UI.DataFieldForAction',
       Action: 'ApprovalService.approveClaim',
@@ -37,6 +38,12 @@ annotate ApprovalService.TeamClaims with @(
       Inline: true,
       ![@UI.Importance]: #High
     }
+  ],
+
+  // Object Page header actions
+  UI.Identification: [
+    { $Type: 'UI.DataFieldForAction', Action: 'ApprovalService.approveClaim', Label: 'Approve', ![@UI.Importance]: #High },
+    { $Type: 'UI.DataFieldForAction', Action: 'ApprovalService.rejectClaim',  Label: 'Reject',  ![@UI.Importance]: #High }
   ],
 
   UI.DataPoint #TotalGross: {
@@ -130,6 +137,12 @@ annotate ApprovalService.TeamClaims with @(
 );
 
 annotate ApprovalService.TeamClaimItems with @(
+  UI.HeaderInfo: {
+    TypeName:       'Expense Item',
+    TypeNamePlural: 'Expense Items',
+    Title:          { $Type: 'UI.DataField', Value: expenseType_code },
+    Description:    { $Type: 'UI.DataField', Value: reasonForTrip }
+  },
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: expenseDate,      Label: 'Date'       },
     { $Type: 'UI.DataField', Value: expenseType_code, Label: 'Type'       },
@@ -141,7 +154,29 @@ annotate ApprovalService.TeamClaimItems with @(
     { $Type: 'UI.DataField', Value: vatAmount,        Label: 'VAT (£)'    },
     { $Type: 'UI.DataField', Value: receiptAttached,  Label: 'Receipt?'   },
     { $Type: 'UI.DataField', Value: receipt,          Label: 'View Receipt' }
-  ]
+  ],
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Label: 'Item Details', ID: 'ItemDetails', Target: '@UI.FieldGroup#ItemDetails' },
+    { $Type: 'UI.ReferenceFacet', Label: 'Receipt',      ID: 'ReceiptFacet', Target: '@UI.FieldGroup#Receipt' }
+  ],
+  UI.FieldGroup #ItemDetails: {
+    Data: [
+      { $Type: 'UI.DataField', Value: expenseDate      },
+      { $Type: 'UI.DataField', Value: expenseType_code },
+      { $Type: 'UI.DataField', Value: destination      },
+      { $Type: 'UI.DataField', Value: reasonForTrip    },
+      { $Type: 'UI.DataField', Value: vatType          },
+      { $Type: 'UI.DataField', Value: grossAmount      },
+      { $Type: 'UI.DataField', Value: netAmount        },
+      { $Type: 'UI.DataField', Value: vatAmount        }
+    ]
+  },
+  UI.FieldGroup #Receipt: {
+    Data: [
+      { $Type: 'UI.DataField', Value: receipt,         Label: 'Receipt' },
+      { $Type: 'UI.DataField', Value: receiptAttached  }
+    ]
+  }
 );
 
 annotate ApprovalService.TeamMileageClaims with @(

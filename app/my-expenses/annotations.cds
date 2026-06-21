@@ -14,13 +14,30 @@ annotate ExpenseService.MyClaims with @(
   UI.SelectionFields: [ status, claimPeriod ],
 
   UI.LineItem: [
-    { $Type: 'UI.DataField', Value: claimNumber,  Label: 'Claim Number'    },
-    { $Type: 'UI.DataField', Value: claimPeriod,  Label: 'Period'          },
-    { $Type: 'UI.DataField', Value: status,        Label: 'Status',
+    { $Type: 'UI.DataField', Value: claimNumber, Label: 'Claim Number', ![@UI.Importance]: #High   },
+    { $Type: 'UI.DataField', Value: claimPeriod, Label: 'Period',       ![@UI.Importance]: #Medium },
+    { $Type: 'UI.DataField', Value: status,       Label: 'Status',
       Criticality: statusCriticality,
-      CriticalityRepresentation: #WithIcon                                  },
-    { $Type: 'UI.DataField', Value: totalGross,    Label: 'Total (£)'      },
-    { $Type: 'UI.DataField', Value: submittedAt,   Label: 'Submitted On'   }
+      CriticalityRepresentation: #WithIcon,
+      ![@UI.Importance]: #High                                                                      },
+    { $Type: 'UI.DataField', Value: totalGross,   Label: 'Total (£)',   ![@UI.Importance]: #High   },
+    { $Type: 'UI.DataField', Value: submittedAt,  Label: 'Submitted On',![@UI.Importance]: #Low    },
+    {
+      $Type:  'UI.DataFieldForAction',
+      Action: 'ExpenseService.submitClaim',
+      Label:  'Apply for Approval',
+      ![@UI.Importance]: #High
+    }
+  ],
+
+  // Object Page header action — the "Apply" button (only enabled while Draft)
+  UI.Identification: [
+    {
+      $Type:  'UI.DataFieldForAction',
+      Action: 'ExpenseService.submitClaim',
+      Label:  'Apply for Approval',
+      ![@UI.Importance]: #High
+    }
   ],
 
   UI.DataPoint #TotalGross: {

@@ -67,6 +67,11 @@
           "pattern": "FinanceClaims({key}):?query:",
           "name": "FinanceClaimsObjectPage",
           "target": "FinanceClaimsObjectPage"
+        },
+        {
+          "pattern": "FinanceClaims({key})/items({key2}):?query:",
+          "name": "FinanceClaimItemsObjectPage",
+          "target": "FinanceClaimItemsObjectPage"
         }
       ],
       "targets": {
@@ -94,6 +99,22 @@
           "options": {
             "settings": {
               "entitySet": "FinanceClaims",
+              "editableHeaderContent": false,
+              "navigation": {
+                "items": {
+                  "detail": { "route": "FinanceClaimItemsObjectPage" }
+                }
+              }
+            }
+          }
+        },
+        "FinanceClaimItemsObjectPage": {
+          "type": "Component",
+          "id": "FinanceClaimItemsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "FinanceClaimItems",
               "editableHeaderContent": false
             }
           }

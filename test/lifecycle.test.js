@@ -161,6 +161,27 @@ test('J. full cross-app flow works with ONE all-role login (demo flow)', async (
   assert.equal(st.data.status, 'Settled');
 });
 
+test('K. visibility: draft hidden from approver; submitted hidden from finance until approved', async () => {
+  const u = EMP;
+  const c = await POST('/expense/MyClaims', { claimPeriod: '2026-06-01' }, { auth: u });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-05-10', expenseType_code: 'TOLLS', reasonForTrip: 'Trip', vatType: 'STD', grossAmount: 8 }, { auth: u });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: u });
+
+  // Activated but NOT submitted (status Draft) → invisible to approver and finance
+  assert.equal((await GET(`/approval/TeamClaims(${id})`, { auth: u })).status, 404, 'draft must be hidden from approver');
+  assert.equal((await GET(`/finance/FinanceClaims(${id})`, { auth: u })).status, 404, 'draft must be hidden from finance');
+
+  // After Apply (submit) → visible to approver, still hidden from finance
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: u });
+  assert.equal((await GET(`/approval/TeamClaims(${id})`, { auth: u })).status, 200, 'submitted visible to approver');
+  assert.equal((await GET(`/finance/FinanceClaims(${id})`, { auth: u })).status, 404, 'submitted still hidden from finance');
+
+  // After manager approval → now visible to finance
+  await POST(`/approval/TeamClaims(${id})/ApprovalService.approveClaim`, { comment: 'ok' }, { auth: u });
+  assert.equal((await GET(`/finance/FinanceClaims(${id})`, { auth: u })).status, 200, 'approved visible to finance');
+});
+
 test('F. manager rejects with reason', async () => {
   const c = await POST('/expense/MyClaims', { employee_ID: EMP_SAB, claimPeriod: '2026-03-15' }, { auth: EMP });
   const id = c.data.ID;

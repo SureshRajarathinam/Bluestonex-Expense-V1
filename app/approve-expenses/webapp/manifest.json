@@ -67,6 +67,11 @@
           "pattern": "TeamClaims({key}):?query:",
           "name": "TeamClaimsObjectPage",
           "target": "TeamClaimsObjectPage"
+        },
+        {
+          "pattern": "TeamClaims({key})/items({key2}):?query:",
+          "name": "TeamClaimItemsObjectPage",
+          "target": "TeamClaimItemsObjectPage"
         }
       ],
       "targets": {
@@ -94,6 +99,22 @@
           "options": {
             "settings": {
               "entitySet": "TeamClaims",
+              "editableHeaderContent": false,
+              "navigation": {
+                "items": {
+                  "detail": { "route": "TeamClaimItemsObjectPage" }
+                }
+              }
+            }
+          }
+        },
+        "TeamClaimItemsObjectPage": {
+          "type": "Component",
+          "id": "TeamClaimItemsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "TeamClaimItems",
               "editableHeaderContent": false
             }
           }

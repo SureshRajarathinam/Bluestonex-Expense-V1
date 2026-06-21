@@ -7,8 +7,9 @@ using com.bluestonex.expense as db from '../db/schema';
 @requires: 'authenticated-user'
 service ApprovalService {
 
+  // Managers only ever see claims the employee has APPLIED (submitted) — never drafts.
   @restrict: [{ grant: ['READ', 'approveClaim', 'rejectClaim'], to: 'Manager' }]
-  entity TeamClaims as projection on db.ExpenseClaims {
+  entity TeamClaims as select from db.ExpenseClaims {
     *,
     employee.fullName   as employeeName  : String,
     employee.email      as employeeEmail : String,
@@ -23,7 +24,7 @@ service ApprovalService {
       when 'Rejected'        then 1
       else 0
     end as statusCriticality : Integer
-  } actions {
+  } where status <> 'Draft' actions {
     @(Core.OperationAvailable: { $edmJson: { $Eq: [{ $Path: 'in/status' }, 'Submitted'] } })
     action approveClaim(comment : String(500)) returns TeamClaims;
 

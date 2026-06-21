@@ -7,8 +7,10 @@ using com.bluestonex.expense as db from '../db/schema';
 @requires: 'authenticated-user'
 service FinanceService {
 
+  // Finance only sees claims a manager has APPROVED (and onward) — never drafts,
+  // pending-approval, or manager-rejected claims.
   @restrict: [{ grant: ['READ', 'financeApprove', 'settleClaim', 'rejectClaim'], to: 'Finance' }]
-  entity FinanceClaims as projection on db.ExpenseClaims {
+  entity FinanceClaims as select from db.ExpenseClaims {
     *,
     employee.fullName   as employeeName  : String,
     employee.email      as employeeEmail : String,
@@ -23,7 +25,7 @@ service FinanceService {
       when 'Rejected'        then 1
       else 0
     end as statusCriticality : Integer
-  } actions {
+  } where status in ('ManagerApproved', 'FinanceApproved', 'Settled') actions {
     @(Core.OperationAvailable: { $edmJson: { $Eq: [{ $Path: 'in/status' }, 'ManagerApproved'] } })
     action financeApprove(comment : String(500)) returns FinanceClaims;
 
