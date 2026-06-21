@@ -2,6 +2,7 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
+const audit = require('./lib/audit');
 
 const LOG = cds.log('approval-service');
 
@@ -31,6 +32,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       });
 
       await notification.notifyManagerApproved({ ...claim, status: 'ManagerApproved' }, req.user.id);
+      await audit.record({ userId: req.user.id, action: 'ManagerApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment || '' });
       LOG.info(`Claim ${claim.claimNumber} approved by manager ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);
     });
@@ -54,6 +56,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       });
 
       await notification.notifyRejected(claim, req.user.id, comment);
+      await audit.record({ userId: req.user.id, action: 'Rejected', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Manager: ${comment}` });
       LOG.info(`Claim ${claim.claimNumber} rejected by manager ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);
     });

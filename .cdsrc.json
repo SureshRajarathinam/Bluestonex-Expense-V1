@@ -5,15 +5,15 @@
       "users": {
         "sabarinathan.chandrasekar@bluestonex.com": {
           "password": "sab",
-          "roles": ["Employee", "Manager", "Finance"]
+          "roles": ["Employee", "Manager", "Finance", "Admin"]
         },
         "manager@bluestonex.com": {
           "password": "mgr",
-          "roles": ["Employee", "Manager", "Finance"]
+          "roles": ["Employee", "Manager", "Finance", "Admin"]
         },
         "Dan.Barton@bluestonex.com": {
           "password": "dan",
-          "roles": ["Employee", "Manager", "Finance"]
+          "roles": ["Employee", "Manager", "Finance", "Admin"]
         },
         "clerk@bluestonex.com": {
           "password": "clerk",

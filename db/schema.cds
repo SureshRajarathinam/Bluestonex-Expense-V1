@@ -16,6 +16,12 @@ entity VATTypes {
       rate        : Decimal(5, 4);
 }
 
+// Business roles assignable to employees (governance; auth is enforced via XSUAA)
+entity Roles {
+  key code        : String(20);
+      description : String(100);
+}
+
 // ─── Master Data ─────────────────────────────────────────────────────────────
 
 entity Employees : managed {
@@ -26,6 +32,8 @@ entity Employees : managed {
       site           : String(500);
       department     : String(100);
       payrollArea    : String(50);
+      role           : String(20) default 'Employee';  // Employee | Manager | Finance | Admin
+      active         : Boolean default true;
       manager        : Association to Employees;
       financeEmail   : String(255) default 'Dan.Barton@bluestonex.com';
 }
@@ -106,6 +114,18 @@ entity MileageClaims : managed {
       milesCount    : Decimal(10, 2) @mandatory;
       ratePerMile   : Decimal(8, 4) default 0.2500;
       totalAmount   : Decimal(15, 2);
+}
+
+// ─── Governance: immutable audit trail ───────────────────────────────────────
+
+entity AuditLog {
+  key ID          : UUID;
+      timestamp   : DateTime;
+      userId      : String(255);
+      action      : String(50);    // Submitted | ManagerApproved | FinanceApproved | Settled | Rejected | PolicyChanged | UserChanged
+      objectType  : String(50);    // ExpenseClaim | ExpensePolicy | Employee
+      objectKey   : String(50);    // claim number / policy name / employee number
+      details     : String(1000);
 }
 
 // ─── Field labels & value helps (propagate to all service projections) ───────

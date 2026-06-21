@@ -14,6 +14,10 @@
     {
       "name": "$XSAPPNAME.Finance",
       "description": "Finance sign-off and settlement of expense claims"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Administer policy, users, roles and view audit log"
     }
   ],
   "attributes": [],
@@ -40,6 +44,13 @@
         "$XSAPPNAME.Finance",
         "$XSAPPNAME.Employee"
       ]
+    },
+    {
+      "name": "Admin",
+      "description": "Administrator — policy, users, audit",
+      "scope-references": [
+        "$XSAPPNAME.Admin"
+      ]
     }
   ],
   "role-collections": [
@@ -62,6 +73,13 @@
       "description": "BluestoneX Expense — Finance",
       "role-template-references": [
         "$XSAPPNAME.Finance"
+      ]
+    },
+    {
+      "name": "Expense_Admin",
+      "description": "BluestoneX Expense — Administrator",
+      "role-template-references": [
+        "$XSAPPNAME.Admin"
       ]
     }
   ]

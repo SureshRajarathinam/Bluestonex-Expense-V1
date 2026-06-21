@@ -5,6 +5,7 @@ const notification = require('./notification');
 const { splitVAT, mileageTotal, claimTotals } = require('./lib/calc');
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
+const audit = require('./lib/audit');
 
 const LOG = cds.log('expense-service');
 
@@ -88,6 +89,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       const employee = await SELECT.one.from(Employees).where({ email: req.user.id });
       await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id });
+      await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total £${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);

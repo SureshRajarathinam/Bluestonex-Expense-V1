@@ -1,4 +1,4 @@
-ID,employeeNumber,fullName,email,site,department,payrollArea,financeEmail
-f1a2b3c4-0001-0001-0001-000000000001,8,Sabarinathan Chandrasekar,sabarinathan.chandrasekar@bluestonex.com,"The Church Offices, Old Baptist Church, Salop Rd, Oswestry, Shropshire, SY11 2NR",Operations,GB - Central,Dan.Barton@bluestonex.com
-f1a2b3c4-0001-0001-0001-000000000002,1,Dan Barton,Dan.Barton@bluestonex.com,BluestoneX HQ,Finance,GB - Central,Dan.Barton@bluestonex.com
-f1a2b3c4-0001-0001-0001-000000000003,5,Team Manager,manager@bluestonex.com,BluestoneX HQ,Operations,GB - Central,Dan.Barton@bluestonex.com
+ID,employeeNumber,fullName,email,site,department,payrollArea,role,active,financeEmail
+f1a2b3c4-0001-0001-0001-000000000001,8,Sabarinathan Chandrasekar,sabarinathan.chandrasekar@bluestonex.com,"The Church Offices, Old Baptist Church, Salop Rd, Oswestry, Shropshire, SY11 2NR",Operations,GB - Central,Employee,true,Dan.Barton@bluestonex.com
+f1a2b3c4-0001-0001-0001-000000000002,1,Dan Barton,Dan.Barton@bluestonex.com,BluestoneX HQ,Finance,GB - Central,Finance,true,Dan.Barton@bluestonex.com
+f1a2b3c4-0001-0001-0001-000000000003,5,Team Manager,manager@bluestonex.com,BluestoneX HQ,Operations,GB - Central,Manager,true,Dan.Barton@bluestonex.com

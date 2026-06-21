@@ -1,0 +1,5 @@
+code,description
+Employee,Employee — submit and track own claims
+Manager,Line Manager — approve team claims
+Finance,Finance — sign-off and settlement
+Admin,Administrator — policy and user management

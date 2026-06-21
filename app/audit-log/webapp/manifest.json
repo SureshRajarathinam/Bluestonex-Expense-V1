@@ -1,0 +1,78 @@
+{
+  "_version": "1.59.0",
+  "sap.app": {
+    "id": "com.bluestonex.expense.auditlog",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": { "version": "1.0.0" },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "dataSources": {
+      "mainService": {
+        "uri": "/admin/",
+        "type": "OData",
+        "settings": { "odataVersion": "4.0" }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": { "desktop": true, "tablet": true, "phone": true }
+  },
+  "sap.fiori": {
+    "registrationIds": ["F-BSX-EXPENSE-AUDIT"],
+    "archeType": "transactional"
+  },
+  "sap.cloud.service": "com.bluestonex.expense",
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": { "sap.m": {}, "sap.ui.core": {}, "sap.ushell": {}, "sap.fe.templates": {} }
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": { "bundleName": "com.bluestonex.expense.auditlog.i18n.i18n" }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "synchronizationMode": "None",
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      }
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        { "pattern": ":?query:", "name": "AuditLogsList", "target": "AuditLogsList" },
+        { "pattern": "AuditLogs({key}):?query:", "name": "AuditLogsObjectPage", "target": "AuditLogsObjectPage" }
+      ],
+      "targets": {
+        "AuditLogsList": {
+          "type": "Component",
+          "id": "AuditLogsList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "AuditLogs",
+              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "navigation": { "AuditLogs": { "detail": { "route": "AuditLogsObjectPage" } } }
+            }
+          }
+        },
+        "AuditLogsObjectPage": {
+          "type": "Component",
+          "id": "AuditLogsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "AuditLogs", "editableHeaderContent": false } }
+        }
+      }
+    }
+  }
+}

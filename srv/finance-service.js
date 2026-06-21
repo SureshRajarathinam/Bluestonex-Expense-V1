@@ -4,6 +4,7 @@ const cds = require('@sap/cds');
 const notification = require('./notification');
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
+const audit = require('./lib/audit');
 
 const LOG = cds.log('finance-service');
 
@@ -39,6 +40,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
       });
 
       await notification.notifyFinanceApproved({ ...claim, status: 'FinanceApproved' }, req.user.id);
+      await audit.record({ userId: req.user.id, action: 'FinanceApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment || '' });
       LOG.info(`Claim ${claim.claimNumber} finance-approved by ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);
     });
@@ -58,6 +60,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
       });
 
       await notification.notifySettled({ ...claim, status: 'Settled' });
+      await audit.record({ userId: req.user.id, action: 'Settled', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Reimbursed £${claim.totalGross}` });
       LOG.info(`Claim ${claim.claimNumber} settled by ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);
     });
@@ -82,6 +85,7 @@ module.exports = class FinanceService extends cds.ApplicationService {
       });
 
       await notification.notifyRejected(claim, req.user.id, comment);
+      await audit.record({ userId: req.user.id, action: 'Rejected', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Finance: ${comment}` });
       LOG.info(`Claim ${claim.claimNumber} rejected by finance ${req.user.id}`);
       return SELECT.one.from(ExpenseClaims, ID);
     });
