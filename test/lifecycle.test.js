@@ -7,6 +7,7 @@ const EMP_SAB = 'f1a2b3c4-0001-0001-0001-000000000001';
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' };
 const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };
+const EMP_ONLY = { username: 'clerk@bluestonex.com', password: 'clerk' }; // Employee role only (RBAC test)
 const near = (a, b) => Math.abs(a - b) < 0.01;
 
 const t = cds.test(process.cwd());
@@ -93,10 +94,10 @@ test('E3. /approval metadata loads for any user (app renders) but data is role-g
   // $metadata must be readable by any authenticated user, else the Fiori app goes blank
   const meta = await GET('/approval/$metadata', { auth: EMP });
   assert.equal(meta.status, 200, `metadata should load, got ${meta.status}`);
-  // ...but the actual claim data is still restricted to managers
-  const data = await GET('/approval/TeamClaims', { auth: EMP });
-  assert.equal(data.status, 403, `employee data read should be 403, got ${data.status}`);
-  // ...and a real manager can read it
+  // ...but the actual claim data is still restricted to the Manager role
+  const data = await GET('/approval/TeamClaims', { auth: EMP_ONLY });
+  assert.equal(data.status, 403, `employee-only data read should be 403, got ${data.status}`);
+  // ...and a user with the Manager role can read it
   const mgr = await GET('/approval/TeamClaims', { auth: MGR });
   assert.equal(mgr.status, 200, `manager data read should be 200, got ${mgr.status}`);
 });
@@ -136,6 +137,28 @@ test('I. receipt upload (per item) downloads back and unblocks submission', asyn
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   assert.ok(s.status < 400, `submit should pass after upload, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
+});
+
+test('J. full cross-app flow works with ONE all-role login (demo flow)', async () => {
+  const u = EMP; // sab now has Employee+Manager+Finance
+  // create + receipt + submit (My Expenses)
+  const c = await POST('/expense/MyClaims', { claimPeriod: '2026-05-01' }, { auth: u });
+  const id = c.data.ID;
+  const it = await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-04-10', expenseType_code: 'TOLLS', reasonForTrip: 'Site visit', vatType: 'STD', grossAmount: 10 }, { auth: u });
+  assert.equal(it.status, 201);
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: u });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: u });
+  assert.ok(s.status < 400, `submit ${s.status}`);
+  // it now appears in Approve Expenses for the same user (Manager role)
+  const team = await GET(`/approval/TeamClaims(${id})`, { auth: u });
+  assert.equal(team.status, 200, 'visible in approval');
+  const ap = await POST(`/approval/TeamClaims(${id})/ApprovalService.approveClaim`, { comment: 'ok' }, { auth: u });
+  assert.equal(ap.data.status, 'ManagerApproved');
+  // and in Finance Expenses (Finance role): approve + settle
+  const fa = await POST(`/finance/FinanceClaims(${id})/FinanceService.financeApprove`, { comment: 'ok' }, { auth: u });
+  assert.equal(fa.data.status, 'FinanceApproved');
+  const st = await POST(`/finance/FinanceClaims(${id})/FinanceService.settleClaim`, {}, { auth: u });
+  assert.equal(st.data.status, 'Settled');
 });
 
 test('F. manager rejects with reason', async () => {
