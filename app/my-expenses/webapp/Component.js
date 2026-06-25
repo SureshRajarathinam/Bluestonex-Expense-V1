@@ -1,12 +1,18 @@
-sap.ui.define(
-  ["sap/fe/core/AppComponent"],
-  function (AppComponent) {
-    "use strict";
+sap.ui.define([
+  "sap/ui/core/UIComponent"
+], function (UIComponent) {
+  "use strict";
 
-    return AppComponent.extend("com.bluestonex.expense.myexpenses.Component", {
-      metadata: {
-        manifest: "json"
-      }
-    });
-  }
-);
+  return UIComponent.extend("com.bluestonex.expense.myexpenses.Component", {
+    metadata: {
+      manifest: "json",
+      interfaces: ["sap.ui.core.IAsyncContentCreation"]
+    },
+
+    init: function () {
+      UIComponent.prototype.init.apply(this, arguments);
+      // Initialise the router after the root view (ToolPage shell) is ready.
+      this.getRouter().initialize();
+    }
+  });
+});

@@ -1,0 +1,145 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.Claim"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.ui.layout.form"
+  height="100%">
+
+  <Page
+    id="claimPage"
+    class="bsxPage"
+    showNavButton="true"
+    navButtonPress=".onBack"
+    backgroundDesign="Transparent"
+    title="{= ${claimNumber} ? ${claimNumber} : 'New Expense Claim' }">
+
+    <content>
+      <!-- General information -->
+      <Panel class="bsxCard" headerText="{i18n>sectionGeneral}" expandable="false">
+        <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2">
+          <f:content>
+            <Label text="{i18n>lblCountry}" />
+            <ObjectStatus text="{path: 'country', formatter: '.formatter.countryText'}" state="Information" inverted="true" />
+            <Label text="{i18n>lblPeriod}" />
+            <DatePicker value="{claimPeriod}" valueFormat="yyyy-MM-dd" displayFormat="long" editable="{ui>/editable}" />
+            <Label text="{i18n>lblEmployee}" />
+            <Text text="{employeeName}" />
+            <Label text="{i18n>lblDept}" />
+            <Text text="{department}" />
+            <Label text="{i18n>lblStatus}" />
+            <ObjectStatus
+              text="{path: 'status', formatter: '.formatter.statusText'}"
+              state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+            <Label text="{i18n>lblCurrency}" />
+            <Text text="{currency}" />
+          </f:content>
+        </f:SimpleForm>
+
+        <HBox justifyContent="End" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" wrap="Wrap">
+          <VBox class="sapUiSmallMarginEnd" alignItems="End">
+            <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
+          </VBox>
+          <VBox class="sapUiSmallMarginEnd" alignItems="End">
+            <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
+          </VBox>
+          <VBox alignItems="End">
+            <Label text="{i18n>lblGross}" /><ObjectNumber emphasized="true" number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+          </VBox>
+        </HBox>
+      </Panel>
+
+      <!-- Expense items -->
+      <Panel class="bsxCard" headerText="{i18n>sectionItems}" expandable="false">
+        <Toolbar>
+          <ToolbarSpacer />
+          <Button text="{i18n>btnAddItem}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddItem" />
+        </Toolbar>
+        <Table id="itemsTable" class="bsxTable" items="{items}" mode="None">
+          <columns>
+            <Column><Text text="{i18n>itDate}" /></Column>
+            <Column><Text text="{i18n>itType}" /></Column>
+            <Column><Text text="{i18n>itDestination}" /></Column>
+            <Column><Text text="{i18n>itReason}" /></Column>
+            <Column><Text text="{i18n>itTaxType}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column><Text text="{i18n>itAttachment}" /></Column>
+            <Column hAlign="Center" width="4rem"><Text text="" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="9rem" />
+                <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false"
+                  items="{ path: '/ExpenseTypes', templateShareable: false }">
+                  <core:Item key="{code}" text="{description}" />
+                </Select>
+                <Input value="{destination}" editable="{ui>/editable}" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" />
+                <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false"
+                  items="{ path: '/VATTypes', templateShareable: false }">
+                  <core:Item key="{code}" text="{description}" />
+                </Select>
+                <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="7rem" />
+                <HBox alignItems="Center">
+                  <ObjectStatus
+                    text="{path: 'receiptAttached', formatter: '.formatter.receiptText'}"
+                    state="{= ${receiptAttached} ? 'Success' : 'None' }" />
+                  <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
+                </HBox>
+                <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <!-- Mileage -->
+      <Panel class="bsxCard" headerText="{i18n>sectionMileage}" expandable="false">
+        <Toolbar>
+          <ToolbarSpacer />
+          <Button text="{i18n>btnAddMileage}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddMileage" />
+        </Toolbar>
+        <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" mode="None">
+          <columns>
+            <Column><Text text="{i18n>mlDate}" /></Column>
+            <Column><Text text="{i18n>mlDestination}" /></Column>
+            <Column><Text text="{i18n>mlReason}" /></Column>
+            <Column><Text text="{i18n>mlEngine}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlMiles}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlRate}" /></Column>
+            <Column hAlign="Center" width="4rem"><Text text="" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="9rem" />
+                <Input value="{destination}" editable="{ui>/editable}" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" />
+                <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false">
+                  <core:Item key="Petrol" text="Petrol" />
+                  <core:Item key="Diesel" text="Diesel" />
+                  <core:Item key="Hybrid" text="Hybrid" />
+                  <core:Item key="Electric" text="Electric" />
+                </Select>
+                <Input value="{milesCount}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
+                <Input value="{ratePerMile}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
+                <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+    </content>
+
+    <footer>
+      <OverflowToolbar>
+        <ToolbarSpacer />
+        <Button text="Edit" icon="sap-icon://edit" class="bsxPill" visible="{ui>/canEdit}" press=".onEdit" />
+        <Button text="{i18n>btnDiscard}" type="Transparent" class="bsxPill" visible="{ui>/editable}" press=".onDiscard" />
+        <Button text="{i18n>btnSave}" class="bsxPill" visible="{ui>/editable}" press=".onSave" />
+        <Button text="{i18n>btnSubmit}" type="Emphasized" class="bsxPill" visible="{ui>/canSubmit}" press=".onSubmit" />
+      </OverflowToolbar>
+    </footer>
+  </Page>
+</mvc:View>

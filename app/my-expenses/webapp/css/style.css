@@ -1,0 +1,101 @@
+/* ============================================================================
+   BluestoneX — shared freestyle theme (layered over SAP Horizon)
+   Reference look: white header, light side rail, pill buttons, clean cards.
+   ========================================================================== */
+
+:root {
+  --bsx-primary:      #143c5e;  /* deep blue   */
+  --bsx-primary-700:  #0e2c46;
+  --bsx-accent:       #2aa39a;  /* teal accent */
+  --bsx-accent-700:   #1f7d76;
+  --bsx-ink:          #1b2a36;
+  --bsx-muted:        #6a7886;
+  --bsx-line:         #e3e8ee;
+  --bsx-bg:           #f4f6f9;
+  --bsx-card:         #ffffff;
+  --bsx-radius:       14px;
+  --bsx-pill:         999px;
+}
+
+/* ---- Shell ---------------------------------------------------------------- */
+.bsxBody, .sapTntToolPage { background: var(--bsx-bg); }
+
+/* Header */
+.bsxHeader.sapTntToolHeader {
+  background: var(--bsx-card);
+  border-bottom: 1px solid var(--bsx-line);
+  box-shadow: 0 1px 2px rgba(20, 60, 94, .05);
+  height: 3.25rem;
+}
+.bsxBrand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: .2px;
+  color: var(--bsx-primary);
+  padding: 0 .25rem;
+}
+.bsxBrand .bsxBrandX { color: var(--bsx-accent); }
+.bsxAppTitle.sapMTitle { color: var(--bsx-ink); font-weight: 600; }
+
+/* Side rail */
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav .sapTntNavLI .sapTntNavLIGroup.sapTntNavLIItemSelected {
+  background: var(--bsx-primary);
+  border-radius: var(--bsx-radius);
+  color: #fff;
+}
+.bsxSideNav .sapTntNavLIGroup { border-radius: var(--bsx-radius); margin: 2px 8px; }
+
+/* ---- Content ------------------------------------------------------------- */
+.bsxPage .sapMPageHeader, .bsxPage section { background: transparent; }
+
+.bsxCard {
+  background: var(--bsx-card);
+  border: 1px solid var(--bsx-line);
+  border-radius: var(--bsx-radius);
+  box-shadow: 0 1px 3px rgba(20, 60, 94, .06);
+  margin: 0.75rem 1rem;
+}
+.bsxCardPad { padding: 0.5rem 0.75rem; }
+
+.bsxPageTitle.sapMTitle {
+  color: var(--bsx-primary);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+/* ---- Buttons: pill styling ---------------------------------------------- */
+.bsxPill.sapMBtn .sapMBtnInner {
+  border-radius: var(--bsx-pill);
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized {
+  background: var(--bsx-primary);
+  border-color: var(--bsx-primary);
+}
+.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized:hover {
+  background: var(--bsx-primary-700);
+  border-color: var(--bsx-primary-700);
+}
+.bsxAccent.sapMBtn .sapMBtnInner {
+  background: var(--bsx-accent);
+  border-color: var(--bsx-accent);
+  color: #fff;
+  border-radius: var(--bsx-pill);
+}
+.bsxAccent.sapMBtn .sapMBtnInner:hover { background: var(--bsx-accent-700); border-color: var(--bsx-accent-700); }
+
+/* ---- Tables -------------------------------------------------------------- */
+.bsxTable .sapMListTblHeader { background: #f7f9fc; }
+.bsxTable .sapMListTblHeaderCell { color: var(--bsx-muted); font-weight: 700; }
+.bsxTable .sapMLIB { border-bottom: 1px solid var(--bsx-line); }
+
+/* ---- Tabs (IconTabBar) pill look ---------------------------------------- */
+.bsxTabs .sapMITBHead .sapMITBFilter.sapMITBSelected .sapMITBText { color: var(--bsx-primary); }
+.bsxTabs .sapMITBSelected .sapMITBFilterText { font-weight: 700; }
+
+/* ---- Status colours ------------------------------------------------------ */
+.bsxStatusApproved { color: #137a4b !important; }
+.bsxStatusRejected { color: #b00020 !important; }
+.bsxStatusPending  { color: #b25c00 !important; }

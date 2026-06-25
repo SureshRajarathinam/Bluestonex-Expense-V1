@@ -1,0 +1,23 @@
+<core:FragmentDefinition
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  xmlns:l="sap.ui.layout">
+
+  <Dialog id="countryDialog" title="{i18n>createTitle}" contentWidth="26rem">
+    <content>
+      <VBox class="sapUiMediumMargin" alignItems="Stretch">
+        <Text text="{i18n>selectCountryPrompt}" class="sapUiSmallMarginBottom" />
+        <RadioButtonGroup id="countryGroup" columns="1" selectedIndex="-1">
+          <RadioButton text="{i18n>countryUK}" />
+          <RadioButton text="{i18n>countryIN}" />
+        </RadioButtonGroup>
+      </VBox>
+    </content>
+    <beginButton>
+      <Button text="{i18n>btnContinue}" type="Emphasized" class="bsxPill" press=".onCountryContinue" />
+    </beginButton>
+    <endButton>
+      <Button text="{i18n>btnCancel}" class="bsxPill" press=".onCountryCancel" />
+    </endButton>
+  </Dialog>
+</core:FragmentDefinition>

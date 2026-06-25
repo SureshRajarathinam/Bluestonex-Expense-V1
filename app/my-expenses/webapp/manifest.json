@@ -4,7 +4,7 @@
     "id": "com.bluestonex.expense.myexpenses",
     "type": "application",
     "i18n": "i18n/i18n.properties",
-    "applicationVersion": { "version": "1.0.0" },
+    "applicationVersion": { "version": "2.0.0" },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
     "dataSources": {
@@ -31,11 +31,23 @@
     "dependencies": {
       "minUI5Version": "1.120.0",
       "libs": {
-        "sap.m":            {},
-        "sap.ui.core":      {},
-        "sap.ushell":       {},
-        "sap.fe.templates": {}
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.tnt": {},
+        "sap.ui.layout": {},
+        "sap.ui.unified": {}
       }
+    },
+    "resources": {
+      "css": [
+        { "uri": "css/style.css" }
+      ]
+    },
+    "rootView": {
+      "viewName": "com.bluestonex.expense.myexpenses.view.App",
+      "type": "XML",
+      "id": "app",
+      "async": true
     },
     "models": {
       "i18n": {
@@ -51,67 +63,29 @@
           "synchronizationMode": "None",
           "operationMode": "Server",
           "autoExpandSelect": true,
-          "earlyRequests": true
+          "earlyRequests": true,
+          "groupId": "$auto"
         }
       }
     },
     "routing": {
-      "config": {},
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "type": "View",
+        "viewType": "XML",
+        "path": "com.bluestonex.expense.myexpenses.view",
+        "controlId": "pageContainer",
+        "controlAggregation": "pages",
+        "transition": "slide",
+        "async": true
+      },
       "routes": [
-        {
-          "pattern": ":?query:",
-          "name": "MyClaimsList",
-          "target": "MyClaimsList"
-        },
-        {
-          "pattern": "MyClaims({key}):?query:",
-          "name": "MyClaimsObjectPage",
-          "target": "MyClaimsObjectPage"
-        }
+        { "pattern": "", "name": "list", "target": "list" },
+        { "pattern": "claim/{key}", "name": "detail", "target": "detail" }
       ],
       "targets": {
-        "MyClaimsList": {
-          "type": "Component",
-          "id": "MyClaimsList",
-          "name": "sap.fe.templates.ListReport",
-          "options": {
-            "settings": {
-              "entitySet": "MyClaims",
-              "variantManagement": "Page",
-              "initialLoad": "Enabled",
-              "navigation": {
-                "MyClaims": {
-                  "detail": { "route": "MyClaimsObjectPage" }
-                }
-              }
-            }
-          }
-        },
-        "MyClaimsObjectPage": {
-          "type": "Component",
-          "id": "MyClaimsObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "entitySet": "MyClaims",
-              "editableHeaderContent": false,
-              "controlConfiguration": {
-                "items/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "type": "ResponsiveTable",
-                    "creationMode": { "name": "InlineCreationRows" }
-                  }
-                },
-                "mileageClaims/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "type": "ResponsiveTable",
-                    "creationMode": { "name": "InlineCreationRows" }
-                  }
-                }
-              }
-            }
-          }
-        }
+        "list": { "id": "Claims", "name": "Claims", "level": 1 },
+        "detail": { "id": "Claim", "name": "Claim", "level": 2 }
       }
     }
   }

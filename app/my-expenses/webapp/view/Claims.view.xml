@@ -1,0 +1,72 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.Claims"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  height="100%">
+
+  <Page id="claimsPage" showHeader="false" class="bsxPage" backgroundDesign="Transparent">
+    <content>
+      <VBox class="bsxCard">
+        <OverflowToolbar class="bsxCardPad">
+          <Title text="{i18n>listTitle}" class="bsxPageTitle" level="H1" />
+          <ToolbarSpacer />
+          <SearchField
+            id="searchField"
+            width="16rem"
+            placeholder="{i18n>searchPlaceholder}"
+            search=".onSearch" />
+          <Button
+            text="{i18n>btnRefresh}"
+            icon="sap-icon://refresh"
+            type="Transparent"
+            class="bsxPill"
+            press=".onRefresh" />
+          <Button
+            text="{i18n>btnCreate}"
+            icon="sap-icon://add"
+            type="Emphasized"
+            class="bsxPill"
+            press=".onCreate" />
+        </OverflowToolbar>
+
+        <Table
+          id="claimsTable"
+          class="bsxTable"
+          growing="true"
+          growingThreshold="25"
+          items="{
+            path: '/MyClaims',
+            parameters: { '$orderby': 'createdAt desc', '$count': true },
+            sorter: { path: 'createdAt', descending: true }
+          }"
+          mode="None">
+          <noData>
+            <IllustratedMessage illustrationType="sapIllus-NoEntries" title="{i18n>noClaims}" />
+          </noData>
+          <columns>
+            <Column><Text text="{i18n>colClaimNo}" /></Column>
+            <Column><Text text="{i18n>colCountry}" /></Column>
+            <Column><Text text="{i18n>colPeriod}" /></Column>
+            <Column><Text text="{i18n>colStatus}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem type="Navigation" press=".onOpenClaim">
+              <cells>
+                <ObjectIdentifier title="{claimNumber}" text="{= ${claimNumber} ? '' : 'Draft (unsaved)'}" />
+                <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+                <Text text="{claimPeriod}" />
+                <ObjectStatus
+                  text="{path: 'status', formatter: '.formatter.statusText'}"
+                  state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+                <ObjectNumber
+                  number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>
