@@ -1,0 +1,18 @@
+{
+  "name": "com.bluestonex.expense.approval",
+  "version": "2.0.0",
+  "private": true,
+  "description": "BluestoneX Approval (freestyle SAPUI5, 3 tabs)",
+  "scripts": {
+    "build:cf": "ui5 build preload --clean-dest --config ui5.yaml --include-task=generateCachebusterInfo"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^3.0.0",
+    "ui5-task-zipper": "^3.1.4"
+  },
+  "ui5": {
+    "dependencies": [
+      "ui5-task-zipper"
+    ]
+  }
+}
