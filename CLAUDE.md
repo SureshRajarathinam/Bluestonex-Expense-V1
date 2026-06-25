@@ -10,7 +10,7 @@ Supports **UK and India** employees with country-aware tax and approval routing.
 ```bash
 npm install        # install deps
 cds watch          # run locally (in-memory SQLite + seed data), serves both services
-npm test           # node --test — 23/23 must stay green after any change
+npm test           # node --test — 28/28 must stay green after any change
 mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 ```
 

@@ -3,7 +3,7 @@
 A modern, end-to-end **Expense Reimbursement System** built on **SAP Cloud Application Programming Model (CAP)** with **SAP Fiori** front-ends, designed to run on **SAP BTP**.
 
 > **Stack:** SAP CAP (Node.js) · OData V4 · SAP Fiori Elements · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service
-> **Status:** **UK & India** support · 4 Fiori Elements apps · 2 OData services · **23/23 automated tests passing** (`npm test`)
+> **Status:** **UK & India** support · 4 Fiori Elements apps · 2 OData services · **28/28 automated tests passing** (`npm test`)
 
 ---
 
@@ -232,14 +232,14 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 ## 13. Testing
 
 ```bash
-npm test           # node --test  → 23/23 passing
+npm test           # node --test  → 28/28 passing
 ```
 
 | Suite | Covers |
 |---|---|
-| `lifecycle.test.js` | Country-aware tax (VAT vs GST), **UK 2-level** + **India 1-level** flows, country-mandatory guard |
+| `lifecycle.test.js` | Country-aware tax (VAT vs GST), **UK 2-level** + **India 1-level** flows, country-mandatory guard, receipt-missing block (422), empty-claim block (422), mileage-only success |
 | `validate.test.js` | Each of the 10 business rules in isolation (success + violation) |
-| `approval.test.js` | Approver-identity routing (403 for wrong/non-configured approver), reject-needs-reason, RBAC (403), policy draft-edit + audit, workflow members |
+| `approval.test.js` | Approver-identity routing (403 for wrong/non-configured/wrong-level approver), reject-needs-reason, RBAC (403), policy draft-edit + audit, workflow members, double-approve (409), rejected leaves queue (404) |
 
 All flows are tested for **success and error** paths (422 on missing receipt / future date / over-limit / no country, 403 on wrong role or wrong approver).
 
@@ -280,4 +280,4 @@ Post-deploy:
 
 ---
 
-*Living documentation. Backend logic and all flows are covered by `npm test` (23/23). Fiori UI rendering should be verified in a browser against `cds watch`.*
+*Living documentation. Backend logic and all flows are covered by `npm test` (28/28). Fiori UI rendering should be verified in a browser against `cds watch`.*
