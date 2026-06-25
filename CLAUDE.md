@@ -40,7 +40,7 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 - Fiori app `index.html` uses the **FLP ushell-sandbox** bootstrap; each app needs a `Component.js` extending `sap/fe/core/AppComponent`.
 - Bound-action key: `req.params[0]` is `{ID}` for draft entities, a raw scalar for non-draft — normalise via `idOf()`.
 - VAT/totals computed in `before('SAVE')` (draft requirement), NOT per-item handlers.
-- My Expenses items are **inline** on the claim Object Page (manifest `controlConfiguration … creationMode: InlineCreationRows`) — no item sub-page. Receipt is an inline media column.
+- My Expenses items are **inline** on the claim Object Page (manifest `controlConfiguration … creationMode: { name: "Inline", createAtEnd: true }`) — no item sub-page. This gives explicit **Create** (adds one editable row) + **Delete** toolbar buttons. Do **not** use `InlineCreationRows` here: it hides the Create button and its perpetual empty "ghost row" commits a new line item the moment you type (e.g. a date), which users report as a bug. Receipt is an inline media column.
 - After any change: `npm test` and `npx cds compile srv db app -s all --to edmx-v4 -o /tmp/x` (warning-free).
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)

@@ -99,13 +99,13 @@
                 "items/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
-                    "creationMode": { "name": "InlineCreationRows" }
+                    "creationMode": { "name": "Inline", "createAtEnd": true }
                   }
                 },
                 "mileageClaims/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
-                    "creationMode": { "name": "InlineCreationRows" }
+                    "creationMode": { "name": "Inline", "createAtEnd": true }
                   }
                 }
               }
