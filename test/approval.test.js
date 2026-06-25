@@ -90,3 +90,24 @@ test('audit: submitting a claim writes a Submitted entry', async () => {
   const logs = await GET(`/approval/AuditLogs?$filter=action eq 'Submitted'`, { auth: MGR });
   assert.ok(logs.data.value.length > 0, 'submit audited');
 });
+
+test('cannot approve a claim twice / once completed (409 or removed from queue)', async () => {
+  // India claim completes after one approval
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const a1 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(a1.status < 400, `first approve ${a1.status}`);
+  // second approve attempt — claim is Approved (out of pending queue) → must not succeed
+  const a2 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'again' }, { auth: MGR });
+  assert.ok(a2.status >= 400, `re-approving a completed claim must fail, got ${a2.status}`);
+});
+
+test('rejected claim leaves the approvals queue', async () => {
+  const id = await submitUK();
+  await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'No' }, { auth: MGR });
+  const g = await GET(`/approval/Approvals(${id})`, { auth: MGR });
+  assert.equal(g.status, 404, `rejected claim should be gone from queue, got ${g.status}`);
+});

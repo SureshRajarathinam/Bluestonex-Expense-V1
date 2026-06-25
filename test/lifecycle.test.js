@@ -92,3 +92,33 @@ test('E. a claim without a country cannot be activated or submitted', async () =
   }
   assert.ok(blocked, 'a claim with no country must not be submittable');
 });
+
+test('F. receipt mandatory above threshold blocks submit (422)', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-01' }, { auth: EMP });
+  const id = c.data.ID;
+  // £50 taxi, no receipt → must block
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'TAXI', reasonForTrip: 'T', vatType: 'STD', grossAmount: 50, receiptAttached: false }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.equal(s.status, 422, `got ${s.status}`);
+  assert.ok(JSON.stringify(s.data?.error).toLowerCase().includes('receipt'), 'error mentions receipt');
+});
+
+test('G. empty claim (no items/mileage) blocks submit (422)', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-01' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.equal(s.status, 422, `got ${s.status}`);
+});
+
+test('H. mileage-only claim submits; total = miles × rate', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-01' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/mileageClaims`, { tripDate: '2026-02-16', destination: 'Site', reasonForTrip: 'Visit', engineType: 'Petrol', milesCount: 100, ratePerMile: 0.25 }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const claim = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data;
+  assert.ok(near(claim.totalGross, 25), `mileage total ${claim.totalGross}`);
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `mileage-only submit ${s.status}: ${JSON.stringify(s.data?.error)}`);
+});
