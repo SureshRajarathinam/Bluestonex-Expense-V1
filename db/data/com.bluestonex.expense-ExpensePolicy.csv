@@ -1,2 +1,2 @@
-ID,policyName,mileageRate,hotelDailyLimit,mealDailyLimit,receiptThreshold,vatRate,effectiveFrom
-e1b2c3d4-0001-0001-0001-000000000001,Standard UK Policy,0.2500,200.00,40.00,25.00,0.2000,2024-01-01
+ID,policyName,mileageRate,hotelDailyLimit,mealDailyLimit,receiptThreshold,vatRate,gstRate,effectiveFrom
+e1b2c3d4-0001-0001-0001-000000000001,Standard Policy,0.2500,200.00,40.00,25.00,0.2000,0.1800,2024-01-01

@@ -22,6 +22,12 @@ entity Roles {
       description : String(100);
 }
 
+// Countries the solution supports — drives tax (VAT/GST) and approval routing
+entity Countries {
+  key code        : String(2);   // UK | IN
+      description : String(50);
+}
+
 // ─── Master Data ─────────────────────────────────────────────────────────────
 
 entity Employees : managed {
@@ -45,9 +51,18 @@ entity ExpensePolicy : managed {
       hotelDailyLimit  : Decimal(10, 2);
       mealDailyLimit   : Decimal(10, 2);
       receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
-      vatRate          : Decimal(5, 4) default 0.2000;
+      vatRate          : Decimal(5, 4) default 0.2000;  // UK VAT rate
+      gstRate          : Decimal(5, 4) default 0.1800;  // India GST rate
       effectiveFrom   : Date;
       effectiveTo     : Date;
+}
+
+// Approval workflow members per country: UK = 2 levels, India = 1 level
+entity ApprovalWorkflow : managed {
+  key country        : String(2);    // UK | IN
+      countryName    : String(50);
+      firstApprover  : String(255);  // email of level-1 approver
+      secondApprover : String(255);  // email of level-2 approver (UK only; null for India)
 }
 
 // ─── Transactional ───────────────────────────────────────────────────────────
@@ -56,27 +71,29 @@ entity ExpenseClaims : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
       employee            : Association to Employees;  // auto-set from logged-in user
+      country             : String(2);                 // UK | IN — set on Create; drives tax + routing
       payrollArea         : String(50);
       claimPeriod         : Date @mandatory;
 
-      // Workflow status
-      // Draft | Submitted | ManagerApproved | FinanceApproved | Settled | Rejected
+      // Workflow status (country-driven):
+      //   Draft → Submitted → FirstApproved (UK only) → Approved | Rejected
       status              : String(30) default 'Draft';
 
       currency            : String(3) default 'GBP';
       totalNet            : Decimal(15, 2) default 0.00;
-      totalVAT            : Decimal(15, 2) default 0.00;
+      totalVAT            : Decimal(15, 2) default 0.00;  // holds VAT (UK) or GST (India)
       totalGross          : Decimal(15, 2) default 0.00;
 
-      // Approval trail
-      managerComment      : String(500);
-      financeComment      : String(500);
+      // Approval trail (generic, country-agnostic)
       submittedAt         : DateTime;
-      managerApprovedAt   : DateTime;
-      managerApprovedBy   : String(255);
-      financeApprovedAt   : DateTime;
-      financeApprovedBy   : String(255);
-      settledAt           : DateTime;
+      level1ApprovedBy    : String(255);
+      level1ApprovedAt    : DateTime;
+      level1Comment       : String(500);
+      level2ApprovedBy    : String(255);
+      level2ApprovedAt    : DateTime;
+      level2Comment       : String(500);
+      rejectedBy          : String(255);
+      rejectionReason     : String(500);
 
       items               : Composition of many ExpenseItems
                               on items.claim = $self;
@@ -132,31 +149,33 @@ entity AuditLog {
 
 annotate ExpenseClaims with {
   claimNumber       @title: 'Claim Number';
+  country           @title: 'Country';
   claimPeriod       @title: 'Claim Period';
   payrollArea       @title: 'Payroll Area';
   status            @title: 'Status';
   currency          @title: 'Currency';
-  totalNet          @title: 'Net Amount (£)'   @Measures.ISOCurrency: currency;
-  totalVAT          @title: 'VAT Amount (£)'   @Measures.ISOCurrency: currency;
-  totalGross        @title: 'Total Amount (£)' @Measures.ISOCurrency: currency;
-  managerComment    @title: 'Manager Comments';
-  financeComment    @title: 'Finance Comments';
+  totalNet          @title: 'Net Amount'   @Measures.ISOCurrency: currency;
+  totalVAT          @title: 'Tax Amount'   @Measures.ISOCurrency: currency;
+  totalGross        @title: 'Total Amount' @Measures.ISOCurrency: currency;
   submittedAt       @title: 'Submitted On';
-  managerApprovedAt @title: 'Manager Approved On';
-  managerApprovedBy @title: 'Manager Approved By';
-  financeApprovedAt @title: 'Finance Approved On';
-  financeApprovedBy @title: 'Finance Approved By';
-  settledAt         @title: 'Settled On';
+  level1ApprovedBy  @title: 'Level 1 Approved By';
+  level1ApprovedAt  @title: 'Level 1 Approved On';
+  level1Comment     @title: 'Level 1 Comments';
+  level2ApprovedBy  @title: 'Level 2 Approved By';
+  level2ApprovedAt  @title: 'Level 2 Approved On';
+  level2Comment     @title: 'Level 2 Comments';
+  rejectedBy        @title: 'Rejected By';
+  rejectionReason   @title: 'Rejection Reason';
 }
 
 annotate ExpenseItems with {
   expenseDate     @title: 'Date';
   destination     @title: 'Destination';
   reasonForTrip   @title: 'Reason for Trip';
-  vatType         @title: 'VAT Type';
-  grossAmount     @title: 'Gross Amount (£)';
-  netAmount       @title: 'Net Amount (£)';
-  vatAmount       @title: 'VAT Amount (£)';
+  vatType         @title: 'Tax Type';
+  grossAmount     @title: 'Gross Amount';
+  netAmount       @title: 'Net Amount';
+  vatAmount       @title: 'Tax Amount';
   receiptAttached @title: 'Receipt Attached';
   notes           @title: 'Notes';
   expenseType     @title: 'Expense Type'

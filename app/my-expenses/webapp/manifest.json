@@ -67,11 +67,6 @@
           "pattern": "MyClaims({key}):?query:",
           "name": "MyClaimsObjectPage",
           "target": "MyClaimsObjectPage"
-        },
-        {
-          "pattern": "MyClaims({key})/items({key2}):?query:",
-          "name": "MyClaimItemsObjectPage",
-          "target": "MyClaimItemsObjectPage"
         }
       ],
       "targets": {
@@ -100,22 +95,20 @@
             "settings": {
               "entitySet": "MyClaims",
               "editableHeaderContent": false,
-              "navigation": {
-                "items": {
-                  "detail": { "route": "MyClaimItemsObjectPage" }
+              "controlConfiguration": {
+                "items/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "creationMode": { "name": "InlineCreationRows" }
+                  }
+                },
+                "mileageClaims/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "creationMode": { "name": "InlineCreationRows" }
+                  }
                 }
               }
-            }
-          }
-        },
-        "MyClaimItemsObjectPage": {
-          "type": "Component",
-          "id": "MyClaimItemsObjectPage",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "entitySet": "MyClaimItems",
-              "editableHeaderContent": false
             }
           }
         }

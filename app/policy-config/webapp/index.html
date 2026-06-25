@@ -4,18 +4,15 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Approve Expenses</title>
-
-  <!-- Fiori Launchpad sandbox config — provides the sap.ushell services that
-       Fiori Elements templates require to render (List Report / Object Page). -->
+  <title>Policy Configuration</title>
   <script type="text/javascript">
     window["sap-ushell-config"] = {
       defaultRenderer: "fiori2",
       applications: {
-        "approve-expenses": {
-          title: "Approve Expenses",
-          description: "Review and approve team expense claims",
-          additionalInformation: "SAPUI5.Component=com.bluestonex.expense.approveexpenses",
+        "policy-config": {
+          title: "Policy Configuration",
+          description: "Maintain tax & expense policy",
+          additionalInformation: "SAPUI5.Component=com.bluestonex.expense.policyconfig",
           applicationType: "URL",
           url: "./",
           navigationMode: "embedded"
@@ -23,26 +20,16 @@
       }
     };
   </script>
-
-  <script id="sap-ushell-bootstrap"
-    src="https://sapui5.hana.ondemand.com/test-resources/sap/ushell/bootstrap/sandbox.js">
-  </script>
-
+  <script id="sap-ushell-bootstrap" src="https://sapui5.hana.ondemand.com/test-resources/sap/ushell/bootstrap/sandbox.js"></script>
   <script id="sap-ui-bootstrap"
     src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
-    data-sap-ui-resourceroots='{"com.bluestonex.expense.approveexpenses": "./"}'
+    data-sap-ui-resourceroots='{"com.bluestonex.expense.policyconfig": "./"}'
     data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
     data-sap-ui-compatVersion="edge"
     data-sap-ui-async="true"
     data-sap-ui-preload="async"
     data-sap-ui-theme="sap_horizon"
     data-sap-ui-frameOptions="allow">
-  </script>
-
-  <script type="text/javascript">
-    sap.ui.getCore().attachInit(function () {
-      sap.ushell.Container.createRenderer().placeAt("content");
-    });
   </script>
 </head>
 <body class="sapUiBody" id="content"></body>

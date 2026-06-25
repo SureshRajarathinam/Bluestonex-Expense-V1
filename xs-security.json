@@ -5,19 +5,15 @@
   "scopes": [
     {
       "name": "$XSAPPNAME.Employee",
-      "description": "Submit and view own expense claims"
+      "description": "Submit and track own expense claims"
     },
     {
-      "name": "$XSAPPNAME.Manager",
-      "description": "Approve or reject team expense claims"
-    },
-    {
-      "name": "$XSAPPNAME.Finance",
-      "description": "Finance sign-off and settlement of expense claims"
+      "name": "$XSAPPNAME.Approver",
+      "description": "Approve or reject expense claims (level 1 / level 2)"
     },
     {
       "name": "$XSAPPNAME.Admin",
-      "description": "Administer policy, users, roles and view audit log"
+      "description": "Administer policy configuration and approval workflow members"
     }
   ],
   "attributes": [],
@@ -30,26 +26,19 @@
       ]
     },
     {
-      "name": "Manager",
-      "description": "Line Manager — approve team claims",
+      "name": "Approver",
+      "description": "Approver — approve/reject claims",
       "scope-references": [
-        "$XSAPPNAME.Manager",
-        "$XSAPPNAME.Employee"
-      ]
-    },
-    {
-      "name": "Finance",
-      "description": "Finance — final approval and settlement",
-      "scope-references": [
-        "$XSAPPNAME.Finance",
+        "$XSAPPNAME.Approver",
         "$XSAPPNAME.Employee"
       ]
     },
     {
       "name": "Admin",
-      "description": "Administrator — policy, users, audit",
+      "description": "Administrator — policy & workflow configuration",
       "scope-references": [
-        "$XSAPPNAME.Admin"
+        "$XSAPPNAME.Admin",
+        "$XSAPPNAME.Employee"
       ]
     }
   ],
@@ -62,17 +51,10 @@
       ]
     },
     {
-      "name": "Expense_Manager",
-      "description": "BluestoneX Expense — Line Manager",
+      "name": "Expense_Approver",
+      "description": "BluestoneX Expense — Approver",
       "role-template-references": [
-        "$XSAPPNAME.Manager"
-      ]
-    },
-    {
-      "name": "Expense_Finance",
-      "description": "BluestoneX Expense — Finance",
-      "role-template-references": [
-        "$XSAPPNAME.Finance"
+        "$XSAPPNAME.Approver"
       ]
     },
     {

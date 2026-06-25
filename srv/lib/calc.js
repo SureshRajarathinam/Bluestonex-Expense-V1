@@ -4,16 +4,21 @@
 
 const round2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
 
-// VAT rate by type. STD = 20%, everything else (ZR / EX) = 0%.
-function vatRate(vatType) {
-  return vatType === 'STD' ? 0.20 : 0.00;
+// Standard tax rate for a country, read from policy:
+//   UK → VAT rate, India (IN) → GST rate. Defaults to UK VAT if unknown.
+function taxRateFor(country, policy = {}) {
+  if (country === 'IN') return Number(policy.gstRate ?? 0.18);
+  return Number(policy.vatRate ?? 0.20); // UK / default
 }
 
-// Split a VAT-inclusive gross amount into net + VAT.
-function splitVAT(grossAmount, vatType) {
+// Split a tax-inclusive gross amount into net + tax.
+//   taxType 'STD' applies the given standard rate; 'ZR'/'EX' apply 0%.
+//   `stdRate` is the country-derived standard rate (VAT for UK, GST for India).
+function splitVAT(grossAmount, taxType, stdRate = 0.20) {
   const gross = Number(grossAmount) || 0;
-  const net   = round2(gross / (1 + vatRate(vatType)));
-  const vat    = round2(gross - net);
+  const rate  = taxType === 'STD' ? Number(stdRate) || 0 : 0;
+  const net   = round2(gross / (1 + rate));
+  const vat   = round2(gross - net);
   return { netAmount: net, vatAmount: vat };
 }
 
@@ -36,4 +41,4 @@ function claimTotals(items = [], mileage = []) {
   };
 }
 
-module.exports = { round2, vatRate, splitVAT, mileageTotal, claimTotals };
+module.exports = { round2, taxRateFor, splitVAT, mileageTotal, claimTotals };

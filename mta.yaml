@@ -72,17 +72,17 @@ modules:
         - name: expense-management-my-expenses
           artifacts: [ my-expenses.zip ]
           target-path: app/
-        - name: expense-management-approve-expenses
-          artifacts: [ approve-expenses.zip ]
+        - name: expense-management-approvals
+          artifacts: [ approvals.zip ]
           target-path: app/
-        - name: expense-management-finance-expenses
-          artifacts: [ finance-expenses.zip ]
+        - name: expense-management-policy-config
+          artifacts: [ policy-config.zip ]
           target-path: app/
-        - name: expense-management-admin-console
-          artifacts: [ admin-console.zip ]
+        - name: expense-management-workflow-members
+          artifacts: [ workflow-members.zip ]
           target-path: app/
 
-  # ── Fiori App: My Expenses ─────────────────────────────────────────────────
+  # ── Fiori App: My Expenses (Employee) ──────────────────────────────────────
   - name: expense-management-my-expenses
     type: html5
     path: app/my-expenses
@@ -94,10 +94,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Approve Expenses ────────────────────────────────────────────
-  - name: expense-management-approve-expenses
+  # ── Fiori App: Approvals (Approver) ────────────────────────────────────────
+  - name: expense-management-approvals
     type: html5
-    path: app/approve-expenses
+    path: app/approvals
     build-parameters:
       build-result: dist
       builder: custom
@@ -106,10 +106,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Finance Expenses ────────────────────────────────────────────
-  - name: expense-management-finance-expenses
+  # ── Fiori App: Policy Configuration (Admin) ────────────────────────────────
+  - name: expense-management-policy-config
     type: html5
-    path: app/finance-expenses
+    path: app/policy-config
     build-parameters:
       build-result: dist
       builder: custom
@@ -118,10 +118,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Expense Administration (Policy · Users · Audit) ─────────────
-  - name: expense-management-admin-console
+  # ── Fiori App: Approval Workflow Members (Admin) ───────────────────────────
+  - name: expense-management-workflow-members
     type: html5
-    path: app/admin-console
+    path: app/workflow-members
     build-parameters:
       build-result: dist
       builder: custom

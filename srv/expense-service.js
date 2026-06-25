@@ -2,7 +2,7 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
-const { splitVAT, mileageTotal, claimTotals } = require('./lib/calc');
+const { splitVAT, mileageTotal, claimTotals, taxRateFor } = require('./lib/calc');
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
@@ -12,7 +12,7 @@ const LOG = cds.log('expense-service');
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, Employees } = cds.entities('com.bluestonex.expense');
+    const { ExpenseClaims, Employees, ExpensePolicy } = cds.entities('com.bluestonex.expense');
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
     // Employees never type their own ID — it comes from $user (the login).
@@ -52,8 +52,14 @@ module.exports = class ExpenseService extends cds.ApplicationService {
         claim.claimNumber = `EXP-${year}-${String(rows.length + 1).padStart(4, '0')}`;
       }
 
+      // Country drives tax (VAT for UK, GST for India) and currency
+      const country = claim.country || 'UK';
+      claim.currency = country === 'IN' ? 'INR' : 'GBP';
+      const policy = await SELECT.one.from(ExpensePolicy);
+      const stdRate = taxRateFor(country, policy || {});
+
       for (const item of claim.items || []) {
-        const { netAmount, vatAmount } = splitVAT(item.grossAmount, item.vatType);
+        const { netAmount, vatAmount } = splitVAT(item.grossAmount, item.vatType, stdRate);
         item.netAmount = netAmount;
         item.vatAmount = vatAmount;
       }
@@ -73,6 +79,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (claim.status !== 'Draft')
         return req.error(409, `Claim ${claim.claimNumber} cannot be submitted — current status is '${claim.status}'.`);
+      if (!claim.country)
+        return req.error(422, 'Please select a country (UK or India) before submitting.');
 
       // Rule 8 — block submission if any critical policy violation exists
       const ctx = await loadValidationContext(ID);

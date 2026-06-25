@@ -1,5 +1,4 @@
 code,description
 Employee,Employee — submit and track own claims
-Manager,Line Manager — approve team claims
-Finance,Finance — sign-off and settlement
-Admin,Administrator — policy and user management
+Approver,Approver — approve expense claims (level 1 / level 2)
+Admin,Administrator — policy and approval-workflow configuration

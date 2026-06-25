@@ -17,12 +17,11 @@ service ExpenseService {
     employee.site       as employeeSite  : String,
     employee.department as department    : String,
     case status
-      when 'Draft'           then 0
-      when 'Submitted'       then 2
-      when 'ManagerApproved' then 2
-      when 'FinanceApproved' then 3
-      when 'Settled'         then 3
-      when 'Rejected'        then 1
+      when 'Draft'         then 0
+      when 'Submitted'     then 2
+      when 'FirstApproved' then 2
+      when 'Approved'      then 3
+      when 'Rejected'      then 1
       else 0
     end as statusCriticality : Integer
   } actions {
@@ -33,6 +32,7 @@ service ExpenseService {
   entity MyClaimItems    as projection on db.ExpenseItems;
   entity MyMileageClaims as projection on db.MileageClaims;
 
+  @readonly entity Countries    as projection on db.Countries;
   @readonly entity ExpenseTypes as projection on db.ExpenseTypes;
   @readonly entity VATTypes     as projection on db.VATTypes;
   @readonly entity Employees    as projection on db.Employees
@@ -46,11 +46,21 @@ annotate ExpenseService.MyClaims with {
   employeeName      @title: 'Employee';
   department        @title: 'Department';
   employeeSite      @title: 'Site';
+  country           @mandatory
+                    @Common.ValueListWithFixedValues
+                    @Common.ValueList: {
+                      CollectionPath: 'Countries',
+                      Parameters: [
+                        { $Type: 'Common.ValueListParameterInOut',       LocalDataProperty: country, ValueListProperty: 'code' },
+                        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' }
+                      ]
+                    };
 }
 
 annotate ExpenseService.MyClaimItems with {
   ID      @UI.Hidden;
-  vatType @Common.ValueList: {
+  vatType @Common.ValueListWithFixedValues
+          @Common.ValueList: {
             CollectionPath: 'VATTypes',
             Parameters: [
               { $Type: 'Common.ValueListParameterInOut',       LocalDataProperty: vatType, ValueListProperty: 'code' },
