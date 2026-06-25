@@ -1,0 +1,48 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:tnt="sap.tnt"
+  xmlns="sap.m"
+  displayBlock="true"
+  height="100%">
+
+  <tnt:ToolPage id="toolPage" class="bsxToolPage">
+
+    <tnt:header>
+      <tnt:ToolHeader class="bsxHeader">
+        <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
+        <Text text="Bluestone" class="bsxBrand" />
+        <Text text="X" class="bsxBrand bsxBrandX" />
+        <ToolbarSpacer />
+        <Title text="{i18n>appTitle}" class="bsxAppTitle" level="H2" />
+        <ToolbarSpacer />
+        <Avatar initials="BS" displaySize="XS" backgroundColor="Accent6" />
+      </tnt:ToolHeader>
+    </tnt:header>
+
+    <tnt:sideContent>
+      <tnt:SideNavigation id="sideNav" class="bsxSideNav" selectedKey="approval">
+        <tnt:NavigationList>
+          <tnt:NavigationListItem key="approval" text="{i18n>navApproval}" icon="sap-icon://approvals" />
+        </tnt:NavigationList>
+      </tnt:SideNavigation>
+    </tnt:sideContent>
+
+    <tnt:mainContents>
+      <IconTabBar id="tabBar" class="bsxTabs" expandable="false" stretchContentHeight="true" backgroundDesign="Transparent" headerMode="Inline">
+        <items>
+          <IconTabFilter key="approvals" text="{i18n>tabApprovals}" icon="sap-icon://task">
+            <mvc:XMLView viewName="com.bluestonex.expense.approval.view.Approvals" />
+          </IconTabFilter>
+          <IconTabFilter key="policy" text="{i18n>tabPolicy}" icon="sap-icon://settings">
+            <mvc:XMLView viewName="com.bluestonex.expense.approval.view.Policy" />
+          </IconTabFilter>
+          <IconTabFilter key="workflow" text="{i18n>tabWorkflow}" icon="sap-icon://org-chart">
+            <mvc:XMLView viewName="com.bluestonex.expense.approval.view.Workflow" />
+          </IconTabFilter>
+        </items>
+      </IconTabBar>
+    </tnt:mainContents>
+
+  </tnt:ToolPage>
+</mvc:View>

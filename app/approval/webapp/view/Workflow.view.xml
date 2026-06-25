@@ -1,0 +1,34 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Workflow"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  height="100%">
+
+  <VBox class="bsxCard">
+    <OverflowToolbar class="bsxCardPad">
+      <Title text="{i18n>workflowTitle}" class="bsxPageTitle" level="H2" />
+      <ToolbarSpacer />
+      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill" press=".onRefresh" />
+    </OverflowToolbar>
+
+    <Table id="wfTable" class="bsxTable" items="{/WorkflowMembers}" mode="None">
+      <columns>
+        <Column><Text text="{i18n>colWfCountry}" /></Column>
+        <Column><Text text="{i18n>colFirst}" /></Column>
+        <Column><Text text="{i18n>colSecond}" /></Column>
+        <Column hAlign="Center" width="6rem"><Text text="" /></Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <ObjectIdentifier title="{countryName}" text="{country}" />
+            <Text text="{firstApprover}" />
+            <Text text="{= ${secondApprover} ? ${secondApprover} : '—' }" />
+            <Button icon="sap-icon://edit" text="{i18n>btnEdit}" type="Transparent" class="bsxPill" press=".onEditMember" />
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+    <Text text="{i18n>wfHint}" class="bsxCardPad" />
+  </VBox>
+</mvc:View>

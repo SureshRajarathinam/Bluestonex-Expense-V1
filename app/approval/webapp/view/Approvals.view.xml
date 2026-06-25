@@ -1,0 +1,54 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Approvals"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  height="100%">
+
+  <VBox class="bsxCard">
+    <OverflowToolbar class="bsxCardPad">
+      <Title text="{i18n>approvalsTitle}" class="bsxPageTitle" level="H2" />
+      <ToolbarSpacer />
+      <SearchField id="searchField" width="16rem" placeholder="{i18n>searchClaim}" search=".onSearch" />
+      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill" press=".onRefresh" />
+    </OverflowToolbar>
+
+    <Table
+      id="approvalsTable"
+      class="bsxTable"
+      growing="true"
+      items="{
+        path: '/Approvals',
+        parameters: { '$expand': 'items,mileageClaims', '$count': true },
+        sorter: { path: 'submittedAt' }
+      }"
+      mode="None">
+      <noData>
+        <IllustratedMessage illustrationType="sapIllus-NoTasks" title="{i18n>noApprovals}" />
+      </noData>
+      <columns>
+        <Column><Text text="{i18n>colClaimNo}" /></Column>
+        <Column><Text text="{i18n>colEmployee}" /></Column>
+        <Column><Text text="{i18n>colCountry}" /></Column>
+        <Column><Text text="{i18n>colPeriod}" /></Column>
+        <Column><Text text="{i18n>colStatus}" /></Column>
+        <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+        <Column hAlign="Center"><Text text="" /></Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <ObjectIdentifier title="{claimNumber}" />
+            <Text text="{employeeName}" />
+            <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+            <Text text="{claimPeriod}" />
+            <ObjectStatus
+              text="{path: 'status', formatter: '.formatter.statusText'}"
+              state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+            <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+            <Button text="{i18n>btnReview}" type="Emphasized" class="bsxPill" press=".onReview" />
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+  </VBox>
+</mvc:View>

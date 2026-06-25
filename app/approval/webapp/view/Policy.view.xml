@@ -1,0 +1,37 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Policy"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form"
+  height="100%">
+
+  <VBox class="bsxCard">
+    <OverflowToolbar class="bsxCardPad">
+      <Title text="{i18n>policyTitle}" class="bsxPageTitle" level="H2" />
+      <ToolbarSpacer />
+      <Button text="{i18n>btnEdit}" icon="sap-icon://edit" type="Emphasized" class="bsxPill" visible="{ui>/display}" press=".onEdit" />
+      <Button text="{i18n>btnCancel}" class="bsxPill" visible="{ui>/editing}" press=".onCancel" />
+      <Button text="{i18n>btnSave}" type="Emphasized" class="bsxPill" visible="{ui>/editing}" press=".onSave" />
+    </OverflowToolbar>
+
+    <f:SimpleForm editable="true" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" class="bsxCardPad">
+      <f:content>
+        <Label text="{i18n>lblPolicyName}" />
+        <Input value="{policyName}" editable="{ui>/editing}" />
+        <Label text="{i18n>lblVat}" />
+        <Input value="{vatRate}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblGst}" />
+        <Input value="{gstRate}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblMileage}" />
+        <Input value="{mileageRate}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblHotel}" />
+        <Input value="{hotelDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblMeal}" />
+        <Input value="{mealDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblThreshold}" />
+        <Input value="{receiptThreshold}" type="Number" editable="{ui>/editing}" />
+      </f:content>
+    </f:SimpleForm>
+    <Text text="{i18n>ratesHint}" class="bsxCardPad" />
+  </VBox>
+</mvc:View>
