@@ -45,34 +45,31 @@ html, body, .sapUiBody, .bsxBody, .sapTntToolPage, .sapTntToolPageContent { back
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
 .bsxSideNav .sapTntNavLIGroup { border-radius: var(--bsx-radius-sm); margin: 4px 10px; height: 2.6rem; }
 .bsxSideNav .sapTntNavLIGroup:hover { background: #eef1f5; }
-/* selected = black pill with white text + a subtle blue ring (reference) */
+/* selected = standard-Fiori light highlight + left accent bar (legacy classes) */
 .bsxSideNav .sapTntNavLIItemSelected,
 .bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
 .bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
-  background: var(--bsx-ink) !important;
+  background: #e8f3fb !important;
   border-radius: var(--bsx-radius-sm) !important;
-  box-shadow: 0 0 0 2px rgba(0, 145, 218, .55);
+  box-shadow: inset 3px 0 0 var(--bsx-blue);
 }
 .bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
 .bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIExpandIcon,
 .bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
-.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: #ffffff !important; }
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: var(--bsx-blue) !important; font-weight: 700; }
 .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-blue); }
-.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIGroupIcon { color: #fff !important; }
 
-/* UI5 1.120+ side-nav classes (sapTntNLI*) — black selected pill */
+/* UI5 1.120+ side-nav classes (sapTntNLI*) — light Fiori selected highlight */
 .bsxSideNav .sapTntNLI { border-radius: var(--bsx-radius-sm); margin: 4px 10px; }
 .bsxSideNav .sapTntNLI:hover { background: #eef1f5; }
 .bsxSideNav .sapTntNLIIcon { color: var(--bsx-blue); }
 .bsxSideNav .sapTntNLISelected {
-  background: var(--bsx-ink) !important;
+  background: #e8f3fb !important;
   border-radius: var(--bsx-radius-sm) !important;
-  box-shadow: 0 0 0 2px rgba(0, 145, 218, .55);
+  box-shadow: inset 3px 0 0 var(--bsx-blue);
 }
-.bsxSideNav .sapTntNLISelected .sapTntNLIText,
-.bsxSideNav .sapTntNLISelected .sapTntNLIIcon { color: #ffffff !important; }
-/* hide the default left selection bar (we use the pill instead) */
-.bsxSideNav .sapTntNLISelected::before, .bsxSideNav .sapTntNLISelectionIndicator { display: none !important; }
+.bsxSideNav .sapTntNLISelected .sapTntNLIText { color: var(--bsx-blue) !important; font-weight: 700; }
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon { color: var(--bsx-blue) !important; }
 
 /* ---- Content cards ------------------------------------------------------- */
 .bsxCard {
@@ -141,6 +138,15 @@ html, body, .sapUiBody, .bsxBody, .sapTntToolPage, .sapTntToolPageContent { back
 /* ---- IconTabBar (kept tidy where still used) ----------------------------- */
 .bsxTabs .sapMITBSelected .sapMITBText, .bsxTabs .sapMITBSelected .sapMITBFilterText { color: var(--bsx-blue); font-weight: 700; }
 .bsxTabs .sapMITBSelectorLine, .bsxTabs .sapMITBSelected:after { background: var(--bsx-blue); }
+
+/* ---- Count chips (reference-style badges) -------------------------------- */
+.bsxChip {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--bsx-blue); color: var(--bsx-blue);
+  border-radius: var(--bsx-pill); padding: 0 .6rem; height: 1.5rem;
+  font-size: .8rem; font-weight: 600; margin-left: .35rem;
+}
+.bsxChip--done { background: var(--bsx-success); border-color: var(--bsx-success); color: #fff; }
 
 /* ---- Status colours ------------------------------------------------------ */
 .bsxStatusApproved { color: var(--bsx-success) !important; }

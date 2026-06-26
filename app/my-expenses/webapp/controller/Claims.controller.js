@@ -43,11 +43,74 @@ sap.ui.define([
     },
 
     applySearch: function (sQuery) {
+      this._sQuery = (sQuery || "").trim();
+      this._applyFilters();
+    },
+
+    onDateFilter: function (oEvent) {
+      this._dateFrom = oEvent.getParameter("from");
+      this._dateTo = oEvent.getParameter("to");
+      this._applyFilters();
+    },
+
+    _ymd: function (oDate) {
+      if (!oDate) { return null; }
+      var p = function (n) { return (n < 10 ? "0" : "") + n; };
+      return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
+    },
+
+    _applyFilters: function () {
       var aFilters = [];
-      if (sQuery && sQuery.trim()) {
-        aFilters.push(new Filter("claimNumber", FilterOperator.Contains, sQuery.trim()));
+      if (this._sQuery) {
+        aFilters.push(new Filter("claimNumber", FilterOperator.Contains, this._sQuery));
+      }
+      if (this._dateFrom && this._dateTo) {
+        aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(this._dateFrom), this._ymd(this._dateTo)));
       }
       this.byId("claimsTable").getBinding("items").filter(aFilters);
+    },
+
+    // ---- Download as Excel --------------------------------------------------
+    onExport: function () {
+      var aCols = [
+        { label: this.getText("colClaimNo"), property: "claimNumber" },
+        { label: this.getText("colCountry"), property: "country" },
+        { label: this.getText("colPeriod"), property: "claimPeriod" },
+        { label: "Period End", property: "periodEnd" },
+        { label: this.getText("colStatus"), property: "status" },
+        { label: this.getText("colTotal"), property: "totalGross" },
+        { label: this.getText("lblCurrency"), property: "currency" }
+      ];
+      var aRows = this.byId("claimsTable").getBinding("items").getCurrentContexts().map(function (c) {
+        var o = {};
+        aCols.forEach(function (col) { o[col.property] = c.getProperty(col.property); });
+        return o;
+      });
+      var that = this;
+      sap.ui.require(["sap/ui/export/Spreadsheet"], function (Spreadsheet) {
+        var oSheet = new Spreadsheet({
+          workbook: { columns: aCols },
+          dataSource: aRows,
+          fileName: "MyExpenseClaims.xlsx"
+        });
+        oSheet.build().finally(function () { oSheet.destroy(); });
+      }, function () {
+        that._exportCsv(aCols, aRows, "MyExpenseClaims.csv");
+      });
+    },
+
+    /** CSV fallback when the spreadsheet library is unavailable. */
+    _exportCsv: function (aCols, aRows, sFile) {
+      var esc = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+      var aLines = [aCols.map(function (c) { return esc(c.label); }).join(",")];
+      aRows.forEach(function (r) { aLines.push(aCols.map(function (c) { return esc(r[c.property]); }).join(",")); });
+      var oBlob = new Blob(["﻿" + aLines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      var oLink = document.createElement("a");
+      oLink.href = URL.createObjectURL(oBlob);
+      oLink.download = sFile;
+      document.body.appendChild(oLink);
+      oLink.click();
+      document.body.removeChild(oLink);
     },
 
     onOpenClaim: function (oEvent) {

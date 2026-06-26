@@ -73,7 +73,8 @@ entity ExpenseClaims : managed {
       employee            : Association to Employees;  // auto-set from logged-in user
       country             : String(2);                 // UK | IN — set on Create; drives tax + routing
       payrollArea         : String(50);
-      claimPeriod         : Date @mandatory;
+      claimPeriod         : Date @mandatory;   // period start (Excel: Date Start)
+      periodEnd           : Date;              // period end   (Excel: Date End)
 
       // Workflow status (country-driven):
       //   Draft → Submitted → FirstApproved (UK only) → Approved | Rejected

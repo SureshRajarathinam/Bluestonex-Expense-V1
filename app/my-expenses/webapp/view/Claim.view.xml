@@ -22,13 +22,24 @@
             <Label text="{i18n>lblCountry}" />
             <ObjectStatus text="{path: 'country', formatter: '.formatter.countryText'}" state="Information" inverted="true" />
             <Label text="{i18n>lblPeriod}" required="true" />
-            <DatePicker value="{claimPeriod}" valueFormat="yyyy-MM-dd" displayFormat="long" editable="{ui>/editable}" />
+            <DateRangeSelection
+              dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
+              secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
+              displayFormat="long"
+              editable="{ui>/editable}" />
             <Label text="{i18n>lblEmployee}" />
             <Text text="{employeeName}" />
+            <Label text="{i18n>lblEmpNo}" />
+            <Text text="{employeeNumber}" />
             <Label text="{i18n>lblDept}" />
             <Text text="{department}" />
+            <Label text="{i18n>lblSite}" />
+            <Text text="{employeeSite}" />
+            <Label text="{i18n>lblPayroll}" />
+            <Text text="{payrollArea}" />
             <Label text="{i18n>lblStatus}" />
             <ObjectStatus
+              icon="{path: 'status', formatter: '.formatter.statusIcon'}"
               text="{path: 'status', formatter: '.formatter.statusText'}"
               state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
             <Label text="{i18n>lblCurrency}" />
@@ -50,12 +61,17 @@
       </Panel>
 
       <!-- Expense items -->
-      <Panel class="bsxCard" headerText="{i18n>sectionItems}" expandable="false">
-        <Toolbar>
-          <ToolbarSpacer />
-          <Button text="{i18n>btnAddItem}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddItem" />
-        </Toolbar>
-        <Table id="itemsTable" class="bsxTable" items="{items}" mode="None">
+      <Panel class="bsxCard" expandable="false">
+        <headerToolbar>
+          <Toolbar class="bsxCardPad">
+            <core:Icon src="sap-icon://receipt" color="#0091da" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionItems}" level="H3" />
+            <Text class="bsxChip" text="{ui>/itemCount}" />
+            <ToolbarSpacer />
+            <Button text="{i18n>btnAddItem}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddItem" />
+          </Toolbar>
+        </headerToolbar>
+        <Table id="itemsTable" class="bsxTable" items="{items}" updateFinished=".onItemsUpdated" mode="None">
           <columns>
             <Column><Label text="{i18n>itDate}" required="true" /></Column>
             <Column><Label text="{i18n>itType}" required="true" /></Column>
@@ -83,8 +99,10 @@
                 <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="7rem" />
                 <HBox alignItems="Center">
                   <ObjectStatus
+                    icon="{= ${receiptAttached} ? 'sap-icon://document' : '' }"
                     text="{path: 'receiptAttached', formatter: '.formatter.receiptText'}"
                     state="{= ${receiptAttached} ? 'Success' : 'None' }" />
+                  <Link text="{i18n>btnView}" class="sapUiTinyMarginBegin" visible="{= !!${receiptAttached} }" press=".onViewReceipt" />
                   <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
                 </HBox>
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
@@ -95,12 +113,17 @@
       </Panel>
 
       <!-- Mileage -->
-      <Panel class="bsxCard" headerText="{i18n>sectionMileage}" expandable="false">
-        <Toolbar>
-          <ToolbarSpacer />
-          <Button text="{i18n>btnAddMileage}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddMileage" />
-        </Toolbar>
-        <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" mode="None">
+      <Panel class="bsxCard" expandable="false">
+        <headerToolbar>
+          <Toolbar class="bsxCardPad">
+            <core:Icon src="sap-icon://car-rental" color="#0091da" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionMileage}" level="H3" />
+            <Text class="bsxChip" text="{ui>/mileageCount}" />
+            <ToolbarSpacer />
+            <Button text="{i18n>btnAddMileage}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddMileage" />
+          </Toolbar>
+        </headerToolbar>
+        <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" updateFinished=".onMileageUpdated" mode="None">
           <columns>
             <Column><Label text="{i18n>mlDate}" required="true" /></Column>
             <Column><Label text="{i18n>mlDestination}" required="true" /></Column>

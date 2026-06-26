@@ -12,7 +12,9 @@
         <Text class="bsxKpiLbl" text="{i18n>kpiPending}" />
       </VBox>
       <ToolbarSpacer />
-      <SearchField id="searchField" width="15rem" placeholder="{i18n>searchClaim}" search=".onSearch" />
+      <DateRangeSelection id="dateFilter" width="14rem" placeholder="{i18n>filterPeriod}" change=".onDateFilter" />
+      <SearchField id="searchField" width="13rem" placeholder="{i18n>searchClaim}" search=".onSearch" />
+      <Button text="{i18n>btnExport}" icon="sap-icon://excel-attachment" type="Transparent" class="bsxPill" tooltip="{i18n>btnExport}" press=".onExport" />
       <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill bsxDark" press=".onRefresh" />
     </OverflowToolbar>
 
@@ -47,6 +49,7 @@
             <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
             <Text text="{claimPeriod}" />
             <ObjectStatus
+              icon="{path: 'status', formatter: '.formatter.statusIcon'}"
               text="{path: 'status', formatter: '.formatter.statusText'}"
               state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
             <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />

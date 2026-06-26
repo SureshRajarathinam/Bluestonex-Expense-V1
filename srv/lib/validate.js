@@ -27,6 +27,10 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
   // Rule 1 — required header field
   if (blank(claim.claimPeriod)) errors.push('Claim period is required.');
 
+  // Rule 2 (header) — period end, when given, must not precede the start
+  if (!blank(claim.periodEnd) && !blank(claim.claimPeriod) && ymd(claim.periodEnd) < ymd(claim.claimPeriod))
+    errors.push('Claim period end date cannot be before the start date.');
+
   // Rule 8 — must have at least one line
   if (items.length === 0 && mileage.length === 0) {
     errors.push('Add at least one expense item or mileage entry before submitting.');

@@ -12,9 +12,10 @@ service ApprovalService {
   @restrict: [{ grant: ['READ', 'approve', 'reject'], to: 'Approver' }]
   entity Approvals as select from db.ExpenseClaims {
     *,
-    employee.fullName   as employeeName  : String,
-    employee.email      as employeeEmail : String,
-    employee.department as department    : String,
+    employee.fullName       as employeeName   : String,
+    employee.employeeNumber as employeeNumber : String,
+    employee.email          as employeeEmail  : String,
+    employee.department     as department     : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2

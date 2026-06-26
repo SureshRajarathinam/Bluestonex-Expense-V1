@@ -12,6 +12,17 @@ sap.ui.define([], function () {
       }
     },
 
+    /** Icon for a claim status (native-Fiori feel). */
+    statusIcon: function (sStatus) {
+      switch (sStatus) {
+        case "Approved": return "sap-icon://accept";
+        case "Rejected": return "sap-icon://decline";
+        case "Submitted": return "sap-icon://pending";
+        case "FirstApproved": return "sap-icon://time-entry-request";
+        default: return "sap-icon://edit";
+      }
+    },
+
     /** Human-friendly status label. */
     statusText: function (sStatus) {
       switch (sStatus) {

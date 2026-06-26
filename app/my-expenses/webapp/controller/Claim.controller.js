@@ -14,8 +14,16 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, itemCount: 0, mileageCount: 0 }), "ui");
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
+    },
+
+    onItemsUpdated: function (oEvent) {
+      this.getView().getModel("ui").setProperty("/itemCount", oEvent.getParameter("total") || 0);
+    },
+
+    onMileageUpdated: function (oEvent) {
+      this.getView().getModel("ui").setProperty("/mileageCount", oEvent.getParameter("total") || 0);
     },
 
     _predicateOf: function (sPath) {
@@ -68,7 +76,8 @@ sap.ui.define([
 
     onAddMileage: function () {
       var sToday = new Date().toISOString().slice(0, 10);
-      this.byId("mileageTable").getBinding("mileageClaims").create({
+      // NOTE: the sap.m.Table aggregation is "items" (bound to {mileageClaims}).
+      this.byId("mileageTable").getBinding("items").create({
         engineType: "Petrol", ratePerMile: "0.25", tripDate: sToday
       }, true);
     },
@@ -85,23 +94,40 @@ sap.ui.define([
         .then(function (r) { that._csrf = r.headers.get("x-csrf-token"); return that._csrf; });
     },
 
+    _itemUrl: function (oCtx) {
+      return SVC + "/MyClaimItems(ID=" + oCtx.getProperty("ID") +
+        ",IsActiveEntity=" + oCtx.getProperty("IsActiveEntity") + ")/receipt";
+    },
+
     onUploadReceipt: function (oEvent) {
       var oCtx = oEvent.getSource().getBindingContext();
+      if (!oCtx || !oCtx.getProperty("ID")) {
+        MessageToast.show(this.getText("msgRowNotReady"));
+        return;
+      }
       var that = this;
       var oInput = document.createElement("input");
       oInput.type = "file";
       oInput.accept = "image/*,application/pdf";
+      oInput.style.display = "none";
+      // Must be in the DOM for the file picker to open reliably across browsers.
+      document.body.appendChild(oInput);
+      var cleanup = function () { if (oInput.parentNode) { oInput.parentNode.removeChild(oInput); } };
       oInput.onchange = function () {
         var oFile = oInput.files && oInput.files[0];
+        cleanup();
         if (oFile) { that._putReceipt(oCtx, oFile); }
       };
+      // Safety net: remove the orphan input if the dialog is cancelled.
+      window.addEventListener("focus", function onFocus() {
+        window.removeEventListener("focus", onFocus);
+        setTimeout(cleanup, 1000);
+      });
       oInput.click();
     },
 
     _putReceipt: function (oCtx, oFile) {
-      var sId = oCtx.getProperty("ID");
-      var bActive = oCtx.getProperty("IsActiveEntity");
-      var sUrl = SVC + "/MyClaimItems(ID=" + sId + ",IsActiveEntity=" + bActive + ")/receipt";
+      var sUrl = this._itemUrl(oCtx);
       var that = this;
       this.getView().setBusy(true);
       this._getToken().then(function (sToken) {
@@ -118,12 +144,20 @@ sap.ui.define([
       }).then(function (r) {
         if (!r.ok) { throw new Error("Upload failed (" + r.status + ")"); }
         oCtx.setProperty("receiptAttached", true);
+        oCtx.setProperty("receiptFileName", oFile.name);
         that.getView().setBusy(false);
         MessageToast.show(that.getText("msgUploadOk"));
       }).catch(function (e) {
         that.getView().setBusy(false);
         that.showError(e);
       });
+    },
+
+    onViewReceipt: function (oEvent) {
+      var oCtx = oEvent.getSource().getBindingContext();
+      if (oCtx && oCtx.getProperty("ID")) {
+        window.open(this._itemUrl(oCtx), "_blank");
+      }
     },
 
     // ---- Lifecycle ----------------------------------------------------------

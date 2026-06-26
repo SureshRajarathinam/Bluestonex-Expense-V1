@@ -19,6 +19,15 @@ sap.ui.define([], function () {
       }
     },
 
+    statusIcon: function (sStatus) {
+      switch (sStatus) {
+        case "Approved": return "sap-icon://accept";
+        case "Rejected": return "sap-icon://decline";
+        case "FirstApproved": return "sap-icon://time-entry-request";
+        default: return "sap-icon://pending";
+      }
+    },
+
     countryText: function (sCode) {
       if (sCode === "IN") return "India";
       if (sCode === "UK") return "United Kingdom";

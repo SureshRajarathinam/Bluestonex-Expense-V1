@@ -15,11 +15,23 @@
             <Text class="bsxKpiLbl" text="{i18n>kpiClaims}" />
           </VBox>
           <ToolbarSpacer />
+          <DateRangeSelection
+            id="dateFilter"
+            width="15rem"
+            placeholder="{i18n>filterPeriod}"
+            change=".onDateFilter" />
           <SearchField
             id="searchField"
-            width="15rem"
+            width="13rem"
             placeholder="{i18n>searchPlaceholder}"
             search=".onSearch" />
+          <Button
+            text="{i18n>btnExport}"
+            icon="sap-icon://excel-attachment"
+            type="Transparent"
+            class="bsxPill"
+            tooltip="{i18n>btnExport}"
+            press=".onExport" />
           <Button
             text="{i18n>btnRefresh}"
             icon="sap-icon://refresh"
@@ -63,6 +75,7 @@
                 <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
                 <Text text="{claimPeriod}" />
                 <ObjectStatus
+                  icon="{path: 'status', formatter: '.formatter.statusIcon'}"
                   text="{path: 'status', formatter: '.formatter.statusText'}"
                   state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
                 <ObjectNumber
