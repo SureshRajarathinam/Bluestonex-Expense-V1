@@ -18,9 +18,9 @@
       <f:content>
         <Label text="{i18n>lblPolicyName}" />
         <Input value="{policyName}" editable="{ui>/editing}" />
-        <Label text="{i18n>lblVat}" />
+        <Label text="{i18n>lblVat}" required="true" />
         <Input value="{vatRate}" type="Number" editable="{ui>/editing}" />
-        <Label text="{i18n>lblGst}" />
+        <Label text="{i18n>lblGst}" required="true" />
         <Input value="{gstRate}" type="Number" editable="{ui>/editing}" />
         <Label text="{i18n>lblMileage}" />
         <Input value="{mileageRate}" type="Number" editable="{ui>/editing}" />

@@ -8,7 +8,7 @@
     <OverflowToolbar class="bsxCardPad">
       <Title text="{i18n>workflowTitle}" class="bsxPageTitle" level="H2" />
       <ToolbarSpacer />
-      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill" press=".onRefresh" />
+      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill bsxDark" press=".onRefresh" />
     </OverflowToolbar>
 
     <Table id="wfTable" class="bsxTable" items="{/WorkflowMembers}" mode="None">

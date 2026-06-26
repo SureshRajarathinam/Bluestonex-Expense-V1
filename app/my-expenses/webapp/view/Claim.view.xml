@@ -21,7 +21,7 @@
           <f:content>
             <Label text="{i18n>lblCountry}" />
             <ObjectStatus text="{path: 'country', formatter: '.formatter.countryText'}" state="Information" inverted="true" />
-            <Label text="{i18n>lblPeriod}" />
+            <Label text="{i18n>lblPeriod}" required="true" />
             <DatePicker value="{claimPeriod}" valueFormat="yyyy-MM-dd" displayFormat="long" editable="{ui>/editable}" />
             <Label text="{i18n>lblEmployee}" />
             <Text text="{employeeName}" />
@@ -57,13 +57,13 @@
         </Toolbar>
         <Table id="itemsTable" class="bsxTable" items="{items}" mode="None">
           <columns>
-            <Column><Text text="{i18n>itDate}" /></Column>
-            <Column><Text text="{i18n>itType}" /></Column>
-            <Column><Text text="{i18n>itDestination}" /></Column>
-            <Column><Text text="{i18n>itReason}" /></Column>
-            <Column><Text text="{i18n>itTaxType}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>itGross}" /></Column>
-            <Column><Text text="{i18n>itAttachment}" /></Column>
+            <Column><Label text="{i18n>itDate}" required="true" /></Column>
+            <Column><Label text="{i18n>itType}" required="true" /></Column>
+            <Column><Label text="{i18n>itDestination}" /></Column>
+            <Column><Label text="{i18n>itReason}" required="true" /></Column>
+            <Column><Label text="{i18n>itTaxType}" /></Column>
+            <Column hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column><Label text="{i18n>itAttachment}" /></Column>
             <Column hAlign="Center" width="4rem"><Text text="" /></Column>
           </columns>
           <items>
@@ -87,7 +87,7 @@
                     state="{= ${receiptAttached} ? 'Success' : 'None' }" />
                   <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
                 </HBox>
-                <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
+                <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
               </cells>
             </ColumnListItem>
           </items>
@@ -102,12 +102,12 @@
         </Toolbar>
         <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" mode="None">
           <columns>
-            <Column><Text text="{i18n>mlDate}" /></Column>
-            <Column><Text text="{i18n>mlDestination}" /></Column>
-            <Column><Text text="{i18n>mlReason}" /></Column>
-            <Column><Text text="{i18n>mlEngine}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>mlMiles}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>mlRate}" /></Column>
+            <Column><Label text="{i18n>mlDate}" required="true" /></Column>
+            <Column><Label text="{i18n>mlDestination}" required="true" /></Column>
+            <Column><Label text="{i18n>mlReason}" required="true" /></Column>
+            <Column><Label text="{i18n>mlEngine}" /></Column>
+            <Column hAlign="End"><Label text="{i18n>mlMiles}" required="true" /></Column>
+            <Column hAlign="End"><Label text="{i18n>mlRate}" /></Column>
             <Column hAlign="Center" width="4rem"><Text text="" /></Column>
           </columns>
           <items>
@@ -124,7 +124,7 @@
                 </Select>
                 <Input value="{milesCount}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
                 <Input value="{ratePerMile}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
-                <Button icon="sap-icon://delete" type="Transparent" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
+                <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
               </cells>
             </ColumnListItem>
           </items>

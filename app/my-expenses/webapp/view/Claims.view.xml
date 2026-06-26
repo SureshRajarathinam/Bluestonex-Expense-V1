@@ -10,17 +10,21 @@
       <VBox class="bsxCard">
         <OverflowToolbar class="bsxCardPad">
           <Title text="{i18n>listTitle}" class="bsxPageTitle" level="H1" />
+          <VBox class="bsxKpi" justifyContent="Center">
+            <Text class="bsxKpiNum" text="{view>/count}" />
+            <Text class="bsxKpiLbl" text="{i18n>kpiClaims}" />
+          </VBox>
           <ToolbarSpacer />
           <SearchField
             id="searchField"
-            width="16rem"
+            width="15rem"
             placeholder="{i18n>searchPlaceholder}"
             search=".onSearch" />
           <Button
             text="{i18n>btnRefresh}"
             icon="sap-icon://refresh"
             type="Transparent"
-            class="bsxPill"
+            class="bsxPill bsxDark"
             press=".onRefresh" />
           <Button
             text="{i18n>btnCreate}"
@@ -40,6 +44,7 @@
             parameters: { '$orderby': 'createdAt desc', '$count': true },
             sorter: { path: 'createdAt', descending: true }
           }"
+          updateFinished=".onUpdateFinished"
           mode="None">
           <noData>
             <IllustratedMessage illustrationType="sapIllus-NoEntries" title="{i18n>noClaims}" />

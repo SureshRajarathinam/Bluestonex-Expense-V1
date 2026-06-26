@@ -9,7 +9,7 @@
         <f:content>
           <Label text="{i18n>colWfCountry}" />
           <Text text="{countryName} ({country})" />
-          <Label text="{i18n>colFirst}" />
+          <Label text="{i18n>colFirst}" required="true" />
           <Input value="{firstApprover}" type="Email" placeholder="first.approver@bluestonex.com" />
           <Label text="{i18n>colSecond}" />
           <Input value="{secondApprover}" type="Email" placeholder="second.approver@bluestonex.com"

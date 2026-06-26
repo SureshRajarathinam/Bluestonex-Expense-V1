@@ -1,101 +1,148 @@
 /* ============================================================================
    BluestoneX — shared freestyle theme (layered over SAP Horizon)
-   Reference look: white header, light side rail, pill buttons, clean cards.
+   Reference look: white header, stacked white side-rail with a BLACK selected
+   pill, rounded cards, pill buttons, magenta required asterisks, clean font.
    ========================================================================== */
 
 :root {
-  --bsx-primary:      #143c5e;  /* deep blue   */
-  --bsx-primary-700:  #0e2c46;
-  --bsx-accent:       #2aa39a;  /* teal accent */
-  --bsx-accent-700:   #1f7d76;
-  --bsx-ink:          #1b2a36;
-  --bsx-muted:        #6a7886;
-  --bsx-line:         #e3e8ee;
-  --bsx-bg:           #f4f6f9;
-  --bsx-card:         #ffffff;
-  --bsx-radius:       14px;
-  --bsx-pill:         999px;
+  /* Clean modern font (system stack — no external download). Overriding the
+     Horizon font variable keeps SAP icon fonts untouched. */
+  --sapFontFamily: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --bsx-ink:       #1c1c22;   /* near-black: pill CTAs + selected nav      */
+  --bsx-blue:      #0091da;   /* brand/action blue (links, primary)        */
+  --bsx-blue-dark: #0073ae;
+  --bsx-required:  #e4007e;   /* magenta required asterisk                 */
+  --bsx-danger:    #d32f2f;
+  --bsx-success:   #1e8e3e;
+  --bsx-bg:        #f4f5f8;
+  --bsx-card:      #ffffff;
+  --bsx-line:      #e6e9ee;
+  --bsx-text:      #1c2530;
+  --bsx-muted:     #6b7682;
+  --bsx-radius:    16px;
+  --bsx-radius-sm: 10px;
+  --bsx-pill:      999px;
 }
 
-/* ---- Shell ---------------------------------------------------------------- */
-.bsxBody, .sapTntToolPage { background: var(--bsx-bg); }
+html, body, .sapUiBody, .bsxBody, .sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
 
-/* Header */
+/* ---- Header --------------------------------------------------------------- */
 .bsxHeader.sapTntToolHeader {
   background: var(--bsx-card);
   border-bottom: 1px solid var(--bsx-line);
-  box-shadow: 0 1px 2px rgba(20, 60, 94, .05);
-  height: 3.25rem;
+  box-shadow: 0 1px 2px rgba(20, 60, 94, .04);
+  height: 3.5rem;
 }
-.bsxBrand {
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: .2px;
-  color: var(--bsx-primary);
-  padding: 0 .25rem;
-}
-.bsxBrand .bsxBrandX { color: var(--bsx-accent); }
-.bsxAppTitle.sapMTitle { color: var(--bsx-ink); font-weight: 600; }
+.bsxBrand { font-weight: 800; font-size: 1.25rem; letter-spacing: .2px; color: var(--bsx-text); padding: 0 .15rem; }
+.bsxBrand .bsxBrandX { color: var(--bsx-blue); }
+.bsxAppTitle.sapMTitle { color: var(--bsx-text); font-weight: 600; }
+/* Blue header action icons, like the reference */
+.bsxHeader .sapMBtn .sapMBtnIcon,
+.bsxHeader .sapTntToolHeaderButton .sapMBtnIcon { color: var(--bsx-blue); }
 
-/* Side rail */
+/* ---- Side navigation ----------------------------------------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
-.bsxSideNav .sapTntNavLI .sapTntNavLIGroup.sapTntNavLIItemSelected {
-  background: var(--bsx-primary);
-  border-radius: var(--bsx-radius);
-  color: #fff;
+.bsxSideNav .sapTntNavLIGroup { border-radius: var(--bsx-radius-sm); margin: 4px 10px; height: 2.6rem; }
+.bsxSideNav .sapTntNavLIGroup:hover { background: #eef1f5; }
+/* selected = black pill with white text + a subtle blue ring (reference) */
+.bsxSideNav .sapTntNavLIItemSelected,
+.bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
+  background: var(--bsx-ink) !important;
+  border-radius: var(--bsx-radius-sm) !important;
+  box-shadow: 0 0 0 2px rgba(0, 145, 218, .55);
 }
-.bsxSideNav .sapTntNavLIGroup { border-radius: var(--bsx-radius); margin: 2px 8px; }
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIExpandIcon,
+.bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: #ffffff !important; }
+.bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-blue); }
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIGroupIcon { color: #fff !important; }
 
-/* ---- Content ------------------------------------------------------------- */
-.bsxPage .sapMPageHeader, .bsxPage section { background: transparent; }
+/* UI5 1.120+ side-nav classes (sapTntNLI*) — black selected pill */
+.bsxSideNav .sapTntNLI { border-radius: var(--bsx-radius-sm); margin: 4px 10px; }
+.bsxSideNav .sapTntNLI:hover { background: #eef1f5; }
+.bsxSideNav .sapTntNLIIcon { color: var(--bsx-blue); }
+.bsxSideNav .sapTntNLISelected {
+  background: var(--bsx-ink) !important;
+  border-radius: var(--bsx-radius-sm) !important;
+  box-shadow: 0 0 0 2px rgba(0, 145, 218, .55);
+}
+.bsxSideNav .sapTntNLISelected .sapTntNLIText,
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon { color: #ffffff !important; }
+/* hide the default left selection bar (we use the pill instead) */
+.bsxSideNav .sapTntNLISelected::before, .bsxSideNav .sapTntNLISelectionIndicator { display: none !important; }
 
+/* ---- Content cards ------------------------------------------------------- */
 .bsxCard {
   background: var(--bsx-card);
   border: 1px solid var(--bsx-line);
   border-radius: var(--bsx-radius);
-  box-shadow: 0 1px 3px rgba(20, 60, 94, .06);
-  margin: 0.75rem 1rem;
+  box-shadow: 0 2px 10px rgba(20, 40, 80, .06);
+  margin: 1rem;
 }
-.bsxCardPad { padding: 0.5rem 0.75rem; }
+.bsxCardPad { padding: 0.65rem 1rem; }
+.bsxPageTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.55rem; }
+.bsxSubtle { color: var(--bsx-muted); }
 
-.bsxPageTitle.sapMTitle {
-  color: var(--bsx-primary);
-  font-weight: 700;
-  font-size: 1.5rem;
+/* ---- KPI chip card ------------------------------------------------------- */
+.bsxKpi {
+  background: var(--bsx-card);
+  border: 1px solid var(--bsx-line);
+  border-radius: var(--bsx-radius);
+  box-shadow: 0 2px 10px rgba(20, 40, 80, .06);
+  padding: .35rem .9rem; margin-left: .5rem; min-width: 5.5rem;
 }
+.bsxKpiNum { font-size: 1.6rem; font-weight: 800; color: var(--bsx-blue); line-height: 1.1; }
+.bsxKpiLbl { color: var(--bsx-muted); font-size: .75rem; }
 
-/* ---- Buttons: pill styling ---------------------------------------------- */
+/* ---- Buttons: pills + colour ---------------------------------------------- */
 .bsxPill.sapMBtn .sapMBtnInner {
   border-radius: var(--bsx-pill);
-  padding-left: 1.1rem;
-  padding-right: 1.1rem;
+  padding-left: 1.15rem; padding-right: 1.15rem;
+  font-weight: 600;
 }
-.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized {
-  background: var(--bsx-primary);
-  border-color: var(--bsx-primary);
+/* primary (Emphasized) -> brand blue */
+.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized,
+.bsxPrimary.sapMBtn .sapMBtnInner {
+  background: var(--bsx-blue); border-color: var(--bsx-blue); color: #fff;
 }
-.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized:hover {
-  background: var(--bsx-primary-700);
-  border-color: var(--bsx-primary-700);
+.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized:hover,
+.bsxPrimary.sapMBtn .sapMBtnInner:hover { background: var(--bsx-blue-dark); border-color: var(--bsx-blue-dark); }
+/* neutral dark pill (Refresh) */
+.bsxDark.sapMBtn .sapMBtnInner {
+  background: var(--bsx-ink); border-color: var(--bsx-ink); color: #fff; border-radius: var(--bsx-pill);
 }
-.bsxAccent.sapMBtn .sapMBtnInner {
-  background: var(--bsx-accent);
-  border-color: var(--bsx-accent);
-  color: #fff;
-  border-radius: var(--bsx-pill);
-}
-.bsxAccent.sapMBtn .sapMBtnInner:hover { background: var(--bsx-accent-700); border-color: var(--bsx-accent-700); }
+.bsxDark.sapMBtn .sapMBtnInner:hover { background: #000; border-color: #000; }
+.bsxDark.sapMBtn .sapMBtnInner .sapMBtnIcon { color: #fff; }
+/* destructive icon button (row delete) */
+.bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
+.bsxDanger.sapMBtn .sapMBtnInner:hover { background: #fdecec; }
+
+/* ---- Inputs / selects: softer corners ------------------------------------ */
+.sapMInputBaseContentWrapper,
+.sapMComboBoxBase .sapMInputBaseContentWrapper,
+.sapMDP .sapMInputBaseContentWrapper,
+.sapMSlt { border-radius: var(--bsx-radius-sm); }
+
+/* ---- Required asterisk -> magenta ---------------------------------------- */
+.sapMLabel.sapMLabelRequired:after,
+.sapMLabelRequired:after,
+.sapMLabelColonAndRequired:after,
+.sapMLabel.sapMLabelRequired .sapMLabelColonAndRequired { color: var(--bsx-required) !important; }
 
 /* ---- Tables -------------------------------------------------------------- */
 .bsxTable .sapMListTblHeader { background: #f7f9fc; }
-.bsxTable .sapMListTblHeaderCell { color: var(--bsx-muted); font-weight: 700; }
+.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMLabel { color: var(--bsx-muted); font-weight: 700; }
 .bsxTable .sapMLIB { border-bottom: 1px solid var(--bsx-line); }
+.bsxTable .sapMLIB:hover { background: #f6f9fd; }
 
-/* ---- Tabs (IconTabBar) pill look ---------------------------------------- */
-.bsxTabs .sapMITBHead .sapMITBFilter.sapMITBSelected .sapMITBText { color: var(--bsx-primary); }
-.bsxTabs .sapMITBSelected .sapMITBFilterText { font-weight: 700; }
+/* ---- IconTabBar (kept tidy where still used) ----------------------------- */
+.bsxTabs .sapMITBSelected .sapMITBText, .bsxTabs .sapMITBSelected .sapMITBFilterText { color: var(--bsx-blue); font-weight: 700; }
+.bsxTabs .sapMITBSelectorLine, .bsxTabs .sapMITBSelected:after { background: var(--bsx-blue); }
 
 /* ---- Status colours ------------------------------------------------------ */
-.bsxStatusApproved { color: #137a4b !important; }
-.bsxStatusRejected { color: #b00020 !important; }
+.bsxStatusApproved { color: var(--bsx-success) !important; }
+.bsxStatusRejected { color: var(--bsx-danger) !important; }
 .bsxStatusPending  { color: #b25c00 !important; }

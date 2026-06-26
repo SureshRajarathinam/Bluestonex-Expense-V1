@@ -2,9 +2,10 @@ sap.ui.define([
   "com/bluestonex/expense/myexpenses/controller/BaseController",
   "com/bluestonex/expense/myexpenses/model/formatter",
   "sap/ui/core/Fragment",
+  "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator"
-], function (BaseController, formatter, Fragment, Filter, FilterOperator) {
+], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator) {
   "use strict";
 
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.Claims", {
@@ -12,7 +13,12 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
+      this.getView().setModel(new JSONModel({ count: 0 }), "view");
       this.getRouter().getRoute("list").attachPatternMatched(this._onListMatched, this);
+    },
+
+    onUpdateFinished: function (oEvent) {
+      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
     },
 
     _onListMatched: function () {

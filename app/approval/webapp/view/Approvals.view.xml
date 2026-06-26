@@ -7,9 +7,13 @@
   <VBox class="bsxCard">
     <OverflowToolbar class="bsxCardPad">
       <Title text="{i18n>approvalsTitle}" class="bsxPageTitle" level="H2" />
+      <VBox class="bsxKpi" justifyContent="Center">
+        <Text class="bsxKpiNum" text="{view>/count}" />
+        <Text class="bsxKpiLbl" text="{i18n>kpiPending}" />
+      </VBox>
       <ToolbarSpacer />
-      <SearchField id="searchField" width="16rem" placeholder="{i18n>searchClaim}" search=".onSearch" />
-      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill" press=".onRefresh" />
+      <SearchField id="searchField" width="15rem" placeholder="{i18n>searchClaim}" search=".onSearch" />
+      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill bsxDark" press=".onRefresh" />
     </OverflowToolbar>
 
     <Table
@@ -21,6 +25,7 @@
         parameters: { '$expand': 'items,mileageClaims', '$count': true },
         sorter: { path: 'submittedAt' }
       }"
+      updateFinished=".onUpdateFinished"
       mode="None">
       <noData>
         <IllustratedMessage illustrationType="sapIllus-NoTasks" title="{i18n>noApprovals}" />

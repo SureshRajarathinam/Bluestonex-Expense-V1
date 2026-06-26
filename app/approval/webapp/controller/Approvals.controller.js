@@ -2,15 +2,24 @@ sap.ui.define([
   "com/bluestonex/expense/approval/controller/BaseController",
   "com/bluestonex/expense/approval/model/formatter",
   "sap/ui/core/Fragment",
+  "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
   "sap/m/MessageToast"
-], function (BaseController, formatter, Fragment, Filter, FilterOperator, MessageToast) {
+], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator, MessageToast) {
   "use strict";
 
   return BaseController.extend("com.bluestonex.expense.approval.controller.Approvals", {
 
     formatter: formatter,
+
+    onInit: function () {
+      this.getView().setModel(new JSONModel({ count: 0 }), "view");
+    },
+
+    onUpdateFinished: function (oEvent) {
+      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
+    },
 
     onRefresh: function () {
       this.byId("approvalsTable").getBinding("items").refresh();
