@@ -64,9 +64,9 @@
       <Panel class="bsxCard" expandable="false">
         <headerToolbar>
           <Toolbar class="bsxCardPad">
-            <core:Icon src="sap-icon://receipt" color="#0091da" class="sapUiTinyMarginEnd" />
-            <Title text="{i18n>sectionItems}" level="H3" />
-            <Text class="bsxChip" text="{ui>/itemCount}" />
+            <core:Icon src="sap-icon://receipt" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionItems}" class="bsxCardTitle" level="H3" />
+            <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{ui>/itemCount}" />
             <ToolbarSpacer />
             <Button text="{i18n>btnAddItem}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddItem" />
           </Toolbar>
@@ -116,9 +116,9 @@
       <Panel class="bsxCard" expandable="false">
         <headerToolbar>
           <Toolbar class="bsxCardPad">
-            <core:Icon src="sap-icon://car-rental" color="#0091da" class="sapUiTinyMarginEnd" />
-            <Title text="{i18n>sectionMileage}" level="H3" />
-            <Text class="bsxChip" text="{ui>/mileageCount}" />
+            <core:Icon src="sap-icon://car-rental" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionMileage}" class="bsxCardTitle" level="H3" />
+            <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{ui>/mileageCount}" />
             <ToolbarSpacer />
             <Button text="{i18n>btnAddMileage}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddMileage" />
           </Toolbar>

@@ -13,12 +13,22 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ count: 0 }), "view");
+      this.getView().setModel(new JSONModel({ count: 0, submitted: 0, approved: 0 }), "view");
       this.getRouter().getRoute("list").attachPatternMatched(this._onListMatched, this);
     },
 
     onUpdateFinished: function (oEvent) {
-      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
+      var oView = this.getView().getModel("view");
+      oView.setProperty("/count", oEvent.getParameter("total") || 0);
+      var aCtx = this.byId("claimsTable").getBinding("items").getCurrentContexts();
+      var nSub = 0, nApp = 0;
+      aCtx.forEach(function (c) {
+        var s = c.getProperty("status");
+        if (s === "Submitted" || s === "FirstApproved") { nSub++; }
+        if (s === "Approved") { nApp++; }
+      });
+      oView.setProperty("/submitted", nSub);
+      oView.setProperty("/approved", nApp);
     },
 
     _onListMatched: function () {
@@ -38,35 +48,26 @@ sap.ui.define([
       this.byId("claimsTable").getBinding("items").refresh();
     },
 
-    onSearch: function (oEvent) {
-      this.applySearch(oEvent.getParameter("query"));
-    },
-
-    applySearch: function (sQuery) {
-      this._sQuery = (sQuery || "").trim();
-      this._applyFilters();
-    },
-
-    onDateFilter: function (oEvent) {
-      this._dateFrom = oEvent.getParameter("from");
-      this._dateTo = oEvent.getParameter("to");
-      this._applyFilters();
-    },
-
     _ymd: function (oDate) {
       if (!oDate) { return null; }
       var p = function (n) { return (n < 10 ? "0" : "") + n; };
       return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
     },
 
-    _applyFilters: function () {
+    /** Apply the Look-up card filters (status, country, period, claim no). */
+    onGo: function () {
       var aFilters = [];
-      if (this._sQuery) {
-        aFilters.push(new Filter("claimNumber", FilterOperator.Contains, this._sQuery));
-      }
-      if (this._dateFrom && this._dateTo) {
-        aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(this._dateFrom), this._ymd(this._dateTo)));
-      }
+      var sStatus = this.byId("fStatus").getSelectedKey();
+      var sCountry = this.byId("fCountry").getSelectedKey();
+      var sNo = (this.byId("fClaimNo").getValue() || "").trim();
+      var oPeriod = this.byId("fPeriod");
+      var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
+
+      if (sStatus) { aFilters.push(new Filter("status", FilterOperator.EQ, sStatus)); }
+      if (sCountry) { aFilters.push(new Filter("country", FilterOperator.EQ, sCountry)); }
+      if (sNo) { aFilters.push(new Filter("claimNumber", FilterOperator.Contains, sNo)); }
+      if (dFrom && dTo) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(dFrom), this._ymd(dTo))); }
+
       this.byId("claimsTable").getBinding("items").filter(aFilters);
     },
 

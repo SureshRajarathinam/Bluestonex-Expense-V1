@@ -10,18 +10,9 @@
 
     <tnt:header>
       <tnt:ToolHeader class="bsxHeader">
-        <Button
-          icon="sap-icon://menu2"
-          type="Transparent"
-          tooltip="Menu"
-          press=".onSideToggle" />
-        <Text text="Bluestone" class="bsxBrand" />
-        <Text text="X" class="bsxBrand bsxBrandX" />
+        <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
+        <Text text="BluestoneX" class="bsxBrand" />
         <ToolbarSpacer />
-        <Title text="{i18n>appTitle}" class="bsxAppTitle" level="H2" />
-        <ToolbarSpacer />
-        <SearchField width="14rem" placeholder="{i18n>searchPlaceholder}" search=".onHeaderSearch" />
-        <Avatar initials="BS" displaySize="XS" backgroundColor="Accent6" />
       </tnt:ToolHeader>
     </tnt:header>
 

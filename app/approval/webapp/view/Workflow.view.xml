@@ -6,7 +6,7 @@
 
   <VBox class="bsxCard">
     <OverflowToolbar class="bsxCardPad">
-      <Title text="{i18n>workflowTitle}" class="bsxPageTitle" level="H2" />
+      <Title text="{i18n>workflowTitle}" class="bsxCardTitle" level="H3" />
       <ToolbarSpacer />
       <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill bsxDark" press=".onRefresh" />
     </OverflowToolbar>

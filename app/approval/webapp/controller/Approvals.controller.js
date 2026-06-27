@@ -14,26 +14,24 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ count: 0 }), "view");
+      this.getView().setModel(new JSONModel({ count: 0, uk: 0, india: 0 }), "view");
     },
 
     onUpdateFinished: function (oEvent) {
-      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
+      var oView = this.getView().getModel("view");
+      oView.setProperty("/count", oEvent.getParameter("total") || 0);
+      var aCtx = this.byId("approvalsTable").getBinding("items").getCurrentContexts();
+      var nUK = 0, nIN = 0;
+      aCtx.forEach(function (c) {
+        if (c.getProperty("country") === "UK") { nUK++; }
+        if (c.getProperty("country") === "IN") { nIN++; }
+      });
+      oView.setProperty("/uk", nUK);
+      oView.setProperty("/india", nIN);
     },
 
     onRefresh: function () {
       this.byId("approvalsTable").getBinding("items").refresh();
-    },
-
-    onSearch: function (oEvent) {
-      this._sQuery = (oEvent.getParameter("query") || "").trim();
-      this._applyFilters();
-    },
-
-    onDateFilter: function (oEvent) {
-      this._dateFrom = oEvent.getParameter("from");
-      this._dateTo = oEvent.getParameter("to");
-      this._applyFilters();
     },
 
     _ymd: function (oDate) {
@@ -42,14 +40,18 @@ sap.ui.define([
       return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
     },
 
-    _applyFilters: function () {
+    /** Apply the Look-up card filters (country, period, claim no). */
+    onGo: function () {
       var aFilters = [];
-      if (this._sQuery) {
-        aFilters.push(new Filter("claimNumber", FilterOperator.Contains, this._sQuery));
-      }
-      if (this._dateFrom && this._dateTo) {
-        aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(this._dateFrom), this._ymd(this._dateTo)));
-      }
+      var sCountry = this.byId("fCountry").getSelectedKey();
+      var sNo = (this.byId("fClaimNo").getValue() || "").trim();
+      var oPeriod = this.byId("fPeriod");
+      var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
+
+      if (sCountry) { aFilters.push(new Filter("country", FilterOperator.EQ, sCountry)); }
+      if (sNo) { aFilters.push(new Filter("claimNumber", FilterOperator.Contains, sNo)); }
+      if (dFrom && dTo) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(dFrom), this._ymd(dTo))); }
+
       this.byId("approvalsTable").getBinding("items").filter(aFilters);
     },
 

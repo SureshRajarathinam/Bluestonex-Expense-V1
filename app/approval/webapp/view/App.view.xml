@@ -11,14 +11,8 @@
     <tnt:header>
       <tnt:ToolHeader class="bsxHeader">
         <Button icon="sap-icon://menu2" type="Transparent" tooltip="Toggle menu" press=".onSideToggle" />
-        <Text text="Bluestone" class="bsxBrand" />
-        <Text text="X" class="bsxBrand bsxBrandX" />
+        <Text text="BluestoneX" class="bsxBrand" />
         <ToolbarSpacer />
-        <Title text="{i18n>appTitle}" class="bsxAppTitle" level="H2" />
-        <ToolbarSpacer />
-        <Button icon="sap-icon://search" type="Transparent" tooltip="Search" />
-        <Button icon="sap-icon://bell" type="Transparent" tooltip="Notifications" />
-        <Avatar initials="BS" displaySize="XS" backgroundColor="Accent6" />
       </tnt:ToolHeader>
     </tnt:header>
 

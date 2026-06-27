@@ -1,154 +1,68 @@
 /* ============================================================================
-   BluestoneX — shared freestyle theme (layered over SAP Horizon)
-   Reference look: white header, stacked white side-rail with a BLACK selected
-   pill, rounded cards, pill buttons, magenta required asterisks, clean font.
+   BluestoneX — thin standard-Fiori layer over SAP Horizon
+   Goal: look like native Fiori (minimal header, flat side-nav selection,
+   white titled cards, native buttons + ObjectStatus chips). Keep it light —
+   lean on Horizon defaults; only add page/layout/brand styling.
    ========================================================================== */
 
 :root {
-  /* Clean modern font (system stack — no external download). Overriding the
-     Horizon font variable keeps SAP icon fonts untouched. */
   --sapFontFamily: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-
-  --bsx-ink:       #1c1c22;   /* near-black: pill CTAs + selected nav      */
-  --bsx-blue:      #0091da;   /* brand/action blue (links, primary)        */
-  --bsx-blue-dark: #0073ae;
-  --bsx-required:  #e4007e;   /* magenta required asterisk                 */
-  --bsx-danger:    #d32f2f;
-  --bsx-success:   #1e8e3e;
-  --bsx-bg:        #f4f5f8;
-  --bsx-card:      #ffffff;
-  --bsx-line:      #e6e9ee;
-  --bsx-text:      #1c2530;
-  --bsx-muted:     #6b7682;
-  --bsx-radius:    16px;
-  --bsx-radius-sm: 10px;
-  --bsx-pill:      999px;
+  --bsx-blue:   #0a6ed1;   /* Fiori action blue (brand)        */
+  --bsx-danger: #bb0000;
+  --bsx-bg:     #f5f6f7;
+  --bsx-card:   #ffffff;
+  --bsx-line:   #e5e5e5;
+  --bsx-text:   #32363a;
+  --bsx-muted:  #6a6d70;
+  --bsx-radius: 8px;
 }
 
-html, body, .sapUiBody, .bsxBody, .sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
+html, body, .sapUiBody, .bsxBody,
+.sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
 
-/* ---- Header --------------------------------------------------------------- */
+/* ---- Header (minimal: menu + blue brand) --------------------------------- */
 .bsxHeader.sapTntToolHeader {
   background: var(--bsx-card);
   border-bottom: 1px solid var(--bsx-line);
-  box-shadow: 0 1px 2px rgba(20, 60, 94, .04);
-  height: 3.5rem;
+  height: 3rem;
 }
-.bsxBrand { font-weight: 800; font-size: 1.25rem; letter-spacing: .2px; color: var(--bsx-text); padding: 0 .15rem; }
+.bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
 .bsxBrand .bsxBrandX { color: var(--bsx-blue); }
-.bsxAppTitle.sapMTitle { color: var(--bsx-text); font-weight: 600; }
-/* Blue header action icons, like the reference */
-.bsxHeader .sapMBtn .sapMBtnIcon,
-.bsxHeader .sapTntToolHeaderButton .sapMBtnIcon { color: var(--bsx-blue); }
 
-/* ---- Side navigation ----------------------------------------------------- */
+/* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
-.bsxSideNav .sapTntNavLIGroup { border-radius: var(--bsx-radius-sm); margin: 4px 10px; height: 2.6rem; }
-.bsxSideNav .sapTntNavLIGroup:hover { background: #eef1f5; }
-/* selected = standard-Fiori light highlight + left accent bar (legacy classes) */
+.bsxSideNav .sapTntNLI:hover,
+.bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
+.bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
+/* selected — flat light blue-grey, blue text/icon (Horizon-like) */
+.bsxSideNav .sapTntNLISelected,
 .bsxSideNav .sapTntNavLIItemSelected,
 .bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
 .bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
-  background: #e8f3fb !important;
-  border-radius: var(--bsx-radius-sm) !important;
+  background: #eaf1f8 !important;
   box-shadow: inset 3px 0 0 var(--bsx-blue);
 }
+.bsxSideNav .sapTntNLISelected .sapTntNLIText,
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon,
 .bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
-.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIExpandIcon,
 .bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
 .bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: var(--bsx-blue) !important; font-weight: 700; }
-.bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-blue); }
-
-/* UI5 1.120+ side-nav classes (sapTntNLI*) — light Fiori selected highlight */
-.bsxSideNav .sapTntNLI { border-radius: var(--bsx-radius-sm); margin: 4px 10px; }
-.bsxSideNav .sapTntNLI:hover { background: #eef1f5; }
-.bsxSideNav .sapTntNLIIcon { color: var(--bsx-blue); }
-.bsxSideNav .sapTntNLISelected {
-  background: #e8f3fb !important;
-  border-radius: var(--bsx-radius-sm) !important;
-  box-shadow: inset 3px 0 0 var(--bsx-blue);
-}
-.bsxSideNav .sapTntNLISelected .sapTntNLIText { color: var(--bsx-blue) !important; font-weight: 700; }
-.bsxSideNav .sapTntNLISelected .sapTntNLIIcon { color: var(--bsx-blue) !important; }
 
 /* ---- Content cards ------------------------------------------------------- */
 .bsxCard {
   background: var(--bsx-card);
   border: 1px solid var(--bsx-line);
   border-radius: var(--bsx-radius);
-  box-shadow: 0 2px 10px rgba(20, 40, 80, .06);
-  margin: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  margin: 0.75rem 1rem;
 }
-.bsxCardPad { padding: 0.65rem 1rem; }
-.bsxPageTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.55rem; }
-.bsxSubtle { color: var(--bsx-muted); }
+.bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
+.bsxCardPad { padding: 0.5rem 1rem; }
+.bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
 
-/* ---- KPI chip card ------------------------------------------------------- */
-.bsxKpi {
-  background: var(--bsx-card);
-  border: 1px solid var(--bsx-line);
-  border-radius: var(--bsx-radius);
-  box-shadow: 0 2px 10px rgba(20, 40, 80, .06);
-  padding: .35rem .9rem; margin-left: .5rem; min-width: 5.5rem;
-}
-.bsxKpiNum { font-size: 1.6rem; font-weight: 800; color: var(--bsx-blue); line-height: 1.1; }
-.bsxKpiLbl { color: var(--bsx-muted); font-size: .75rem; }
-
-/* ---- Buttons: pills + colour ---------------------------------------------- */
-.bsxPill.sapMBtn .sapMBtnInner {
-  border-radius: var(--bsx-pill);
-  padding-left: 1.15rem; padding-right: 1.15rem;
-  font-weight: 600;
-}
-/* primary (Emphasized) -> brand blue */
-.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized,
-.bsxPrimary.sapMBtn .sapMBtnInner {
-  background: var(--bsx-blue); border-color: var(--bsx-blue); color: #fff;
-}
-.bsxPill.sapMBtn .sapMBtnInner.sapMBtnEmphasized:hover,
-.bsxPrimary.sapMBtn .sapMBtnInner:hover { background: var(--bsx-blue-dark); border-color: var(--bsx-blue-dark); }
-/* neutral dark pill (Refresh) */
-.bsxDark.sapMBtn .sapMBtnInner {
-  background: var(--bsx-ink); border-color: var(--bsx-ink); color: #fff; border-radius: var(--bsx-pill);
-}
-.bsxDark.sapMBtn .sapMBtnInner:hover { background: #000; border-color: #000; }
-.bsxDark.sapMBtn .sapMBtnInner .sapMBtnIcon { color: #fff; }
-/* destructive icon button (row delete) */
+/* ---- Destructive icon button (row delete) -------------------------------- */
 .bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
-.bsxDanger.sapMBtn .sapMBtnInner:hover { background: #fdecec; }
-
-/* ---- Inputs / selects: softer corners ------------------------------------ */
-.sapMInputBaseContentWrapper,
-.sapMComboBoxBase .sapMInputBaseContentWrapper,
-.sapMDP .sapMInputBaseContentWrapper,
-.sapMSlt { border-radius: var(--bsx-radius-sm); }
-
-/* ---- Required asterisk -> magenta ---------------------------------------- */
-.sapMLabel.sapMLabelRequired:after,
-.sapMLabelRequired:after,
-.sapMLabelColonAndRequired:after,
-.sapMLabel.sapMLabelRequired .sapMLabelColonAndRequired { color: var(--bsx-required) !important; }
 
 /* ---- Tables -------------------------------------------------------------- */
-.bsxTable .sapMListTblHeader { background: #f7f9fc; }
-.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMLabel { color: var(--bsx-muted); font-weight: 700; }
-.bsxTable .sapMLIB { border-bottom: 1px solid var(--bsx-line); }
-.bsxTable .sapMLIB:hover { background: #f6f9fd; }
-
-/* ---- IconTabBar (kept tidy where still used) ----------------------------- */
-.bsxTabs .sapMITBSelected .sapMITBText, .bsxTabs .sapMITBSelected .sapMITBFilterText { color: var(--bsx-blue); font-weight: 700; }
-.bsxTabs .sapMITBSelectorLine, .bsxTabs .sapMITBSelected:after { background: var(--bsx-blue); }
-
-/* ---- Count chips (reference-style badges) -------------------------------- */
-.bsxChip {
-  display: inline-flex; align-items: center;
-  border: 1px solid var(--bsx-blue); color: var(--bsx-blue);
-  border-radius: var(--bsx-pill); padding: 0 .6rem; height: 1.5rem;
-  font-size: .8rem; font-weight: 600; margin-left: .35rem;
-}
-.bsxChip--done { background: var(--bsx-success); border-color: var(--bsx-success); color: #fff; }
-
-/* ---- Status colours ------------------------------------------------------ */
-.bsxStatusApproved { color: var(--bsx-success) !important; }
-.bsxStatusRejected { color: var(--bsx-danger) !important; }
-.bsxStatusPending  { color: #b25c00 !important; }
+.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
+.bsxTable .sapMLIB:hover { background: #f5f8fc; }

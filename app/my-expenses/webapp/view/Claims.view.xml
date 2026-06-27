@@ -3,47 +3,61 @@
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
   height="100%">
 
   <Page id="claimsPage" showHeader="false" class="bsxPage" backgroundDesign="Transparent">
     <content>
+
+      <!-- Look up (filters) -->
+      <VBox class="bsxCard">
+        <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+          <VBox>
+            <Label text="{i18n>filterStatus}" class="bsxFieldLbl" />
+            <Select id="fStatus" width="100%">
+              <core:Item key="" text="{i18n>all}" />
+              <core:Item key="Draft" text="Draft" />
+              <core:Item key="Submitted" text="Submitted" />
+              <core:Item key="FirstApproved" text="First Approved" />
+              <core:Item key="Approved" text="Approved" />
+              <core:Item key="Rejected" text="Rejected" />
+            </Select>
+          </VBox>
+          <VBox>
+            <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
+            <Select id="fCountry" width="100%">
+              <core:Item key="" text="{i18n>all}" />
+              <core:Item key="UK" text="United Kingdom" />
+              <core:Item key="IN" text="India" />
+            </Select>
+          </VBox>
+          <VBox>
+            <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
+            <DateRangeSelection id="fPeriod" width="100%" />
+          </VBox>
+          <VBox>
+            <Label text="{i18n>searchPlaceholder}" class="bsxFieldLbl" />
+            <Input id="fClaimNo" width="100%" placeholder="{i18n>searchPlaceholder}" submit=".onGo" />
+          </VBox>
+          <VBox justifyContent="End">
+            <Label text=" " />
+            <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+          </VBox>
+        </l:Grid>
+      </VBox>
+
+      <!-- Results -->
       <VBox class="bsxCard">
         <OverflowToolbar class="bsxCardPad">
-          <Title text="{i18n>listTitle}" class="bsxPageTitle" level="H1" />
-          <VBox class="bsxKpi" justifyContent="Center">
-            <Text class="bsxKpiNum" text="{view>/count}" />
-            <Text class="bsxKpiLbl" text="{i18n>kpiClaims}" />
-          </VBox>
+          <Title text="{i18n>listTitle}" class="bsxCardTitle" level="H3" />
+          <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiTotal} + ': ' + ${view>/count} }" />
+          <ObjectStatus inverted="true" state="Warning" text="{= ${i18n>kpiSubmitted} + ': ' + ${view>/submitted} }" />
+          <ObjectStatus inverted="true" state="Success" text="{= ${i18n>kpiApproved} + ': ' + ${view>/approved} }" />
           <ToolbarSpacer />
-          <DateRangeSelection
-            id="dateFilter"
-            width="15rem"
-            placeholder="{i18n>filterPeriod}"
-            change=".onDateFilter" />
-          <SearchField
-            id="searchField"
-            width="13rem"
-            placeholder="{i18n>searchPlaceholder}"
-            search=".onSearch" />
-          <Button
-            text="{i18n>btnExport}"
-            icon="sap-icon://excel-attachment"
-            type="Transparent"
-            class="bsxPill"
-            tooltip="{i18n>btnExport}"
-            press=".onExport" />
-          <Button
-            text="{i18n>btnRefresh}"
-            icon="sap-icon://refresh"
-            type="Transparent"
-            class="bsxPill bsxDark"
-            press=".onRefresh" />
-          <Button
-            text="{i18n>btnCreate}"
-            icon="sap-icon://add"
-            type="Emphasized"
-            class="bsxPill"
-            press=".onCreate" />
+          <Button text="{i18n>btnExport}" icon="sap-icon://excel-attachment" type="Transparent" tooltip="{i18n>btnExport}" press=".onExport" />
+          <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
+          <Button text="{i18n>btnCreate}" icon="sap-icon://add" type="Emphasized" press=".onCreate" />
         </OverflowToolbar>
 
         <Table
@@ -78,8 +92,7 @@
                   icon="{path: 'status', formatter: '.formatter.statusIcon'}"
                   text="{path: 'status', formatter: '.formatter.statusText'}"
                   state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
-                <ObjectNumber
-                  number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
               </cells>
             </ColumnListItem>
           </items>

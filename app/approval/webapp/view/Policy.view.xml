@@ -7,7 +7,7 @@
 
   <VBox class="bsxCard">
     <OverflowToolbar class="bsxCardPad">
-      <Title text="{i18n>policyTitle}" class="bsxPageTitle" level="H2" />
+      <Title text="{i18n>policyTitle}" class="bsxCardTitle" level="H3" />
       <ToolbarSpacer />
       <Button text="{i18n>btnEdit}" icon="sap-icon://edit" type="Emphasized" class="bsxPill" visible="{ui>/display}" press=".onEdit" />
       <Button text="{i18n>btnCancel}" class="bsxPill" visible="{ui>/editing}" press=".onCancel" />
