@@ -63,6 +63,16 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Destructive icon button (row delete) -------------------------------- */
 .bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
 
+/* ---- Approval-chain cards (Workflow Members tab) ------------------------- */
+.bsxChainNode {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--bsx-blue); color: #fff; font-weight: 700; font-size: .8125rem;
+  flex-shrink: 0;
+}
+.bsxChainConnector { height: 1.25rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
+.bsxChainCard.sapFCard { border-radius: var(--bsx-radius); }
+
 /* ---- Tables -------------------------------------------------------------- */
 .bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
 .bsxTable .sapMLIB:hover { background: #f5f8fc; }

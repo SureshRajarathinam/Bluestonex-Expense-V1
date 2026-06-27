@@ -2,33 +2,101 @@
   controllerName="com.bluestonex.expense.approval.controller.Workflow"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
+  xmlns:f="sap.f"
+  xmlns:fcard="sap.f.cards"
+  xmlns:core="sap.ui.core"
   height="100%">
 
   <VBox class="bsxCard">
     <OverflowToolbar class="bsxCardPad">
       <Title text="{i18n>workflowTitle}" class="bsxCardTitle" level="H3" />
       <ToolbarSpacer />
-      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" class="bsxPill bsxDark" press=".onRefresh" />
+      <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
     </OverflowToolbar>
+    <Text text="{i18n>wfHint}" class="bsxCardPad bsxFieldLbl" />
 
-    <Table id="wfTable" class="bsxTable" items="{/WorkflowMembers}" mode="None">
-      <columns>
-        <Column><Text text="{i18n>colWfCountry}" /></Column>
-        <Column><Text text="{i18n>colFirst}" /></Column>
-        <Column><Text text="{i18n>colSecond}" /></Column>
-        <Column hAlign="Center" width="6rem"><Text text="" /></Column>
-      </columns>
+    <FlexBox wrap="Wrap" class="bsxCardPad" items="{wf>/rows}">
       <items>
-        <ColumnListItem>
-          <cells>
-            <ObjectIdentifier title="{countryName}" text="{country}" />
-            <Text text="{firstApprover}" />
-            <Text text="{= ${secondApprover} ? ${secondApprover} : '—' }" />
-            <Button icon="sap-icon://edit" text="{i18n>btnEdit}" type="Transparent" class="bsxPill" press=".onEditMember" />
-          </cells>
-        </ColumnListItem>
+        <f:Card class="bsxChainCard sapUiSmallMarginEnd sapUiSmallMarginBottom" width="26rem">
+          <f:header>
+            <fcard:Header
+              title="{wf>countryName}"
+              subtitle="{wf>chainType}"
+              iconInitials="{wf>country}"
+              iconDisplayShape="Square" />
+          </f:header>
+          <f:content>
+            <VBox class="sapUiContentPadding">
+
+              <!-- DISPLAY mode -->
+              <VBox visible="{= !${wf>editing} }">
+                <!-- Level 1 -->
+                <HBox alignItems="Center">
+                  <Text text="1" class="bsxChainNode" />
+                  <Avatar initials="{wf>firstInitials}" displaySize="S" class="sapUiTinyMarginBegin" />
+                  <VBox class="sapUiSmallMarginBegin" width="100%">
+                    <Label text="{i18n>firstLevelApprover}" design="Bold" />
+                    <Text text="{wf>firstName}" />
+                    <Text text="{wf>firstApprover}" class="bsxFieldLbl" />
+                  </VBox>
+                  <ObjectStatus text="{i18n>lvlOne}" state="Information" inverted="true" />
+                </HBox>
+
+                <!-- Connector + Level 2 (UK only) -->
+                <HBox class="bsxChainConnector" visible="{wf>twoLevel}" />
+                <HBox alignItems="Center" visible="{wf>twoLevel}">
+                  <Text text="2" class="bsxChainNode" />
+                  <Avatar initials="{wf>secondInitials}" displaySize="S" class="sapUiTinyMarginBegin" />
+                  <VBox class="sapUiSmallMarginBegin" width="100%">
+                    <Label text="{i18n>secondLevelApprover}" design="Bold" />
+                    <Text text="{wf>secondName}" />
+                    <Text text="{wf>secondApprover}" class="bsxFieldLbl" />
+                  </VBox>
+                  <ObjectStatus text="{i18n>lvlTwo}" state="Success" inverted="true" />
+                </HBox>
+
+                <!-- India single-level note -->
+                <MessageStrip
+                  text="{i18n>singleLevelNote}"
+                  type="Information"
+                  showIcon="true"
+                  class="sapUiSmallMarginTop"
+                  visible="{= !${wf>twoLevel} }" />
+              </VBox>
+
+              <!-- EDIT mode -->
+              <VBox visible="{wf>editing}">
+                <Label text="{i18n>firstLevelApprover}" required="true" />
+                <ComboBox
+                  selectedKey="{wf>firstApprover}"
+                  items="{ path: 'wf>/employees', templateShareable: false }"
+                  width="100%"
+                  placeholder="{i18n>selectApprover}">
+                  <core:ListItem key="{wf>email}" text="{wf>fullName} ({wf>email})" />
+                </ComboBox>
+                <Label text="{i18n>secondLevelApprover}" required="true" visible="{wf>twoLevel}" class="sapUiSmallMarginTop" />
+                <ComboBox
+                  selectedKey="{wf>secondApprover}"
+                  items="{ path: 'wf>/employees', templateShareable: false }"
+                  width="100%"
+                  visible="{wf>twoLevel}"
+                  placeholder="{i18n>selectApprover}">
+                  <core:ListItem key="{wf>email}" text="{wf>fullName} ({wf>email})" />
+                </ComboBox>
+              </VBox>
+
+              <!-- Footer actions -->
+              <OverflowToolbar>
+                <ToolbarSpacer />
+                <Button text="{i18n>btnEdit}" icon="sap-icon://edit" type="Transparent" visible="{= !${wf>editing} }" press=".onEditCard" />
+                <Button text="{i18n>btnCancel}" type="Transparent" visible="{wf>editing}" press=".onCancelCard" />
+                <Button text="{i18n>btnSave}" type="Emphasized" visible="{wf>editing}" press=".onSaveCard" />
+              </OverflowToolbar>
+
+            </VBox>
+          </f:content>
+        </f:Card>
       </items>
-    </Table>
-    <Text text="{i18n>wfHint}" class="bsxCardPad" />
+    </FlexBox>
   </VBox>
 </mvc:View>
