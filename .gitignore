@@ -4,3 +4,6 @@ dist/
 *.mtar
 .env
 default-env.json
+
+# graphify generated knowledge graph (rebuilt by hook / /graphify)
+graphify-out/
