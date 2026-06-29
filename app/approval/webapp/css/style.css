@@ -70,8 +70,10 @@ html, body, .sapUiBody, .bsxBody,
   background: var(--bsx-blue); color: #fff; font-weight: 700; font-size: .8125rem;
   flex-shrink: 0;
 }
-.bsxChainConnector { height: 1.25rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
+.bsxChainConnector { height: 1.75rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
 .bsxChainCard.sapFCard { border-radius: var(--bsx-radius); }
+/* Roomier approver rows in the Workflow detail (less congested) */
+.bsxWfRow { padding: 0.55rem 0; }
 
 /* ---- Premium card (shared "look" across all tabs) ------------------------ */
 /* Additive: composes with .bsxCard / .sapFCard. Adds the blue left accent,

@@ -15,11 +15,43 @@ sap.ui.define([
 
     onInit: function () {
       this.getView().setModel(new JSONModel({ rows: [], employees: [] }), "wf");
+      // Landing → detail state, mirroring the Policy tab.
+      this.getView().setModel(new JSONModel({
+        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+      }), "ui");
       this._snap = {};
       this._load();
     },
 
     onRefresh: function () { this._load(); },
+
+    onChooseUK: function () { this._open("UK"); },
+    onChooseIN: function () { this._open("IN"); },
+
+    // Drill into the chosen country's approver detail (bind the detail box to its row).
+    _open: function (sCountry) {
+      var that = this;
+      var show = function () {
+        var aRows = that.getView().getModel("wf").getProperty("/rows") || [];
+        var i = aRows.findIndex(function (r) { return r.country === sCountry; });
+        if (i < 0) { MessageToast.show(that.getText("msgNoWf")); return; }
+        that.byId("wfDetail").bindElement({ path: "/rows/" + i, model: "wf" });
+        that.getView().getModel("ui").setData({
+          choose: false, detail: true, country: sCountry,
+          isUK: sCountry === "UK", isIN: sCountry === "IN",
+          title: that.getText(sCountry === "UK" ? "wfTitleUK" : "wfTitleIN")
+        });
+      };
+      var aRows = this.getView().getModel("wf").getProperty("/rows") || [];
+      if (aRows.length) { show(); } else { this._load().then(show); }
+    },
+
+    onBack: function () {
+      this.byId("wfDetail").unbindElement("wf");
+      this.getView().getModel("ui").setData({
+        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+      });
+    },
 
     _freshCtx: function (sCountry, bActive) {
       return this.getModel()
@@ -41,7 +73,7 @@ sap.ui.define([
         .requestContexts(0, 100)
         .then(function (aCtx) { return aCtx.map(function (c) { return c.getObject(); }); });
 
-      Promise.all([pEmp, pWf]).then(function (aRes) {
+      return Promise.all([pEmp, pWf]).then(function (aRes) {
         var aEmp = aRes[0];
         var mName = {};
         aEmp.forEach(function (e) { mName[e.email] = e.fullName; });
