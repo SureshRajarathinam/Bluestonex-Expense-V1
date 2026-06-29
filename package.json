@@ -9,7 +9,8 @@
     "@sap/cds": "^8",
     "@sap/xsenv": "^5",
     "express": "^4",
-    "hdb": "^0.19"
+    "hdb": "^0.19",
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^1",

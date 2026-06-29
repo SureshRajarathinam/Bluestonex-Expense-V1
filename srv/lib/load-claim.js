@@ -18,7 +18,8 @@ async function loadValidationContext(claimId) {
     : [];
   const hasReceipt = new Set(withReceipt.map((r) => r.ID));
   items.forEach((it) => { it.receiptAttached = it.receiptAttached || hasReceipt.has(it.ID); });
-  const policy = (await SELECT.one.from(ExpensePolicy)) || {};
+  // Per-country policy: load the row for this claim's country (UK | IN).
+  const policy = (await SELECT.one.from(ExpensePolicy).where({ country: claim.country })) || {};
   const typeRows = await SELECT.from(ExpenseTypes);
   const types = Object.fromEntries(typeRows.map((t) => [t.code, t]));
 

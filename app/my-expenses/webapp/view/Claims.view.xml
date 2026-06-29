@@ -1,0 +1,102 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.Claims"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  height="100%">
+
+  <Page id="claimsPage" showHeader="false" class="bsxPage" backgroundDesign="Transparent">
+    <content>
+
+      <!-- Look up (filters) -->
+      <VBox class="bsxCard">
+        <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+          <VBox>
+            <Label text="{i18n>filterStatus}" class="bsxFieldLbl" />
+            <Select id="fStatus" width="100%">
+              <core:Item key="" text="{i18n>all}" />
+              <core:Item key="Draft" text="Draft" />
+              <core:Item key="Submitted" text="Submitted" />
+              <core:Item key="FirstApproved" text="First Approved" />
+              <core:Item key="Approved" text="Approved" />
+              <core:Item key="Rejected" text="Rejected" />
+            </Select>
+          </VBox>
+          <VBox>
+            <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
+            <Select id="fCountry" width="100%">
+              <core:Item key="" text="{i18n>all}" />
+              <core:Item key="UK" text="United Kingdom" />
+              <core:Item key="IN" text="India" />
+            </Select>
+          </VBox>
+          <VBox>
+            <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
+            <DateRangeSelection id="fPeriod" width="100%" />
+          </VBox>
+          <VBox>
+            <Label text="{i18n>searchPlaceholder}" class="bsxFieldLbl" />
+            <Input id="fClaimNo" width="100%" placeholder="{i18n>searchPlaceholder}" submit=".onGo" />
+          </VBox>
+          <VBox justifyContent="End">
+            <Label text=" " />
+            <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+          </VBox>
+        </l:Grid>
+      </VBox>
+
+      <!-- Results -->
+      <VBox class="bsxCard">
+        <OverflowToolbar class="bsxCardPad">
+          <Title text="{i18n>listTitle}" class="bsxCardTitle" level="H3" />
+          <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiTotal} + ': ' + ${view>/count} }" />
+          <ObjectStatus inverted="true" state="Warning" text="{= ${i18n>kpiSubmitted} + ': ' + ${view>/submitted} }" />
+          <ObjectStatus inverted="true" state="Success" text="{= ${i18n>kpiApproved} + ': ' + ${view>/approved} }" />
+          <ToolbarSpacer />
+          <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
+          <Button text="{i18n>btnCreate}" icon="sap-icon://add" type="Emphasized" press=".onCreate" />
+        </OverflowToolbar>
+
+        <Table
+          id="claimsTable"
+          class="bsxTable"
+          growing="true"
+          growingThreshold="25"
+          items="{
+            path: '/MyClaims',
+            parameters: { '$orderby': 'createdAt desc', '$count': true },
+            sorter: { path: 'createdAt', descending: true }
+          }"
+          updateFinished=".onUpdateFinished"
+          mode="None">
+          <noData>
+            <IllustratedMessage illustrationType="sapIllus-NoEntries" title="{i18n>noClaims}" />
+          </noData>
+          <columns>
+            <Column><Text text="{i18n>colClaimNo}" /></Column>
+            <Column><Text text="{i18n>colCountry}" /></Column>
+            <Column><Text text="{i18n>colPeriod}" /></Column>
+            <Column><Text text="{i18n>colStatus}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem type="Navigation" press=".onOpenClaim">
+              <cells>
+                <ObjectIdentifier title="{claimNumber}" text="{= ${claimNumber} ? '' : 'Draft (unsaved)'}" />
+                <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+                <Text text="{claimPeriod}" />
+                <ObjectStatus
+                  icon="{path: 'status', formatter: '.formatter.statusIcon'}"
+                  text="{path: 'status', formatter: '.formatter.statusText'}"
+                  state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+                <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>

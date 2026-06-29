@@ -63,7 +63,10 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   // read
   const list = await GET('/approval/Policies', { auth: MGR });
   assert.equal(list.status, 200);
-  const id = list.data.value[0].ID;
+  // Per-country policies: edit the India row (it carries the GST rate).
+  const inRow = list.data.value.find((p) => p.country === 'IN');
+  assert.ok(inRow, 'India policy row exists');
+  const id = inRow.ID;
   // employee-only cannot read policies
   assert.equal((await GET('/approval/Policies', { auth: CLERK })).status, 403);
   // draft edit: edit → patch → activate
@@ -74,6 +77,17 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   assert.equal(Number((await GET(`/approval/Policies(ID=${id},IsActiveEntity=true)`, { auth: MGR })).data.gstRate), 0.20);
   const logs = await GET(`/approval/AuditLogs?$filter=action eq 'PolicyChanged'`, { auth: MGR });
   assert.ok(logs.data.value.length > 0, 'policy change audited');
+});
+
+test('per-country policy: India hotel above the UK limit still submits (own limit applies)', async () => {
+  // A 500 hotel exceeds the UK daily limit (200) but is within India's own limit (8000),
+  // proving the claim is validated against its country's policy row.
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 500, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `India hotel 500 should submit under India policy, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
 });
 
 test('Workflow members: UK has 2 approvers, India has 1', async () => {
@@ -110,4 +124,28 @@ test('rejected claim leaves the approvals queue', async () => {
   await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'No' }, { auth: MGR });
   const g = await GET(`/approval/Approvals(${id})`, { auth: MGR });
   assert.equal(g.status, 404, `rejected claim should be gone from queue, got ${g.status}`);
+});
+
+test('History: shows non-draft claims (incl. approved/rejected), excludes drafts; employee blocked', async () => {
+  const id = await submitUK();
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const hist = await GET('/approval/ClaimHistory', { auth: MGR });
+  assert.equal(hist.status, 200, `history read ${hist.status}`);
+  assert.ok(hist.data.value.some((r) => r.ID === id), 'submitted/approved claim appears in history');
+  assert.ok(hist.data.value.every((r) => r.status !== 'Draft'), 'no drafts in history');
+  // a pure draft must not surface in history
+  const dft = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-01' }, { auth: EMP });
+  const h2 = await GET('/approval/ClaimHistory', { auth: MGR });
+  assert.ok(!h2.data.value.some((r) => r.ID === dft.data.ID), 'draft excluded from history');
+  // employee-only blocked
+  assert.equal((await GET('/approval/ClaimHistory', { auth: CLERK })).status, 403, 'employee blocked from history');
+});
+
+test('PDF export: approver gets a PDF (base64), employee-only is 403', async () => {
+  const url = "/approval/exportClaimsPdf(scope='history',status=null,country=null,claimNo=null,fromDate=null,toDate=null)";
+  const ok = await GET(url, { auth: MGR });
+  assert.ok(ok.status < 400, `pdf export ${ok.status}: ${JSON.stringify(ok.data?.error || '')}`);
+  const buf = Buffer.from((ok.data && ok.data.value) || '', 'base64');
+  assert.equal(buf.slice(0, 5).toString(), '%PDF-', 'decoded body should be a PDF');
+  assert.equal((await GET(url, { auth: CLERK })).status, 403, 'employee-only PDF should be 403');
 });

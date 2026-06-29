@@ -1,0 +1,92 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Approvals"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  height="100%">
+
+  <ScrollContainer height="100%" vertical="true" horizontal="false">
+
+    <!-- Look up (filters) -->
+    <VBox class="bsxCard bsxPremiumCard">
+      <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
+      <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+        <VBox>
+          <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
+          <Select id="fCountry" width="100%">
+            <core:Item key="" text="{i18n>all}" />
+            <core:Item key="UK" text="United Kingdom" />
+            <core:Item key="IN" text="India" />
+          </Select>
+        </VBox>
+        <VBox>
+          <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
+          <DateRangeSelection id="fPeriod" width="100%" />
+        </VBox>
+        <VBox>
+          <Label text="{i18n>searchClaim}" class="bsxFieldLbl" />
+          <Input id="fClaimNo" width="100%" placeholder="{i18n>searchClaim}" submit=".onGo" />
+        </VBox>
+        <VBox justifyContent="End">
+          <Label text=" " />
+          <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+        </VBox>
+      </l:Grid>
+    </VBox>
+
+    <!-- Results -->
+    <VBox class="bsxCard bsxPremiumCard">
+      <OverflowToolbar class="bsxCardPad">
+        <Title text="{i18n>approvalsTitle}" class="bsxCardTitle" level="H3" />
+        <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiPending} + ': ' + ${view>/count} }" />
+        <ObjectStatus inverted="true" state="None" text="{= 'UK: ' + ${view>/uk} }" />
+        <ObjectStatus inverted="true" state="None" text="{= 'IN: ' + ${view>/india} }" />
+        <ToolbarSpacer />
+        <Button text="{i18n>btnExport}" icon="sap-icon://pdf-attachment" type="Transparent" tooltip="{i18n>btnExport}" press=".onExportPdf" />
+        <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
+      </OverflowToolbar>
+
+      <Table
+        id="approvalsTable"
+        class="bsxTable"
+        growing="true"
+        items="{
+          path: '/Approvals',
+          parameters: { '$expand': 'items,mileageClaims', '$count': true },
+          sorter: { path: 'submittedAt' }
+        }"
+        updateFinished=".onUpdateFinished"
+        mode="None">
+        <noData>
+          <IllustratedMessage illustrationType="sapIllus-NoTasks" title="{i18n>noApprovals}" />
+        </noData>
+        <columns>
+          <Column><Text text="{i18n>colClaimNo}" /></Column>
+          <Column><Text text="{i18n>colEmployee}" /></Column>
+          <Column><Text text="{i18n>colCountry}" /></Column>
+          <Column><Text text="{i18n>colPeriod}" /></Column>
+          <Column><Text text="{i18n>colStatus}" /></Column>
+          <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+          <Column hAlign="Center"><Text text="" /></Column>
+        </columns>
+        <items>
+          <ColumnListItem>
+            <cells>
+              <ObjectIdentifier title="{claimNumber}" />
+              <Text text="{employeeName}" />
+              <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+              <Text text="{claimPeriod}" />
+              <ObjectStatus
+                icon="{path: 'status', formatter: '.formatter.statusIcon'}"
+                text="{path: 'status', formatter: '.formatter.statusText'}"
+                state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+              <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+              <Button text="{i18n>btnReview}" type="Emphasized" press=".onReview" />
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </VBox>
+  </ScrollContainer>
+</mvc:View>

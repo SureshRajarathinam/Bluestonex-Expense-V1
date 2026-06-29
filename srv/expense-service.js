@@ -55,7 +55,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       // Country drives tax (VAT for UK, GST for India) and currency
       const country = claim.country || 'UK';
       claim.currency = country === 'IN' ? 'INR' : 'GBP';
-      const policy = await SELECT.one.from(ExpensePolicy);
+      // Per-country policy: load the row for this claim's country (UK | IN).
+      const policy = await SELECT.one.from(ExpensePolicy).where({ country });
       const stdRate = taxRateFor(country, policy || {});
 
       for (const item of claim.items || []) {

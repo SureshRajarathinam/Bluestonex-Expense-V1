@@ -1,0 +1,78 @@
+/* ============================================================================
+   BluestoneX — thin standard-Fiori layer over SAP Horizon
+   Goal: look like native Fiori (minimal header, flat side-nav selection,
+   white titled cards, native buttons + ObjectStatus chips). Keep it light —
+   lean on Horizon defaults; only add page/layout/brand styling.
+   ========================================================================== */
+
+:root {
+  --sapFontFamily: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bsx-blue:   #0a6ed1;   /* Fiori action blue (brand)        */
+  --bsx-danger: #bb0000;
+  --bsx-bg:     #f5f6f7;
+  --bsx-card:   #ffffff;
+  --bsx-line:   #e5e5e5;
+  --bsx-text:   #32363a;
+  --bsx-muted:  #6a6d70;
+  --bsx-radius: 8px;
+}
+
+html, body, .sapUiBody, .bsxBody,
+.sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
+
+/* ---- Header (minimal: menu + blue brand) --------------------------------- */
+.bsxHeader.sapTntToolHeader {
+  background: var(--bsx-card);
+  border-bottom: 1px solid var(--bsx-line);
+  height: 3rem;
+}
+.bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
+.bsxBrand .bsxBrandX { color: var(--bsx-blue); }
+
+/* ---- Side navigation: flat light selected highlight ---------------------- */
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav .sapTntNLI:hover,
+.bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
+.bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
+/* selected — flat light blue-grey, blue text/icon (Horizon-like) */
+.bsxSideNav .sapTntNLISelected,
+.bsxSideNav .sapTntNavLIItemSelected,
+.bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
+  background: #eaf1f8 !important;
+  box-shadow: inset 3px 0 0 var(--bsx-blue);
+}
+.bsxSideNav .sapTntNLISelected .sapTntNLIText,
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon,
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
+.bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: var(--bsx-blue) !important; font-weight: 700; }
+
+/* ---- Content cards ------------------------------------------------------- */
+.bsxCard {
+  background: var(--bsx-card);
+  border: 1px solid var(--bsx-line);
+  border-radius: var(--bsx-radius);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  margin: 0.75rem 1rem;
+}
+.bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
+.bsxCardPad { padding: 0.5rem 1rem; }
+.bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
+
+/* ---- Destructive icon button (row delete) -------------------------------- */
+.bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
+
+/* ---- Approval-chain cards (Workflow Members tab) ------------------------- */
+.bsxChainNode {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--bsx-blue); color: #fff; font-weight: 700; font-size: .8125rem;
+  flex-shrink: 0;
+}
+.bsxChainConnector { height: 1.25rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
+.bsxChainCard.sapFCard { border-radius: var(--bsx-radius); }
+
+/* ---- Tables -------------------------------------------------------------- */
+.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
+.bsxTable .sapMLIB:hover { background: #f5f8fc; }

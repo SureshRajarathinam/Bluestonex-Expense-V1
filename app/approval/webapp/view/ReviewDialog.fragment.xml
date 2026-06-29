@@ -1,0 +1,77 @@
+<core:FragmentDefinition
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form">
+
+  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="46rem" contentHeight="36rem" verticalScrolling="true">
+    <content>
+      <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" class="sapUiSmallMarginBottom">
+        <f:content>
+          <Label text="{i18n>colClaimNo}" /><Text text="{claimNumber}" />
+          <Label text="{i18n>lblEmployee}" /><Text text="{employeeName}" />
+          <Label text="{i18n>lblCountry}" /><Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+          <Label text="{i18n>lblLevel}" /><ObjectStatus text="{ parts: ['country','status'], formatter: '.formatter.levelText' }" state="Information" />
+          <Label text="{i18n>lblTotal}" /><ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" emphasized="true" />
+        </f:content>
+      </f:SimpleForm>
+
+      <Panel headerText="{i18n>secItems}" expandable="true" expanded="true">
+        <Table items="{items}" mode="None" class="bsxTable">
+          <columns>
+            <Column><Text text="{i18n>itDate}" /></Column>
+            <Column><Text text="{i18n>itType}" /></Column>
+            <Column><Text text="{i18n>itReason}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column><Text text="{i18n>itReceipt}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{expenseDate}" />
+                <Text text="{expenseType_code}" />
+                <Text text="{reasonForTrip}" />
+                <Text text="{grossAmount}" />
+                <Link text="{i18n>viewReceipt}" target="_blank" href="{ path: 'ID', formatter: '.formatter.receiptHref' }" visible="{= !!${receiptAttached} }" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <Panel headerText="{i18n>secMileage}" expandable="true" expanded="true">
+        <Table items="{mileageClaims}" mode="None" class="bsxTable">
+          <columns>
+            <Column><Text text="{i18n>mlDate}" /></Column>
+            <Column><Text text="{i18n>itDestination}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlMiles}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlRate}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlTotal}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{tripDate}" />
+                <Text text="{destination}" />
+                <Text text="{milesCount}" />
+                <Text text="{ratePerMile}" />
+                <Text text="{totalAmount}" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <f:SimpleForm editable="true" layout="ResponsiveGridLayout" columnsM="1" columnsL="1">
+        <f:content>
+          <Label text="{i18n>commentLabel}" />
+          <TextArea id="commentArea" rows="2" width="100%" placeholder="{i18n>rejectReasonLabel}" />
+        </f:content>
+      </f:SimpleForm>
+    </content>
+    <buttons>
+      <Button text="{i18n>btnApprove}" type="Accept" icon="sap-icon://accept" class="bsxPill" press=".onApprove" />
+      <Button text="{i18n>btnReject}" type="Reject" icon="sap-icon://decline" class="bsxPill" press=".onReject" />
+      <Button text="{i18n>btnClose}" class="bsxPill" press=".onCloseReview" />
+    </buttons>
+  </Dialog>
+</core:FragmentDefinition>

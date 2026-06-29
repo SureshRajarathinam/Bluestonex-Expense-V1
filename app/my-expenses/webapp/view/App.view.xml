@@ -1,0 +1,36 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:tnt="sap.tnt"
+  xmlns="sap.m"
+  displayBlock="true"
+  height="100%">
+
+  <tnt:ToolPage id="toolPage" class="bsxToolPage">
+
+    <tnt:header>
+      <tnt:ToolHeader class="bsxHeader">
+        <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
+        <Text text="BluestoneX" class="bsxBrand" />
+        <ToolbarSpacer />
+      </tnt:ToolHeader>
+    </tnt:header>
+
+    <tnt:sideContent>
+      <tnt:SideNavigation id="sideNav" class="bsxSideNav" selectedKey="myExpenses">
+        <tnt:NavigationList>
+          <tnt:NavigationListItem
+            key="myExpenses"
+            text="{i18n>navMyExpenses}"
+            icon="sap-icon://expense-report"
+            select=".onNavToList" />
+        </tnt:NavigationList>
+      </tnt:SideNavigation>
+    </tnt:sideContent>
+
+    <tnt:mainContents>
+      <App id="pageContainer" />
+    </tnt:mainContents>
+
+  </tnt:ToolPage>
+</mvc:View>

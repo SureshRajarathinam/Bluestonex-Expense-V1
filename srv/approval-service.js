@@ -3,6 +3,7 @@
 const cds = require('@sap/cds');
 const notification = require('./notification');
 const audit = require('./lib/audit');
+const { renderClaimsPdf } = require('./lib/pdf');
 
 const LOG = cds.log('approval-service');
 
@@ -119,6 +120,38 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         details: `L1=${data?.firstApprover || '-'}, L2=${data?.secondApprover || '-'}`
       });
       LOG.info(`Workflow for '${data?.country}' updated by ${req.user.id}`);
+    });
+
+    // ─── Function: exportClaimsPdf (Approver/Admin) — returns PDF as base64 ────
+    this.on('exportClaimsPdf', async (req) => {
+      const d = req.data || {};
+      const scope = d.scope === 'history' ? 'history' : 'approvals';
+
+      let rows = await SELECT.from(ExpenseClaims)
+        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); }); })
+        .orderBy('submittedAt desc');
+
+      rows = rows.filter((r) => scope === 'history'
+        ? r.status !== 'Draft'
+        : ['Submitted', 'FirstApproved'].includes(r.status));
+      if (d.status)  rows = rows.filter((r) => r.status === d.status);
+      if (d.country) rows = rows.filter((r) => r.country === d.country);
+      if (d.claimNo) rows = rows.filter((r) => (r.claimNumber || '').includes(d.claimNo));
+      if (d.fromDate && d.toDate) {
+        rows = rows.filter((r) => r.claimPeriod && r.claimPeriod >= d.fromDate && r.claimPeriod <= d.toDate);
+      }
+
+      const data = rows.map((r) => ({
+        ...r,
+        employeeName: (r.employee && r.employee.fullName) || r.employee_ID || '',
+        decidedBy: r.level2ApprovedBy || r.level1ApprovedBy || r.rejectedBy || ''
+      }));
+
+      const buf = await renderClaimsPdf(data, {
+        title: scope === 'history' ? 'Claim History' : 'Pending Approvals'
+      });
+      LOG.info(`exportClaimsPdf (${scope}) by ${req.user.id} — ${data.length} claim(s)`);
+      return buf; // LargeBinary → base64 in the OData JSON response
     });
 
     await super.init();

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cds-watch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["cds", "watch"],
+      "port": 4004
+    }
+  ]
+}

@@ -2,8 +2,8 @@
 
 A modern, end-to-end **Expense Reimbursement System** built on **SAP Cloud Application Programming Model (CAP)** with **SAP Fiori** front-ends, designed to run on **SAP BTP**.
 
-> **Stack:** SAP CAP (Node.js) · OData V4 · SAP Fiori Elements · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service
-> **Status:** **UK & India** support · 4 Fiori Elements apps · 2 OData services · **28/28 automated tests passing** (`npm test`)
+> **Stack:** SAP CAP (Node.js) · OData V4 · **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell) · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service
+> **Status:** **UK & India** support · **2 freestyle SAPUI5 apps** (My Expenses, Approval) · 2 OData services · **28/28 automated tests passing** (`npm test`)
 
 ---
 
@@ -65,12 +65,10 @@ Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India 
 
 | App | Path | Type | Role | Purpose |
 |---|---|---|---|---|
-| **My Expenses** | `/my-expenses` → `/expense` | Fiori Elements (LR + OP, draft) | Employee | Pick country, add **inline** items + attachments, **Apply for Approval** |
-| **Approvals** | `/approvals` → `/approval` | Fiori Elements (LR + OP) | Approver | Review pending claims, view receipts, **Approve / Reject** |
-| **Policy Configuration** | `/policy-config` → `/approval` | Fiori Elements (LR + OP, draft) | Admin | Edit VAT/GST rates, mileage rate, limits, receipt threshold |
-| **Approval Workflow Members** | `/workflow-members` → `/approval` | Fiori Elements (LR + OP, draft) | Admin | Configure L1/L2 approvers per country |
+| **My Expenses** | `/my-expenses` → `/expense` | Freestyle SAPUI5 (list + single-page detail, draft) | Employee | Pick country on Create, add **inline** items + mileage + attachments on one screen, **Apply for Approval** |
+| **Approval** | `/approval` → `/approval` | Freestyle SAPUI5 (3-tab IconTabBar) | Approver + Admin | Tabs: **Approvals** (approve/reject), **Policy Configuration** (VAT/GST/limits), **Approval Workflow Members** (L1/L2 approvers per country) |
 
-> Fiori Elements is one-entity-per-app, so the "Approval" area is delivered as three FE apps (tiles) over one `/approval` service — grouped together on the launchpad.
+> The former four Fiori Elements apps are consolidated into **two freestyle SAPUI5 apps**. The Approval app merges Approvals, Policy Configuration and Workflow Members into one app with three tabs over the single `/approval` service.
 
 ---
 
@@ -155,13 +153,15 @@ Defined in **`xs-security.json`** (XSUAA) — scopes, role templates, and role c
 
 ---
 
-## 10. The Approval area (3 Fiori Elements apps on `/approval`)
+## 10. The Approval app (3 tabs on `/approval`)
 
-| App | What it does |
+One freestyle SAPUI5 app with a 3-tab `IconTabBar`:
+
+| Tab | What it does |
 |---|---|
-| **Approvals** | List of claims pending the user's decision → Object Page (items, mileage, receipts) → **Approve / Reject** (Reject prompts for a reason). UK needs L1 then L2; India needs L1 only. |
-| **Policy Configuration** | Open the policy → **Edit** → change VAT/GST rate, mileage rate, limits, receipt threshold → **Save** (draft flow). Feeds the rules + tax engine. |
-| **Approval Workflow Members** | Per country, set the **first-level** and **second-level** (UK) approver emails. |
+| **Approvals** | List of claims pending the user's decision → **Review** dialog (items, mileage, receipt links) → **Approve / Reject** (Reject requires a reason). UK needs L1 then L2; India needs L1 only. |
+| **Policy Configuration** | **Edit** the policy → change VAT/GST rate, mileage rate, limits, receipt threshold → **Save** (draft flow). Feeds the rules + tax engine. |
+| **Approval Workflow Members** | Per country, edit the **first-level** and **second-level** (UK only) approver emails. |
 
 ---
 
@@ -182,11 +182,13 @@ Defined in **`xs-security.json`** (XSUAA) — scopes, role templates, and role c
 │       ├── load-claim.js           # Validation context loader
 │       └── audit.js                # Audit-log writer
 ├── app/
-│   ├── my-expenses/                # FE app (Employee) — country + inline items
-│   ├── approvals/                  # FE app (Approver)
-│   ├── policy-config/              # FE app (Admin)
-│   ├── workflow-members/           # FE app (Admin)
-│   └── services.cds                # Aggregates app UI annotations into the model
+│   ├── my-expenses/                # Freestyle SAPUI5 (Employee) — country + inline items
+│   │   ├── webapp/                 #   index.html, Component.js, manifest.json,
+│   │   │                           #   view/, controller/, model/formatter.js, css/, i18n/
+│   │   ├── package.json, ui5.yaml  #   CF build (ui5-task-zipper → my-expenses.zip)
+│   └── approval/                   # Freestyle SAPUI5 (Approver+Admin) — 3-tab IconTabBar
+│       ├── webapp/                 #   App + Approvals/Policy/Workflow views & controllers
+│       └── package.json, ui5.yaml  #   CF build (ui5-task-zipper → approval.zip)
 ├── test/
 │   ├── lifecycle.test.js           # UK 2-level + India 1-level flows, country tax
 │   ├── validate.test.js            # 10 business-rule unit tests
@@ -265,7 +267,7 @@ Post-deploy:
 ## 15. Tech stack & versions
 
 - **@sap/cds** 8 · **Node.js** 18+ · **OData V4**
-- **SAP Fiori Elements** 1.120 · **Horizon** theme
+- **Freestyle SAPUI5** 1.120+ (XML views + JS controllers, `sap.tnt.ToolPage` shell) · **Horizon** theme + BluestoneX custom CSS
 - **SQLite** (`@cap-js/sqlite`) for dev · **SAP HANA Cloud** for production
 - **XSUAA** for auth · **BTP Alert Notification Service** for email notifications
 

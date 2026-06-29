@@ -1,0 +1,77 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Policy"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form"
+  height="100%">
+
+  <!-- ══ CHOOSE MODE — pick the country to configure ══════════════════════ -->
+  <VBox class="bsxCard" visible="{ui>/choose}">
+    <Title text="{i18n>policyTitle}" class="bsxCardTitle bsxCardPad" level="H3" />
+    <Text text="{i18n>policyChooseHint}" class="bsxCardPad bsxFieldLbl" />
+
+    <FlexBox wrap="Wrap" class="bsxCardPad">
+      <!-- United Kingdom -->
+      <VBox class="bsxCard bsxPremiumCard bsxChoiceCard sapUiSmallMarginEnd sapUiSmallMarginBottom" width="22rem">
+        <HBox class="bsxCardPad" alignItems="Center">
+          <Avatar initials="UK" displayShape="Square" backgroundColor="Accent6" class="sapUiSmallMarginEnd" />
+          <VBox>
+            <Title text="{i18n>countryUKName}" level="H4" class="bsxCardTitle" />
+            <Text text="{i18n>countryUKSub}" class="bsxFieldLbl" />
+          </VBox>
+        </HBox>
+        <HBox class="bsxCardPad" alignItems="Center" justifyContent="SpaceBetween">
+          <Text text="{i18n>tagVat}" class="bsxCardTag" />
+          <Button text="{i18n>btnConfigure}" type="Emphasized" icon="sap-icon://settings" class="bsxPill bsxCardPill" press=".onChooseUK" />
+        </HBox>
+      </VBox>
+
+      <!-- India -->
+      <VBox class="bsxCard bsxPremiumCard bsxChoiceCard sapUiSmallMarginEnd sapUiSmallMarginBottom" width="22rem">
+        <HBox class="bsxCardPad" alignItems="Center">
+          <Avatar initials="IN" displayShape="Square" backgroundColor="Accent8" class="sapUiSmallMarginEnd" />
+          <VBox>
+            <Title text="{i18n>countryINName}" level="H4" class="bsxCardTitle" />
+            <Text text="{i18n>countryINSub}" class="bsxFieldLbl" />
+          </VBox>
+        </HBox>
+        <HBox class="bsxCardPad" alignItems="Center" justifyContent="SpaceBetween">
+          <Text text="{i18n>tagGst}" class="bsxCardTag" />
+          <Button text="{i18n>btnConfigure}" type="Emphasized" icon="sap-icon://settings" class="bsxPill bsxCardPill" press=".onChooseIN" />
+        </HBox>
+      </VBox>
+    </FlexBox>
+  </VBox>
+
+  <!-- ══ DETAIL MODE — the selected country's policy ══════════════════════ -->
+  <VBox class="bsxCard bsxPremiumCard" visible="{ui>/detail}">
+    <OverflowToolbar class="bsxCardPad">
+      <Button icon="sap-icon://nav-back" type="Transparent" tooltip="{i18n>btnBack}" press=".onBack" />
+      <Title text="{ui>/title}" class="bsxCardTitle" level="H3" />
+      <ToolbarSpacer />
+      <Button text="{i18n>btnEdit}" icon="sap-icon://edit" type="Emphasized" class="bsxPill" visible="{ui>/display}" press=".onEdit" />
+      <Button text="{i18n>btnCancel}" class="bsxPill" visible="{ui>/editing}" press=".onCancel" />
+      <Button text="{i18n>btnSave}" type="Emphasized" class="bsxPill" visible="{ui>/editing}" press=".onSave" />
+    </OverflowToolbar>
+
+    <f:SimpleForm editable="true" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" class="bsxCardPad">
+      <f:content>
+        <Label text="{i18n>lblPolicyName}" />
+        <Input value="{policyName}" editable="{ui>/editing}" />
+        <Label text="{i18n>lblVat}" visible="{ui>/isUK}" required="true" />
+        <Input value="{vatRate}" type="Number" editable="{ui>/editing}" visible="{ui>/isUK}" />
+        <Label text="{i18n>lblGst}" visible="{ui>/isIN}" required="true" />
+        <Input value="{gstRate}" type="Number" editable="{ui>/editing}" visible="{ui>/isIN}" />
+        <Label text="{i18n>lblMileage}" />
+        <Input value="{mileageRate}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblHotel}" />
+        <Input value="{hotelDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblMeal}" />
+        <Input value="{mealDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <Label text="{i18n>lblThreshold}" />
+        <Input value="{receiptThreshold}" type="Number" editable="{ui>/editing}" />
+      </f:content>
+    </f:SimpleForm>
+    <Text text="{i18n>ratesHint}" class="bsxCardPad" />
+  </VBox>
+</mvc:View>

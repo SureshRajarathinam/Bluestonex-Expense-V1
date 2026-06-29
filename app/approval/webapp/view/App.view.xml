@@ -1,0 +1,40 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:tnt="sap.tnt"
+  xmlns="sap.m"
+  displayBlock="true"
+  height="100%">
+
+  <tnt:ToolPage id="toolPage" class="bsxToolPage">
+
+    <tnt:header>
+      <tnt:ToolHeader class="bsxHeader">
+        <Button icon="sap-icon://menu2" type="Transparent" tooltip="Toggle menu" press=".onSideToggle" />
+        <Text text="BluestoneX" class="bsxBrand" />
+        <ToolbarSpacer />
+      </tnt:ToolHeader>
+    </tnt:header>
+
+    <tnt:sideContent>
+      <tnt:SideNavigation id="sideNav" class="bsxSideNav" selectedKey="approvals" itemSelect=".onNavSelect">
+        <tnt:NavigationList>
+          <tnt:NavigationListItem key="approvals" text="{i18n>tabApprovals}" icon="sap-icon://task" />
+          <tnt:NavigationListItem key="policy" text="{i18n>tabPolicy}" icon="sap-icon://settings" />
+          <tnt:NavigationListItem key="workflow" text="{i18n>tabWorkflow}" icon="sap-icon://org-chart" />
+          <tnt:NavigationListItem key="history" text="{i18n>tabHistory}" icon="sap-icon://history" />
+        </tnt:NavigationList>
+      </tnt:SideNavigation>
+    </tnt:sideContent>
+
+    <tnt:mainContents>
+      <NavContainer id="sectionNav" height="100%">
+        <mvc:XMLView id="approvalsView" viewName="com.bluestonex.expense.approval.view.Approvals" />
+        <mvc:XMLView id="policyView" viewName="com.bluestonex.expense.approval.view.Policy" />
+        <mvc:XMLView id="workflowView" viewName="com.bluestonex.expense.approval.view.Workflow" />
+        <mvc:XMLView id="historyView" viewName="com.bluestonex.expense.approval.view.History" />
+      </NavContainer>
+    </tnt:mainContents>
+
+  </tnt:ToolPage>
+</mvc:View>

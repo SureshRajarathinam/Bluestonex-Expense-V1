@@ -72,17 +72,11 @@ modules:
         - name: expense-management-my-expenses
           artifacts: [ my-expenses.zip ]
           target-path: app/
-        - name: expense-management-approvals
-          artifacts: [ approvals.zip ]
-          target-path: app/
-        - name: expense-management-policy-config
-          artifacts: [ policy-config.zip ]
-          target-path: app/
-        - name: expense-management-workflow-members
-          artifacts: [ workflow-members.zip ]
+        - name: expense-management-approval
+          artifacts: [ approval.zip ]
           target-path: app/
 
-  # ── Fiori App: My Expenses (Employee) ──────────────────────────────────────
+  # ── Freestyle App: My Expenses (Employee) ──────────────────────────────────
   - name: expense-management-my-expenses
     type: html5
     path: app/my-expenses
@@ -94,34 +88,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Approvals (Approver) ────────────────────────────────────────
-  - name: expense-management-approvals
+  # ── Freestyle App: Approval (Approver + Admin, 3 tabs) ─────────────────────
+  - name: expense-management-approval
     type: html5
-    path: app/approvals
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: Policy Configuration (Admin) ────────────────────────────────
-  - name: expense-management-policy-config
-    type: html5
-    path: app/policy-config
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: Approval Workflow Members (Admin) ───────────────────────────
-  - name: expense-management-workflow-members
-    type: html5
-    path: app/workflow-members
+    path: app/approval
     build-parameters:
       build-result: dist
       builder: custom

@@ -12,10 +12,11 @@ service ExpenseService {
   @restrict: [{ grant: '*', to: 'Employee', where: 'employeeEmail = $user' }]
   entity MyClaims as projection on db.ExpenseClaims {
     *,
-    employee.fullName   as employeeName  : String,
-    employee.email      as employeeEmail : String,
-    employee.site       as employeeSite  : String,
-    employee.department as department    : String,
+    employee.fullName       as employeeName   : String,
+    employee.employeeNumber as employeeNumber : String,
+    employee.email          as employeeEmail  : String,
+    employee.site           as employeeSite   : String,
+    employee.department     as department     : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2
