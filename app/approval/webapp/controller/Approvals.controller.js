@@ -55,40 +55,14 @@ sap.ui.define([
       this.byId("approvalsTable").getBinding("items").filter(aFilters);
     },
 
-    onExport: function () {
-      var aCols = [
-        { label: this.getText("colClaimNo"), property: "claimNumber" },
-        { label: this.getText("colEmployee"), property: "employeeName" },
-        { label: this.getText("colCountry"), property: "country" },
-        { label: this.getText("colPeriod"), property: "claimPeriod" },
-        { label: this.getText("colStatus"), property: "status" },
-        { label: this.getText("colTotal"), property: "totalGross" }
-      ];
-      var aRows = this.byId("approvalsTable").getBinding("items").getCurrentContexts().map(function (c) {
-        var o = {};
-        aCols.forEach(function (col) { o[col.property] = c.getProperty(col.property); });
-        return o;
+    onExportPdf: function () {
+      this.exportPdf("approvals", {
+        status: "",
+        country: this.byId("fCountry").getSelectedKey(),
+        claimNo: (this.byId("fClaimNo").getValue() || "").trim(),
+        from: this._ymd(this.byId("fPeriod").getDateValue()),
+        to: this._ymd(this.byId("fPeriod").getSecondDateValue())
       });
-      var that = this;
-      sap.ui.require(["sap/ui/export/Spreadsheet"], function (Spreadsheet) {
-        var oSheet = new Spreadsheet({ workbook: { columns: aCols }, dataSource: aRows, fileName: "Approvals.xlsx" });
-        oSheet.build().finally(function () { oSheet.destroy(); });
-      }, function () {
-        that._exportCsv(aCols, aRows, "Approvals.csv");
-      });
-    },
-
-    _exportCsv: function (aCols, aRows, sFile) {
-      var esc = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
-      var aLines = [aCols.map(function (c) { return esc(c.label); }).join(",")];
-      aRows.forEach(function (r) { aLines.push(aCols.map(function (c) { return esc(r[c.property]); }).join(",")); });
-      var oBlob = new Blob(["﻿" + aLines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-      var oLink = document.createElement("a");
-      oLink.href = URL.createObjectURL(oBlob);
-      oLink.download = sFile;
-      document.body.appendChild(oLink);
-      oLink.click();
-      document.body.removeChild(oLink);
     },
 
     onReview: function (oEvent) {

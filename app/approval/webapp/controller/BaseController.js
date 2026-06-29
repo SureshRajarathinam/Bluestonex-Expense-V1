@@ -47,6 +47,47 @@ sap.ui.define([
 
     toast: function (sKey) {
       MessageToast.show(this.getText(sKey));
+    },
+
+    /**
+     * Trigger the server-side PDF export (ApprovalService.exportClaimsPdf).
+     * sScope: 'approvals' | 'history'. oState: { status, country, claimNo, from, to }.
+     */
+    exportPdf: function (sScope, oState) {
+      var s = oState || {};
+      var lit = function (v) { return (v == null || v === "") ? "null" : "'" + String(v).replace(/'/g, "''") + "'"; };
+      var dt = function (v) { return v ? v : "null"; };
+      var sUrl = "/approval/exportClaimsPdf(" +
+        "scope='" + sScope + "'," +
+        "status=" + lit(s.status) + "," +
+        "country=" + lit(s.country) + "," +
+        "claimNo=" + lit(s.claimNo) + "," +
+        "fromDate=" + dt(s.from) + "," +
+        "toDate=" + dt(s.to) + ")";
+      var that = this;
+      fetch(encodeURI(sUrl), { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { if (!r.ok) { throw new Error("PDF export failed (" + r.status + ")"); } return r.json(); })
+        .then(function (j) {
+          var v = j && j.value;
+          var arr;
+          if (typeof v === "string") {            // base64 string
+            var bin = atob(v);
+            arr = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) { arr[i] = bin.charCodeAt(i); }
+          } else if (v && v.data) {               // { type:'Buffer', data:[...] }
+            arr = new Uint8Array(v.data);
+          } else {
+            throw new Error("Unexpected PDF payload");
+          }
+          var oBlob = new Blob([arr], { type: "application/pdf" });
+          var oLink = document.createElement("a");
+          oLink.href = URL.createObjectURL(oBlob);
+          oLink.download = (sScope === "history" ? "claim-history" : "approvals") + ".pdf";
+          document.body.appendChild(oLink);
+          oLink.click();
+          document.body.removeChild(oLink);
+        })
+        .catch(function (e) { that.showError(e); });
     }
   });
 });

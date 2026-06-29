@@ -111,3 +111,27 @@ test('rejected claim leaves the approvals queue', async () => {
   const g = await GET(`/approval/Approvals(${id})`, { auth: MGR });
   assert.equal(g.status, 404, `rejected claim should be gone from queue, got ${g.status}`);
 });
+
+test('History: shows non-draft claims (incl. approved/rejected), excludes drafts; employee blocked', async () => {
+  const id = await submitUK();
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const hist = await GET('/approval/ClaimHistory', { auth: MGR });
+  assert.equal(hist.status, 200, `history read ${hist.status}`);
+  assert.ok(hist.data.value.some((r) => r.ID === id), 'submitted/approved claim appears in history');
+  assert.ok(hist.data.value.every((r) => r.status !== 'Draft'), 'no drafts in history');
+  // a pure draft must not surface in history
+  const dft = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-01' }, { auth: EMP });
+  const h2 = await GET('/approval/ClaimHistory', { auth: MGR });
+  assert.ok(!h2.data.value.some((r) => r.ID === dft.data.ID), 'draft excluded from history');
+  // employee-only blocked
+  assert.equal((await GET('/approval/ClaimHistory', { auth: CLERK })).status, 403, 'employee blocked from history');
+});
+
+test('PDF export: approver gets a PDF (base64), employee-only is 403', async () => {
+  const url = "/approval/exportClaimsPdf(scope='history',status=null,country=null,claimNo=null,fromDate=null,toDate=null)";
+  const ok = await GET(url, { auth: MGR });
+  assert.ok(ok.status < 400, `pdf export ${ok.status}: ${JSON.stringify(ok.data?.error || '')}`);
+  const buf = Buffer.from((ok.data && ok.data.value) || '', 'base64');
+  assert.equal(buf.slice(0, 5).toString(), '%PDF-', 'decoded body should be a PDF');
+  assert.equal((await GET(url, { auth: CLERK })).status, 403, 'employee-only PDF should be 403');
+});
