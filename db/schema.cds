@@ -44,15 +44,18 @@ entity Employees : managed {
       financeEmail   : String(255) default 'Dan.Barton@bluestonex.com';
 }
 
+// One policy row PER COUNTRY (UK | IN) — each country has its own rate and limits.
+@assert.unique.country: [country]
 entity ExpensePolicy : managed {
   key ID              : UUID;
+      country         : String(2);   // UK | IN — the country this policy applies to
       policyName      : String(100);
       mileageRate      : Decimal(8, 4) default 0.2500;
       hotelDailyLimit  : Decimal(10, 2);
       mealDailyLimit   : Decimal(10, 2);
       receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
-      vatRate          : Decimal(5, 4) default 0.2000;  // UK VAT rate
-      gstRate          : Decimal(5, 4) default 0.1800;  // India GST rate
+      vatRate          : Decimal(5, 4);  // UK VAT rate   (set on the UK row)
+      gstRate          : Decimal(5, 4);  // India GST rate (set on the IN row)
       effectiveFrom   : Date;
       effectiveTo     : Date;
 }

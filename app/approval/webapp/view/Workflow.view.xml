@@ -15,9 +15,9 @@
     </OverflowToolbar>
     <Text text="{i18n>wfHint}" class="bsxCardPad bsxFieldLbl" />
 
-    <FlexBox wrap="Wrap" class="bsxCardPad" items="{wf>/rows}">
+    <FlexBox wrap="Wrap" alignItems="Stretch" class="bsxCardPad" items="{wf>/rows}">
       <items>
-        <f:Card class="bsxChainCard sapUiSmallMarginEnd sapUiSmallMarginBottom" width="26rem">
+        <f:Card class="bsxChainCard bsxPremiumCard sapUiSmallMarginEnd sapUiSmallMarginBottom" width="26rem">
           <f:header>
             <fcard:Header
               title="{wf>countryName}"

@@ -63,7 +63,10 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   // read
   const list = await GET('/approval/Policies', { auth: MGR });
   assert.equal(list.status, 200);
-  const id = list.data.value[0].ID;
+  // Per-country policies: edit the India row (it carries the GST rate).
+  const inRow = list.data.value.find((p) => p.country === 'IN');
+  assert.ok(inRow, 'India policy row exists');
+  const id = inRow.ID;
   // employee-only cannot read policies
   assert.equal((await GET('/approval/Policies', { auth: CLERK })).status, 403);
   // draft edit: edit → patch → activate
@@ -74,6 +77,17 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   assert.equal(Number((await GET(`/approval/Policies(ID=${id},IsActiveEntity=true)`, { auth: MGR })).data.gstRate), 0.20);
   const logs = await GET(`/approval/AuditLogs?$filter=action eq 'PolicyChanged'`, { auth: MGR });
   assert.ok(logs.data.value.length > 0, 'policy change audited');
+});
+
+test('per-country policy: India hotel above the UK limit still submits (own limit applies)', async () => {
+  // A 500 hotel exceeds the UK daily limit (200) but is within India's own limit (8000),
+  // proving the claim is validated against its country's policy row.
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 500, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `India hotel 500 should submit under India policy, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
 });
 
 test('Workflow members: UK has 2 approvers, India has 1', async () => {

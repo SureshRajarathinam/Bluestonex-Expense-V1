@@ -9,7 +9,7 @@
   <ScrollContainer height="100%" vertical="true" horizontal="false">
 
     <!-- Look up (filters) -->
-    <VBox class="bsxCard">
+    <VBox class="bsxCard bsxPremiumCard">
       <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
       <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
         <VBox>
@@ -46,7 +46,7 @@
     </VBox>
 
     <!-- Results -->
-    <VBox class="bsxCard">
+    <VBox class="bsxCard bsxPremiumCard">
       <OverflowToolbar class="bsxCardPad">
         <Title text="{i18n>historyTitle}" class="bsxCardTitle" level="H3" />
         <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiTotal} + ': ' + ${view>/count} }" />
