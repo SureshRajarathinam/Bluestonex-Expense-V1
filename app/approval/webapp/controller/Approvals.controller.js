@@ -14,24 +14,57 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ count: 0, uk: 0, india: 0 }), "view");
+      this.getView().setModel(new JSONModel({ count: 0, pendUK: 0, pendIN: 0 }), "view");
+      // Landing → detail state, mirroring the Policy / Workflow tabs.
+      this.getView().setModel(new JSONModel({
+        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+      }), "ui");
+      this._loadCounts();
+    },
+
+    // Pending-claim counts per country for the landing cards.
+    _loadCounts: function () {
+      var oModel = this.getModel();
+      var oView = this.getView().getModel("view");
+      ["UK", "IN"].forEach(function (sCountry) {
+        oModel.bindList("/Approvals", null, null,
+          [new Filter("country", FilterOperator.EQ, sCountry)], { $$groupId: "$direct" })
+          .requestContexts(0, 999)
+          .then(function (aCtx) {
+            oView.setProperty(sCountry === "UK" ? "/pendUK" : "/pendIN", aCtx.length);
+          })
+          .catch(function () { /* leave count at 0 */ });
+      });
+    },
+
+    onChooseUK: function () { this._open("UK"); },
+    onChooseIN: function () { this._open("IN"); },
+
+    // Drill into the chosen country's pending claims (scope the table by country).
+    _open: function (sCountry) {
+      this.getView().getModel("ui").setData({
+        choose: false, detail: true, country: sCountry,
+        isUK: sCountry === "UK", isIN: sCountry === "IN",
+        title: this.getText(sCountry === "UK" ? "apvTitleUK" : "apvTitleIN")
+      });
+      this.byId("fClaimNo").setValue("");
+      this.onGo();
+    },
+
+    onBack: function () {
+      this.getView().getModel("ui").setData({
+        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+      });
+      this._loadCounts();
     },
 
     onUpdateFinished: function (oEvent) {
-      var oView = this.getView().getModel("view");
-      oView.setProperty("/count", oEvent.getParameter("total") || 0);
-      var aCtx = this.byId("approvalsTable").getBinding("items").getCurrentContexts();
-      var nUK = 0, nIN = 0;
-      aCtx.forEach(function (c) {
-        if (c.getProperty("country") === "UK") { nUK++; }
-        if (c.getProperty("country") === "IN") { nIN++; }
-      });
-      oView.setProperty("/uk", nUK);
-      oView.setProperty("/india", nIN);
+      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
     },
 
     onRefresh: function () {
       this.byId("approvalsTable").getBinding("items").refresh();
+      this._loadCounts();
     },
 
     _ymd: function (oDate) {
@@ -40,10 +73,10 @@ sap.ui.define([
       return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
     },
 
-    /** Apply the Look-up card filters (country, period, claim no). */
+    /** Apply the Look-up filters (Period, Claim No) scoped to the chosen country. */
     onGo: function () {
       var aFilters = [];
-      var sCountry = this.byId("fCountry").getSelectedKey();
+      var sCountry = this.getView().getModel("ui").getProperty("/country");
       var sNo = (this.byId("fClaimNo").getValue() || "").trim();
       var oPeriod = this.byId("fPeriod");
       var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
@@ -58,7 +91,7 @@ sap.ui.define([
     onExportPdf: function () {
       this.exportPdf("approvals", {
         status: "",
-        country: this.byId("fCountry").getSelectedKey(),
+        country: this.getView().getModel("ui").getProperty("/country"),
         claimNo: (this.byId("fClaimNo").getValue() || "").trim(),
         from: this._ymd(this.byId("fPeriod").getDateValue()),
         to: this._ymd(this.byId("fPeriod").getSecondDateValue())
@@ -106,6 +139,7 @@ sap.ui.define([
           oDialog.close();
           MessageToast.show(that.getText(sMsgKey));
           that.byId("approvalsTable").getBinding("items").refresh();
+          that._loadCounts();
         })
         .catch(function (e) {
           that.getView().setBusy(false);
