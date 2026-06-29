@@ -65,9 +65,11 @@ sap.ui.define([
     // ---- Inline rows --------------------------------------------------------
     onAddItem: function () {
       var sToday = new Date().toISOString().slice(0, 10);
+      // create(initialData, bSkipRefresh, bAtEnd) — bAtEnd:true appends new rows
+      // in order; without it V4 inserts at the front and the first line drops to row 2.
       this.byId("itemsTable").getBinding("items").create({
         vatType: "STD", expenseDate: sToday
-      }, true);
+      }, true, true);
     },
 
     onDeleteItem: function (oEvent) {
@@ -77,9 +79,10 @@ sap.ui.define([
     onAddMileage: function () {
       var sToday = new Date().toISOString().slice(0, 10);
       // NOTE: the sap.m.Table aggregation is "items" (bound to {mileageClaims}).
+      // bAtEnd:true appends in order (see onAddItem).
       this.byId("mileageTable").getBinding("items").create({
         engineType: "Petrol", ratePerMile: "0.25", tripDate: sToday
-      }, true);
+      }, true, true);
     },
 
     onDeleteMileage: function (oEvent) {
@@ -163,13 +166,29 @@ sap.ui.define([
     // ---- Lifecycle ----------------------------------------------------------
     onEdit: function () {
       var that = this;
+      var oCtx = this._claimCtx();
+      // draftEdit returns a draft that shares the active record's ID with
+      // IsActiveEntity=false. Rebind by this computed key rather than the action's
+      // return-value-context path — the latter does not reliably resolve to the
+      // draft, leaving the form stuck read-only ("Edit does nothing").
+      var sDraftPredicate = "ID=" + oCtx.getProperty("ID") + ",IsActiveEntity=false";
       this.getView().setBusy(true);
-      this.callAction(this._claimCtx(), "ExpenseService.draftEdit", { PreserveChanges: true })
-        .then(function (oDraft) {
+      this.callAction(oCtx, "ExpenseService.draftEdit", { PreserveChanges: true })
+        .then(function () {
           that.getView().setBusy(false);
-          that._bindClaim(that._predicateOf(oDraft.getPath()));
+          that._bindClaim(sDraftPredicate);
         })
-        .catch(function (e) { that.getView().setBusy(false); that.showError(e); });
+        .catch(function (e) {
+          that.getView().setBusy(false);
+          // A draft may already exist (e.g. an interrupted earlier edit); draftEdit
+          // then returns 409. Resume that draft instead of dead-ending on an error.
+          var sMsg = (e && (e.message || (e.error && e.error.message))) || "";
+          if (/draft.*already exists/i.test(sMsg)) {
+            that._bindClaim(sDraftPredicate);
+          } else {
+            that.showError(e);
+          }
+        });
     },
 
     onSave: function () {

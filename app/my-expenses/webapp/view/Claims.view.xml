@@ -55,7 +55,6 @@
           <ObjectStatus inverted="true" state="Warning" text="{= ${i18n>kpiSubmitted} + ': ' + ${view>/submitted} }" />
           <ObjectStatus inverted="true" state="Success" text="{= ${i18n>kpiApproved} + ': ' + ${view>/approved} }" />
           <ToolbarSpacer />
-          <Button text="{i18n>btnExport}" icon="sap-icon://excel-attachment" type="Transparent" tooltip="{i18n>btnExport}" press=".onExport" />
           <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
           <Button text="{i18n>btnCreate}" icon="sap-icon://add" type="Emphasized" press=".onCreate" />
         </OverflowToolbar>
