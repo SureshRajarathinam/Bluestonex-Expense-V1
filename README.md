@@ -217,8 +217,9 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 | User | Password | Role(s) | Approver of |
 |---|---|---|---|
 | `sabarinathan.chandrasekar@bluestonex.com` | `sab` | all (dev) | — (submits claims) |
-| `manager@bluestonex.com` | `mgr` | all (dev) | UK level-1 + India level-1 |
+| `manager@bluestonex.com` | `mgr` | all (dev) | UK level-1 |
 | `Dan.Barton@bluestonex.com` | `dan` | all (dev) | UK level-2 |
+| `yuvaraj.kumar@bluestonex.com` | `yuvaraj` | all (dev) | India level-1 |
 | `priya.sharma@bluestonex.com` | `priya` | Employee | — (India employee) |
 | `clerk@bluestonex.com` | `clerk` | Employee | — (RBAC demo) |
 
@@ -226,7 +227,7 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 
 **End-to-end demo flow:**
 1. **My Expenses** (as `sab`) → Create → choose **UK** or **India** → add inline items + attachments → **Apply for Approval**.
-2. **Approvals** → as `manager` approve level-1. For a **UK** claim, then as `Dan.Barton` approve level-2 → **Approved**. For an **India** claim, level-1 completes it.
+2. **Approvals** → For a **UK** claim, as `manager` approve level-1, then as `Dan.Barton` approve level-2 → **Approved**. For an **India** claim, as `yuvaraj.kumar` approve level-1 → **Approved**.
 3. **Policy Configuration** (as `sab`/Admin) → edit a rate → Save. **Approval Workflow Members** → set approvers per country.
 
 ---

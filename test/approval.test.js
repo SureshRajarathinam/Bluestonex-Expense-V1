@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' };
 const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };
+const YUV = { username: 'yuvaraj.kumar@bluestonex.com', password: 'yuvaraj' }; // India L1
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' }; // Employee only
 
 // Spy on the notification singleton's low-level sender to capture every ANS
@@ -130,10 +131,10 @@ test('cannot approve a claim twice / once completed (409 or removed from queue)'
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
-  const a1 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const a1 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
   assert.ok(a1.status < 400, `first approve ${a1.status}`);
   // second approve attempt — claim is Approved (out of pending queue) → must not succeed
-  const a2 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'again' }, { auth: MGR });
+  const a2 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'again' }, { auth: YUV });
   assert.ok(a2.status >= 400, `re-approving a completed claim must fail, got ${a2.status}`);
 });
 
@@ -178,7 +179,7 @@ test('India single-level approval does NOT fire a second-approver notification',
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
-  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
   assert.ok(ok.status < 400, `IN approve ${ok.status}`);
   assert.equal(eventsFor(id, 'ExpenseClaim.Level1Approved').length, 0,
     'India (single-level) approval must not fire a Level1Approved event');
@@ -228,8 +229,8 @@ test('submitting an India claim emails the single configured approver', async ()
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   const mails = mailsSince(before);
-  assert.ok(mails.some((m) => m.to === 'manager@bluestonex.com'),
-    'India single-level approver (manager@) should be emailed on submit');
+  assert.ok(mails.some((m) => m.to === 'yuvaraj.kumar@bluestonex.com'),
+    'India single-level approver (yuvaraj.kumar@) should be emailed on submit');
 });
 
 test('India single-level approval sends no further approver email', async () => {
@@ -239,7 +240,7 @@ test('India single-level approval sends no further approver email', async () => 
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   const before = MAILS.length;
-  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
   assert.ok(ok.status < 400, `IN approve ${ok.status}`);
   assert.equal(mailsSince(before).length, 0,
     'India (single-level) approval must not send a second-level email');

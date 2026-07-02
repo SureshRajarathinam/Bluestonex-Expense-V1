@@ -26,7 +26,7 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 ## Country-aware behaviour
 - Claim has a **`country`** (UK | IN), chosen on Create (mandatory).
 - Tax: UK → `ExpensePolicy.vatRate` (VAT), India → `ExpensePolicy.gstRate` (GST). Picked in `srv/lib/calc.js` `taxRateFor()`, applied in `expense-service.js before('SAVE')`. Field names stay `vatType/vatAmount/totalVAT` (hold the country tax); UI labels say "Tax". Currency GBP (UK) / INR (IN).
-- Approval routing from **`ApprovalWorkflow`** (seed: UK first=manager@, second=Dan.Barton@; IN first=manager@):
+- Approval routing from **`ApprovalWorkflow`** (seed: UK first=manager@, second=Dan.Barton@; IN first=yuvaraj.kumar@):
   - **UK = 2-level**: `Submitted → FirstApproved → Approved`
   - **India = 1-level**: `Submitted → Approved`
   - (+ `Draft`, `Rejected`). No "Settled" step.
@@ -48,7 +48,7 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 - After any change: `npm test` (28/28) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)
-`sab`/`sab` · `manager`/`mgr` (UK L1 + IN L1) · `Dan.Barton`/`dan` (UK L2) · `clerk`/`clerk` (employee-only) · `priya.sharma`/`priya` (India employee)
+`sab`/`sab` · `manager`/`mgr` (UK L1) · `Dan.Barton`/`dan` (UK L2) · `yuvaraj.kumar`/`yuvaraj` (IN L1) · `clerk`/`clerk` (employee-only) · `priya.sharma`/`priya` (India employee)
 
 ## Repo
 https://github.com/SureshRajarathinam/Bluestonex-Expense-V1

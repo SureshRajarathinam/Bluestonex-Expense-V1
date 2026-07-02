@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const calc = require('../srv/lib/calc');
 
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' }; // employee (not an approver in workflow)
-const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1 + India L1
+const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };                // UK L2
+const YUV = { username: 'yuvaraj.kumar@bluestonex.com', password: 'yuvaraj' };         // India L1
 const near = (a, b) => Math.abs(a - b) < 0.01;
 
 let baseURL;
@@ -73,8 +74,9 @@ test('C. UK = TWO-level approval (L1 then L2 → Approved)', async () => {
 
 test('D. India = SINGLE-level approval (L1 → Approved)', async () => {
   const id = await submitClaim('IN', 118);
+  // India L1 approver is yuvaraj.kumar@ (per Approval Workflow config)
   assert.equal(await statusOf(id), 'Submitted');
-  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
   assert.ok(a.status < 400, `IN approve ${a.status}: ${JSON.stringify(a.data?.error)}`);
   assert.equal(await statusOf(id), 'Approved'); // single level completes it
 });
