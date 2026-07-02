@@ -10,6 +10,7 @@
     "@sap/xsenv": "^5",
     "express": "^4",
     "hdb": "^0.19",
+    "nodemailer": "^9.0.3",
     "pdfkit": "^0.19.1"
   },
   "devDependencies": {

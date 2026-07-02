@@ -1,8 +1,12 @@
 'use strict';
 
 const cds = require('@sap/cds');
+const mailer = require('./lib/mailer');
 
 const LOG = cds.log('notification');
+
+// Currency-aware amount for email bodies (GBP for UK, INR for India).
+const money = (claim) => `${claim.currency === 'INR' ? '₹' : '£'}${(claim.totalGross || 0).toFixed(2)}`;
 
 // Wraps SAP BTP Alert Notification Service (ANS).
 // In production: bind an `alert-notification` service instance to the app.
@@ -109,6 +113,14 @@ class NotificationService {
       body:     `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
                 `for £${(claim.totalGross || 0).toFixed(2)}. Please review and approve.`
     });
+
+    // Targeted email to the configured first-level approver for this claim.
+    await mailer.sendMail({
+      to:      firstApprover,
+      subject: `Expense Claim ${claim.claimNumber} awaiting your approval`,
+      text:    `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
+               `for ${money(claim)}. Please review and approve it in the Approvals app.`
+    });
   }
 
   // Fired when a two-level (UK) claim clears level 1 and now awaits level 2.
@@ -131,6 +143,14 @@ class NotificationService {
       body:     `Claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} has ` +
                 `passed first-level approval and now awaits second-level approval from ` +
                 `${nextApprover || 'the configured approver'}.`
+    });
+
+    // Targeted email to the configured second-level (UK) approver.
+    await mailer.sendMail({
+      to:      nextApprover,
+      subject: `Expense Claim ${claim.claimNumber} awaiting your second-level approval`,
+      text:    `Claim ${claim.claimNumber} for ${money(claim)} has passed first-level ` +
+               `approval and now awaits your second-level approval in the Approvals app.`
     });
   }
 

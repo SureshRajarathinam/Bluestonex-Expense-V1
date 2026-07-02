@@ -17,6 +17,14 @@ const _origSend = notification._sendEvent.bind(notification);
 notification._sendEvent = async (payload) => { NOTIFS.push(payload); return _origSend(payload); };
 const eventsFor = (id, type) => NOTIFS.filter((e) => e.resource?.resourceInstance === id && e.eventType === type);
 
+// Spy on the mailer singleton the notification layer uses, so we can assert the
+// approval alert is addressed to the approver configured in Approval Workflow.
+// Same instance require('../srv/lib/mailer') returns to notification.js.
+const mailer = require('../srv/lib/mailer');
+const MAILS = [];
+mailer.sendMail = async (opts) => { MAILS.push(opts); return true; };
+const mailsSince = (n) => MAILS.slice(n);
+
 let baseURL;
 cds.on('listening', (o) => { baseURL = (o.url || o); });
 const t = cds.test(process.cwd());
@@ -187,6 +195,54 @@ test('server computes item net/VAT split on save (UK 20%: gross 120 → net 100,
   const it = items.data.value[0];
   assert.equal(Number(it.netAmount), 100, 'net should be gross / 1.20');
   assert.equal(Number(it.vatAmount), 20, 'VAT should be gross - net');
+});
+
+test('submitting a UK claim emails the configured first-level approver', async () => {
+  const before = MAILS.length;
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `submit ${s.status}`);
+  const mails = mailsSince(before);
+  assert.ok(mails.some((m) => m.to === 'manager@bluestonex.com'),
+    'UK first-level approver (manager@) should be emailed on submit');
+});
+
+test('UK level-1 approval emails the configured second-level approver', async () => {
+  const id = await submitUK();
+  const before = MAILS.length;
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
+  const mails = mailsSince(before);
+  assert.ok(mails.some((m) => m.to === 'Dan.Barton@bluestonex.com'),
+    'UK second-level approver (Dan.Barton@) should be emailed on level-1 approval');
+});
+
+test('submitting an India claim emails the single configured approver', async () => {
+  const before = MAILS.length;
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const mails = mailsSince(before);
+  assert.ok(mails.some((m) => m.to === 'manager@bluestonex.com'),
+    'India single-level approver (manager@) should be emailed on submit');
+});
+
+test('India single-level approval sends no further approver email', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const before = MAILS.length;
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(ok.status < 400, `IN approve ${ok.status}`);
+  assert.equal(mailsSince(before).length, 0,
+    'India (single-level) approval must not send a second-level email');
 });
 
 test('PDF export: approver gets a PDF (base64), employee-only is 403', async () => {
