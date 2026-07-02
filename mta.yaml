@@ -22,6 +22,13 @@ modules:
       - name: expense-management-db
       - name: expense-management-xsuaa
       - name: expense-management-ans
+      # SMTP service for approver emails. Optional: if 'expense-mail' isn't
+      # created, deploy still succeeds and the mailer safely no-ops.
+      # Create it once with:
+      #   cf cups expense-mail -p '{"host":"smtp.example.com","port":587,"user":"u","pass":"p","from":"noreply@bluestonex.com","secure":false}'
+      - name: expense-management-mail
+        parameters:
+          optional: true
     provides:
       - name: srv-api
         properties:
@@ -158,6 +165,15 @@ resources:
     parameters:
       service: alert-notification
       service-plan: standard
+
+  # ── SMTP Mail Service (approver emails) ───────────────────────────────────
+  # User-provided service holding SMTP credentials. Optional so a deploy
+  # without it still succeeds (the mailer then no-ops until it's bound).
+  - name: expense-management-mail
+    type: org.cloudfoundry.existing-service
+    optional: true
+    parameters:
+      service-name: expense-mail
 
   # ── HTML5 Application Repository (Host) ───────────────────────────────────
   - name: expense-management-html5-host
