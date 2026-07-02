@@ -2,9 +2,11 @@ sap.ui.define([
   "com/bluestonex/expense/myexpenses/controller/BaseController",
   "com/bluestonex/expense/myexpenses/model/formatter",
   "sap/ui/model/json/JSONModel",
+  "sap/ui/model/Filter",
+  "sap/ui/model/FilterOperator",
   "sap/m/MessageBox",
   "sap/m/MessageToast"
-], function (BaseController, formatter, JSONModel, MessageBox, MessageToast) {
+], function (BaseController, formatter, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
   "use strict";
 
   var SVC = "/expense";
@@ -14,7 +16,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, itemCount: 0, mileageCount: 0 }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, itemCount: 0, mileageCount: 0, stdRate: 0, currency: "GBP" }), "ui");
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
     },
 
@@ -53,6 +55,8 @@ sap.ui.define([
             var bDraft = !sStatus || sStatus === "Draft";
             oUi.setProperty("/canSubmit", bDraft);
             oUi.setProperty("/canEdit", !bEditable && bDraft);
+            oUi.setProperty("/currency", (oCtx && oCtx.getProperty("currency")) || "GBP");
+            that._loadTaxRate(oCtx && oCtx.getProperty("country"));
           }
         }
       });
@@ -60,6 +64,26 @@ sap.ui.define([
 
     _claimCtx: function () {
       return this.getView().getBindingContext();
+    },
+
+    // ---- Net / VAT live preview ---------------------------------------------
+    // Loads the standard tax rate for the claim's country (UK -> vatRate,
+    // India -> gstRate) so the items table can preview the net/VAT split as the
+    // user types the gross. The server before('SAVE') remains authoritative.
+    _loadTaxRate: function (sCountry) {
+      var oUi = this.getView().getModel("ui");
+      if (!sCountry) { oUi.setProperty("/stdRate", 0); return; }
+      var oList = this.getModel().bindList("/Policies", null, null, [
+        new Filter("country", FilterOperator.EQ, sCountry)
+      ]);
+      oList.requestContexts(0, 1).then(function (aCtx) {
+        var rate = 0;
+        if (aCtx.length) {
+          var p = aCtx[0].getObject();
+          rate = Number(sCountry === "IN" ? p.gstRate : p.vatRate) || 0;
+        }
+        oUi.setProperty("/stdRate", rate);
+      }).catch(function () { oUi.setProperty("/stdRate", 0); });
     },
 
     // ---- Inline rows --------------------------------------------------------

@@ -37,6 +37,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
             status: 'FirstApproved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
           });
           await audit.record({ userId: me, action: 'FirstApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 1 approved; awaiting level 2 (${wf.secondApprover || 'n/a'})` });
+          // Alert the configured second-level approver that it now awaits them.
+          await notification.notifyLevel1Approved(claim, wf.secondApprover);
         } else {
           await UPDATE(ExpenseClaims, ID).with({
             status: 'Approved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''

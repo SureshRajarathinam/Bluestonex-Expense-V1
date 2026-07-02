@@ -79,6 +79,8 @@
             <Column><Label text="{i18n>itReason}" required="true" /></Column>
             <Column><Label text="{i18n>itTaxType}" /></Column>
             <Column hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column hAlign="End"><Label text="{i18n>itNet}" /></Column>
+            <Column hAlign="End"><Label text="{i18n>itVat}" /></Column>
             <Column><Label text="{i18n>itAttachment}" /></Column>
             <Column hAlign="Center" width="4rem"><Text text="" /></Column>
           </columns>
@@ -97,6 +99,8 @@
                   <core:Item key="{code}" text="{description}" />
                 </Select>
                 <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="7rem" />
+                <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
+                <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center">
                   <ObjectStatus
                     icon="{= ${receiptAttached} ? 'sap-icon://document' : '' }"

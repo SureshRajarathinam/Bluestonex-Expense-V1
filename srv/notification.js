@@ -88,7 +88,7 @@ class NotificationService {
 
   // ─── Business notification methods ───────────────────────────────────────
 
-  async notifyClaimSubmitted(claim, employee) {
+  async notifyClaimSubmitted(claim, employee, firstApprover) {
     await this._sendEvent({
       eventType:    'ExpenseClaim.Submitted',
       resource: {
@@ -98,7 +98,9 @@ class NotificationService {
         tags: {
           employee:  employee.fullName,
           amount:    `£${(claim.totalGross || 0).toFixed(2)}`,
-          period:    claim.claimPeriod || ''
+          period:    claim.claimPeriod || '',
+          // First-level approver so ANS can route the alert to the right person.
+          approver:  firstApprover || ''
         }
       },
       severity: 'INFO',
@@ -106,6 +108,29 @@ class NotificationService {
       subject:  `Expense Claim ${claim.claimNumber} Submitted for Approval`,
       body:     `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
                 `for £${(claim.totalGross || 0).toFixed(2)}. Please review and approve.`
+    });
+  }
+
+  // Fired when a two-level (UK) claim clears level 1 and now awaits level 2.
+  // `nextApprover` is the configured second-level approver ANS should alert.
+  async notifyLevel1Approved(claim, nextApprover) {
+    await this._sendEvent({
+      eventType:    'ExpenseClaim.Level1Approved',
+      resource: {
+        resourceName:     claim.claimNumber,
+        resourceType:     'ExpenseClaim',
+        resourceInstance: claim.ID,
+        tags: {
+          amount:       `£${(claim.totalGross || 0).toFixed(2)}`,
+          nextApprover: nextApprover || ''
+        }
+      },
+      severity: 'INFO',
+      category: 'NOTIFICATION',
+      subject:  `Expense Claim ${claim.claimNumber} — Level 1 Approved, Awaiting Level 2`,
+      body:     `Claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} has ` +
+                `passed first-level approval and now awaits second-level approval from ` +
+                `${nextApprover || 'the configured approver'}.`
     });
   }
 

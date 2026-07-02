@@ -36,6 +36,9 @@ service ExpenseService {
   @readonly entity Countries    as projection on db.Countries;
   @readonly entity ExpenseTypes as projection on db.ExpenseTypes;
   @readonly entity VATTypes     as projection on db.VATTypes;
+  // Read-only so the UI can preview the net/VAT split live as gross is typed
+  // (server before('SAVE') stays the source of truth for saved values).
+  @readonly entity Policies     as projection on db.ExpensePolicy;
   @readonly entity Employees    as projection on db.Employees
                                    excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
 }

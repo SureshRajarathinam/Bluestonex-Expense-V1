@@ -12,7 +12,7 @@ const LOG = cds.log('expense-service');
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, Employees, ExpensePolicy } = cds.entities('com.bluestonex.expense');
+    const { ExpenseClaims, Employees, ExpensePolicy, ApprovalWorkflow } = cds.entities('com.bluestonex.expense');
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
     // Employees never type their own ID — it comes from $user (the login).
@@ -97,7 +97,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       });
 
       const employee = await SELECT.one.from(Employees).where({ email: req.user.id });
-      await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id });
+      const wf = await SELECT.one.from(ApprovalWorkflow).where({ country: claim.country });
+      await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover);
       await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total £${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);

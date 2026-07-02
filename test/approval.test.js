@@ -7,6 +7,16 @@ const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' }; // Employee only
 
+// Spy on the notification singleton's low-level sender to capture every ANS
+// event the real methods emit (ANS is unconfigured in tests, so _sendEvent is a
+// no-op we simply record). Same module instance the services use — reassigning
+// _sendEvent is visible to notifyClaimSubmitted/notifyLevel1Approved via `this`.
+const notification = require('../srv/notification');
+const NOTIFS = [];
+const _origSend = notification._sendEvent.bind(notification);
+notification._sendEvent = async (payload) => { NOTIFS.push(payload); return _origSend(payload); };
+const eventsFor = (id, type) => NOTIFS.filter((e) => e.resource?.resourceInstance === id && e.eventType === type);
+
 let baseURL;
 cds.on('listening', (o) => { baseURL = (o.url || o); });
 const t = cds.test(process.cwd());
@@ -139,6 +149,44 @@ test('History: shows non-draft claims (incl. approved/rejected), excludes drafts
   assert.ok(!h2.data.value.some((r) => r.ID === dft.data.ID), 'draft excluded from history');
   // employee-only blocked
   assert.equal((await GET('/approval/ClaimHistory', { auth: CLERK })).status, 403, 'employee blocked from history');
+});
+
+test('UK level-1 approval fires a notification to the second-level approver', async () => {
+  const id = await submitUK();
+  const before = NOTIFS.length;
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
+  const evts = eventsFor(id, 'ExpenseClaim.Level1Approved');
+  assert.equal(evts.length, 1, 'exactly one Level1Approved event should fire for a UK claim');
+  // The payload must carry the configured second-level approver so ANS can route it.
+  assert.ok(JSON.stringify(evts[0]).includes('Dan.Barton@bluestonex.com'),
+    'the event should reference the UK second-level approver');
+  assert.ok(NOTIFS.length > before, 'a notification was recorded');
+});
+
+test('India single-level approval does NOT fire a second-approver notification', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(ok.status < 400, `IN approve ${ok.status}`);
+  assert.equal(eventsFor(id, 'ExpenseClaim.Level1Approved').length, 0,
+    'India (single-level) approval must not fire a Level1Approved event');
+});
+
+test('server computes item net/VAT split on save (UK 20%: gross 120 → net 100, VAT 20)', async () => {
+  // Regression guard: the my-expenses UI shows a client-side net/VAT preview, but
+  // before('SAVE') stays the source of truth for the persisted values.
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const items = await GET(`/expense/MyClaims${active(id)}/items`, { auth: EMP });
+  const it = items.data.value[0];
+  assert.equal(Number(it.netAmount), 100, 'net should be gross / 1.20');
+  assert.equal(Number(it.vatAmount), 20, 'VAT should be gross - net');
 });
 
 test('PDF export: approver gets a PDF (base64), employee-only is 403', async () => {
