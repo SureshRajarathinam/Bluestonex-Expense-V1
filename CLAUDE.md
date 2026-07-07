@@ -10,13 +10,14 @@ Supports **UK and India** employees with country-aware tax and approval routing.
 ```bash
 npm install        # install deps
 cds watch          # run locally (in-memory SQLite + seed data), serves both services
-npm test           # node --test — 28/28 must stay green after any change
+npm test           # node --test — 38/38 must stay green after any change
 mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 ```
 
 ## Apps & services (2 services, 2 freestyle apps)
 - `/expense`  → `ExpenseService`  (Employee, draft, submit) → app **`my-expenses`** (`com.bluestonex.expense.myexpenses`)
   - List of own claims → **Create** opens a country dialog (UK/India) → single-page claim detail with **inline** expense-item + mileage tables (Add/Delete rows on the same screen, no sub-page) + per-item receipt upload → Save (draftActivate) / Apply for Approval (submitClaim).
+  - Items table shows a **live Net + Tax preview** next to Gross: derived client-side via `formatter.netPreview/vatPreview` from the country's rate (read-only `Policies` projection), mirroring `calc.js splitVAT`. Preview only — `before('SAVE')` stays authoritative. (Formatters must NOT use `this` — a `.formatter.x` XML ref is bound to the controller, not the module.)
 - `/approval` → `ApprovalService` (merged) → app **`approval`** (`com.bluestonex.expense.approval`), one app with a **3-tab IconTabBar**:
   - **Approvals** (entitySet `Approvals`, role **Approver**) — review dialog + approve/reject
   - **Policy Configuration** (entitySet `Policies`, role **Admin**, draft) — VAT/GST/limits
@@ -31,10 +32,12 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
   - **India = 1-level**: `Submitted → Approved`
   - (+ `Draft`, `Rejected`). No "Settled" step.
 - `approve`/`reject` actions verify the caller **is the configured approver** for that level+country (403 otherwise) — routing is per-person, not per-role.
+- **Approver email alerts** (`srv/lib/mailer.js`, called from `notification.js`): submit → email the country's first-level approver; UK `Submitted→FirstApproved` → email the second-level approver; India single-level fires no second email. SMTP from a bound `expense-mail` service or `SMTP_*` env; **`MAIL_DEV=true`** uses a throwaway Ethereal inbox and logs a preview URL; with none configured it's a logged no-op. `sendMail` never throws (can't break approve/submit). ANS event emission is kept alongside.
 
 ## Key files
 - `db/schema.cds` — entities incl. `Countries`, `ApprovalWorkflow`; claim has `country` + generic `level1*/level2*/rejected*` trail.
-- `srv/lib/calc.js` (`taxRateFor`, `splitVAT(gross, taxType, rate)`), `validate.js` (10 rules), `load-claim.js`, `audit.js`.
+- `srv/lib/calc.js` (`taxRateFor`, `splitVAT(gross, taxType, rate)`), `validate.js` (10 rules), `load-claim.js`, `audit.js`, `mailer.js` (SMTP/nodemailer approver emails). `srv/notification.js` = ANS events + mailer calls.
+- `srv/expense-service.cds` exposes a read-only `Policies` projection so the my-expenses UI can read the country tax rate for the Net/Tax preview.
 - `app/<app>/webapp/` — freestyle: `index.html` (ComponentContainer), `Component.js` (extends `UIComponent`), `manifest.json` (V4 model + rootView), `view/*.xml`, `controller/*.js` (BaseController has a `callAction` wrapper), `model/formatter.js`, `css/style.css`, `i18n/`.
 - There is **no `app/services.cds`** and no per-app `annotations.cds` — freestyle needs no UI annotations in `$metadata`.
 
@@ -45,7 +48,7 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 - Receipt upload = manual media `PUT /expense/MyClaimItems(ID=..,IsActiveEntity=..)/receipt` with an `x-csrf-token` (fetch `HEAD` first).
 - Bound-action key (backend): `req.params[0]` is `{ID}` for draft entities, a raw scalar for non-draft — normalise via `idOf()`.
 - VAT/totals computed in `before('SAVE')` (draft requirement), NOT per-item handlers. UI sends only `country`, `claimPeriod`, item/mileage inputs — all money math is server-side.
-- After any change: `npm test` (28/28) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
+- After any change: `npm test` (38/38) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)
 **The username is the FULL EMAIL** (`…@bluestonex.com`), not the shorthand — logging in with just `sab` authenticates as a **role-less** user and every `/expense` call 403s. Format below is `username` / `password`:

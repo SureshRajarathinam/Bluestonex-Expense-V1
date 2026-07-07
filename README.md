@@ -2,8 +2,8 @@
 
 A modern, end-to-end **Expense Reimbursement System** built on **SAP Cloud Application Programming Model (CAP)** with **SAP Fiori** front-ends, designed to run on **SAP BTP**.
 
-> **Stack:** SAP CAP (Node.js) · OData V4 · **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell) · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service
-> **Status:** **UK & India** support · **2 freestyle SAPUI5 apps** (My Expenses, Approval) · 2 OData services · **28/28 automated tests passing** (`npm test`)
+> **Stack:** SAP CAP (Node.js) · OData V4 · **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell) · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service · SMTP mailer (nodemailer) for approver emails
+> **Status:** **UK & India** support · **2 freestyle SAPUI5 apps** (My Expenses, Approval) · 2 OData services · **38/38 automated tests passing** (`npm test`)
 
 ---
 
@@ -25,13 +25,13 @@ This project replaces that with a digital, policy-enforced, fully auditable work
 
 A simplified **two-area** landscape supporting **UK and India** employees, backed by **two** CAP OData V4 services:
 
-- **My Expenses** (`/expense`) — employees pick **UK or India** on Create, enter **multiple items inline** on one page with **per-item attachments**, and *Apply* (submit). Tax is **VAT (UK)** or **GST (India)** from config.
-- **Approval area** (`/approval`) — three Fiori Elements apps on one service:
+- **My Expenses** (`/expense`) — employees pick **UK or India** on Create, enter **multiple items inline** on one page with **per-item attachments** and a **live Net/Tax preview** next to each Gross, and *Apply* (submit). Tax is **VAT (UK)** or **GST (India)** from config.
+- **Approval area** (`/approval`) — one freestyle SAPUI5 app with a **3-tab IconTabBar** on one service:
   - **Approvals** (Approver) — approve/reject pending claims.
   - **Policy Configuration** (Admin) — VAT/GST rates, mileage rate, limits, receipt threshold.
   - **Approval Workflow Members** (Admin) — the approvers per country.
 
-Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India = single-level** (L1). Policy is enforced centrally (10 business rules), receipts are mandatory above a configurable threshold, and every state change is written to an audit log.
+Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India = single-level** (L1). Each approval hop **emails the configured approver** (submit → L1; UK L1-approve → L2). Policy is enforced centrally (10 business rules), receipts are mandatory above a configurable threshold, and every state change is written to an audit log.
 
 ---
 
@@ -41,18 +41,18 @@ Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India 
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        SAP BTP Launchpad (FLP)                         │
 │                                                                        │
-│  My Expenses        Approvals      Policy Config    Workflow Members   │
-│  (Fiori Elements)   (Fiori El.)    (Fiori El.)      (Fiori Elements)   │
-│  Employee           Approver       Admin            Admin              │
-└─────┬───────────────────┴──────────────┴───────────────┴──────────────┘
+│   My Expenses (freestyle)          Approval (freestyle, 3-tab)         │
+│   Employee                         Approvals · Policy · Workflow       │
+│                                    Approver + Admin                    │
+└─────┬───────────────────────────────────────┬─────────────────────────┘
       │ /expense                    │ /approval
 ┌─────▼─────────────────┐  ┌────────▼───────────────────────────────────┐
 │   ExpenseService      │  │           ApprovalService                   │
 │   draft · submit      │  │  Approvals (approve/reject, country routing) │
 │   country-aware tax   │  │  Policies · WorkflowMembers · AuditLogs      │
 └───────────┬───────────┘  └───────────────────┬─────────────────────────┘
-            └─── shared libs: calc · validate · load-claim · audit ───┘
-                    notification → BTP Alert Notification Service
+            └─── shared libs: calc · validate · load-claim · audit · mailer ───┘
+              notification → BTP Alert Notification Service + SMTP mailer (approvers)
                                   │ CDS model (db/schema.cds)
                     ┌─────────────▼──────────────┐
                     │  SQLite (dev) / HANA (prod) │
@@ -175,12 +175,14 @@ One freestyle SAPUI5 app with a 3-tab `IconTabBar`:
 ├── srv/
 │   ├── expense-service.{cds,js}    # Employee service (/expense) — draft, country tax, submit
 │   ├── approval-service.{cds,js}   # Merged service  (/approval) — approve/reject, policy, workflow, audit
-│   ├── notification.js             # BTP Alert Notification Service integration
+│   ├── notification.js             # ANS events + approver email dispatch (via mailer)
 │   └── lib/
 │       ├── calc.js                 # taxRateFor, VAT/GST split, mileage, totals (pure)
 │       ├── validate.js             # All 10 business rules (pure)
 │       ├── load-claim.js           # Validation context loader
-│       └── audit.js                # Audit-log writer
+│       ├── audit.js                # Audit-log writer
+│       ├── mailer.js               # SMTP approver emails (nodemailer; MAIL_DEV/expense-mail/SMTP_*)
+│       └── pdf.js                  # Server-side PDF export (pdfkit)
 ├── app/
 │   ├── my-expenses/                # Freestyle SAPUI5 (Employee) — country + inline items
 │   │   ├── webapp/                 #   index.html, Component.js, manifest.json,
@@ -235,16 +237,16 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 ## 13. Testing
 
 ```bash
-npm test           # node --test  → 28/28 passing
+npm test           # node --test  → 38/38 passing
 ```
 
 | Suite | Covers |
 |---|---|
 | `lifecycle.test.js` | Country-aware tax (VAT vs GST), **UK 2-level** + **India 1-level** flows, country-mandatory guard, receipt-missing block (422), empty-claim block (422), mileage-only success |
 | `validate.test.js` | Each of the 10 business rules in isolation (success + violation) |
-| `approval.test.js` | Approver-identity routing (403 for wrong/non-configured/wrong-level approver), reject-needs-reason, RBAC (403), policy draft-edit + audit, workflow members, double-approve (409), rejected leaves queue (404) |
+| `approval.test.js` | Approver-identity routing (403 for wrong/non-configured/wrong-level approver), reject-needs-reason, RBAC (403), policy draft-edit + audit, workflow members, double-approve (409), rejected leaves queue (404), history + PDF export, **level-1-approval notification + per-approver email** (submit→L1, UK L1-approve→L2, India single approver, no second email), server net/VAT split |
 
-All flows are tested for **success and error** paths (422 on missing receipt / future date / over-limit / no country, 403 on wrong role or wrong approver).
+All flows are tested for **success and error** paths (422 on missing receipt / future date / over-limit / no country, 403 on wrong role or wrong approver). Email is asserted by spying the notification/mailer singletons — no real SMTP is hit.
 
 ---
 
@@ -257,9 +259,11 @@ cf deploy mta_archives/*.mtar   # deploys srv + HANA + XSUAA + ANS + HTML5 repo 
 ```
 
 Post-deploy:
-1. **XSUAA** — assign the role collections (`Expense_Employee/Approver/Admin`) to users.
-2. **Alert Notification Service** — in BTP Cockpit, create Conditions (by `eventType`, e.g. `ExpenseClaim.Submitted`) + Email Actions + Subscriptions. The backend fires events automatically; ANS routes the emails.
-3. **Launchpad** — register the HTML5 content provider; group the **Approvals / Policy Configuration / Approval Workflow Members** tiles together (e.g. under *Expense Approval*).
+1. **XSUAA** — assign the role collections (`Expense_Employee/Approver/Admin`) to users. (A 403 in production usually means the role collection isn't assigned.)
+2. **Approver emails (SMTP)** — create the optional user-provided SMTP service so approval alerts are delivered to the configured approver:
+   `cf cups expense-mail -p '{"host":"...","port":587,"user":"...","pass":"...","from":"noreply@bluestonex.com","secure":false}'` then redeploy. It's an **optional** binding — deploy succeeds without it and the mailer no-ops. Locally, run `MAIL_DEV=true cds watch` to preview emails via an Ethereal test inbox (a preview URL is logged).
+3. **Alert Notification Service** — optionally, in BTP Cockpit create Conditions (by `eventType`, e.g. `ExpenseClaim.Submitted`) + Email Actions + Subscriptions for broadcast/ops-style alerts. The backend fires ANS events alongside the targeted mailer.
+4. **Launchpad** — register the HTML5 content provider; group the **Approvals / Policy Configuration / Approval Workflow Members** tiles together (e.g. under *Expense Approval*).
 
 `mta.yaml` already declares all modules/resources (CAP service, HANA HDI, XSUAA, ANS, HTML5 host/runtime, destination, approuter, launchpad).
 
@@ -270,7 +274,7 @@ Post-deploy:
 - **@sap/cds** 8 · **Node.js** 18+ · **OData V4**
 - **Freestyle SAPUI5** 1.120+ (XML views + JS controllers, `sap.tnt.ToolPage` shell) · **Horizon** theme + BluestoneX custom CSS
 - **SQLite** (`@cap-js/sqlite`) for dev · **SAP HANA Cloud** for production
-- **XSUAA** for auth · **BTP Alert Notification Service** for email notifications
+- **XSUAA** for auth · **BTP Alert Notification Service** (events) + **SMTP mailer** (`nodemailer`, targeted approver emails)
 
 ---
 
@@ -279,8 +283,11 @@ Post-deploy:
 - **Initial build** — CAP project: data model, services, Fiori apps, MTA descriptor.
 - **3-service split & front-end fixes** — role-based services; `Component.js` + FLP-sandbox bootstrap; app annotations in served metadata (fixed blank screens).
 - **Business logic** — totals/tax on `SAVE`, all 10 business-rule validations, per-item receipt upload, *Apply for Approval*, audit logging.
-- **UK + India restructure (current)** — consolidated to **2 services / 4 Fiori Elements apps**; added **country** (UK/IN) on Create with **VAT vs GST** tax; **country-driven approval** (UK two-level, India single-level) via configurable **Approval Workflow Members**; merged Finance + Approver + Admin into the **Approval** area (Approvals · Policy Configuration · Workflow Members); inline multi-item entry on My Expenses; roles simplified to **Employee / Approver / Admin**.
+- **UK + India restructure** — consolidated to **2 services**; added **country** (UK/IN) on Create with **VAT vs GST** tax; **country-driven approval** (UK two-level, India single-level) via configurable **Approval Workflow Members**; merged Finance + Approver + Admin into the **Approval** area (Approvals · Policy Configuration · Workflow Members); inline multi-item entry on My Expenses; roles simplified to **Employee / Approver / Admin**.
+- **Freestyle rewrite** — both front-ends rebuilt as **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell, standard `ComponentContainer`); the four Fiori Elements apps became **two freestyle apps** (My Expenses + a 3-tab Approval app); per-country policies; History tab + server-side PDF export.
+- **Live Net/Tax preview** — my-expenses items show a client-derived Net + Tax preview next to Gross (read-only `Policies` projection; `before('SAVE')` remains authoritative).
+- **Approver email alerts** — `srv/lib/mailer.js` sends targeted emails to the configured approver (submit→L1, UK L1-approve→L2) via SMTP/`nodemailer`, with a zero-setup `MAIL_DEV` mode and an optional `expense-mail` binding; India L1 approver set to `yuvaraj.kumar@bluestonex.com`.
 
 ---
 
-*Living documentation. Backend logic and all flows are covered by `npm test` (28/28). Fiori UI rendering should be verified in a browser against `cds watch`.*
+*Living documentation. Backend logic and all flows are covered by `npm test` (38/38). Fiori UI rendering should be verified in a browser against `cds watch`.*
