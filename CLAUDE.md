@@ -48,7 +48,13 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 - After any change: `npm test` (28/28) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)
-`sab`/`sab` · `manager`/`mgr` (UK L1) · `Dan.Barton`/`dan` (UK L2) · `yuvaraj.kumar`/`yuvaraj` (IN L1) · `clerk`/`clerk` (employee-only) · `priya.sharma`/`priya` (India employee)
+**The username is the FULL EMAIL** (`…@bluestonex.com`), not the shorthand — logging in with just `sab` authenticates as a **role-less** user and every `/expense` call 403s. Format below is `username` / `password`:
+- `sabarinathan.chandrasekar@bluestonex.com` / `sab`
+- `manager@bluestonex.com` / `mgr` (UK L1)
+- `Dan.Barton@bluestonex.com` / `dan` (UK L2)
+- `yuvaraj.kumar@bluestonex.com` / `yuvaraj` (IN L1)
+- `clerk@bluestonex.com` / `clerk` (employee-only)
+- `priya.sharma@bluestonex.com` / `priya` (India employee)
 
 ## Repo
 https://github.com/SureshRajarathinam/Bluestonex-Expense-V1
