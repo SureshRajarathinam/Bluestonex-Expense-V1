@@ -9,7 +9,12 @@ using EXP as db from '../db/schema';
 service ExpenseService {
 
   @odata.draft.enabled
-  @restrict: [{ grant: '*', to: 'Employee', where: 'employeeEmail = $user' }]
+  // Ownership = the user who created the claim (managed `createdBy` = $user on
+  // insert). Using createdBy — not the employee association — means any
+  // authenticated Employee owns the claims they create even if they are not a
+  // pre-seeded EMPLOYEES row (otherwise employeeEmail is null → own claim reads
+  // 404 and submitClaim 403).
+  @restrict: [{ grant: '*', to: 'Employee', where: 'createdBy = $user' }]
   entity MyClaims as projection on db.CLAIMS {
     *,
     employee.fullName       as employeeName   : String,
@@ -31,11 +36,12 @@ service ExpenseService {
   };
 
   // Own-rows only: these child sets are reachable directly (e.g. the receipt
-  // media PUT), so they carry the same per-employee filter as MyClaims —
-  // otherwise the row-level security on the header is bypassable (fix D10).
-  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.employee.email = $user' }]
+  // media PUT), so they carry the same ownership filter as MyClaims (by the
+  // parent claim's creator) — otherwise the row-level security on the header is
+  // bypassable (fix D10).
+  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.createdBy = $user' }]
   entity MyClaimItems    as projection on db.ITEMS;
-  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.employee.email = $user' }]
+  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.createdBy = $user' }]
   entity MyMileageClaims as projection on db.MILEAGE;
 
   @readonly entity Countries    as projection on db.COUNTRIES;

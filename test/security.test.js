@@ -79,6 +79,25 @@ test('AUTHZ: PDF export blocked for employee-only user (403), allowed for approv
   assert.ok((await GET(url, { auth: MGR })).status < 400);
 });
 
+// ═══ PART B2 — ownership by creator (works for non-seeded users) ══════════════
+// Regression for the "Apply for Approval → 403 Forbidden" bug: a user with the
+// Employee role who is NOT a pre-seeded EMPLOYEES row (e.g. clerk, or a BAS/BTP
+// identity) must still be able to READ and SUBMIT the claims they create.
+// Ownership is keyed on managed `createdBy = $user`, not the employee assoc.
+test('OWNERSHIP: a non-seeded Employee can create, read and submit their own claim', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: CLERK });
+  assert.equal(c.status, 201, `create should succeed, got ${c.status}`);
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: CLERK });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: CLERK });
+  // must be able to READ own active claim (was 404 before the createdBy fix)
+  const read = await GET(`/expense/MyClaims${active(id)}`, { auth: CLERK });
+  assert.equal(read.status, 200, `owner must read own active claim, got ${read.status}`);
+  // must be able to SUBMIT own claim (was 403 Forbidden before the fix)
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: CLERK });
+  assert.ok(s.status < 400, `owner must submit own claim, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
+});
+
 // ═══ PART C — row-level scoping on MyClaims (own data only) ════════════════════
 test('ROW-LEVEL: an employee cannot read another employee\'s claim by key (filtered → 404)', async () => {
   const id = await empClaimWithItem('sab-only');
