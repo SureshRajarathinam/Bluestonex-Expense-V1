@@ -1,36 +1,36 @@
-namespace com.bluestonex.expense;
+namespace EXP;
 
 using { managed, cuid } from '@sap/cds/common';
 
 // ─── Code Lists ─────────────────────────────────────────────────────────────
 
-entity ExpenseTypes {
+entity EXPENSE_TYPES {
   key code            : String(20);
       description     : String(100);
       requiresReceipt : Boolean default false;
 }
 
-entity VATTypes {
+entity VAT_TYPES {
   key code        : String(10);
       description : String(50);
       rate        : Decimal(5, 4);
 }
 
 // Business roles assignable to employees (governance; auth is enforced via XSUAA)
-entity Roles {
+entity ROLES {
   key code        : String(20);
       description : String(100);
 }
 
 // Countries the solution supports — drives tax (VAT/GST) and approval routing
-entity Countries {
+entity COUNTRIES {
   key code        : String(2);   // UK | IN
       description : String(50);
 }
 
 // ─── Master Data ─────────────────────────────────────────────────────────────
 
-entity Employees : managed {
+entity EMPLOYEES : managed {
   key ID             : UUID;
       employeeNumber : String(20) @mandatory;
       fullName       : String(100) @mandatory;
@@ -40,13 +40,13 @@ entity Employees : managed {
       payrollArea    : String(50);
       role           : String(20) default 'Employee';  // Employee | Manager | Finance | Admin
       active         : Boolean default true;
-      manager        : Association to Employees;
+      manager        : Association to EMPLOYEES;
       financeEmail   : String(255) default 'Dan.Barton@bluestonex.com';
 }
 
 // One policy row PER COUNTRY (UK | IN) — each country has its own rate and limits.
 @assert.unique.country: [country]
-entity ExpensePolicy : managed {
+entity POLICY : managed {
   key ID              : UUID;
       country         : String(2);   // UK | IN — the country this policy applies to
       policyName      : String(100);
@@ -61,7 +61,7 @@ entity ExpensePolicy : managed {
 }
 
 // Approval workflow members per country: UK = 2 levels, India = 1 level
-entity ApprovalWorkflow : managed {
+entity WORKFLOW : managed {
   key country        : String(2);    // UK | IN
       countryName    : String(50);
       firstApprover  : String(255);  // email of level-1 approver
@@ -70,10 +70,10 @@ entity ApprovalWorkflow : managed {
 
 // ─── Transactional ───────────────────────────────────────────────────────────
 
-entity ExpenseClaims : managed {
+entity CLAIMS : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
-      employee            : Association to Employees;  // auto-set from logged-in user
+      employee            : Association to EMPLOYEES;  // auto-set from logged-in user
       country             : String(2);                 // UK | IN — set on Create; drives tax + routing
       payrollArea         : String(50);
       claimPeriod         : Date @mandatory;   // period start (Excel: Date Start)
@@ -99,17 +99,17 @@ entity ExpenseClaims : managed {
       rejectedBy          : String(255);
       rejectionReason     : String(500);
 
-      items               : Composition of many ExpenseItems
+      items               : Composition of many ITEMS
                               on items.claim = $self;
-      mileageClaims       : Composition of many MileageClaims
+      mileageClaims       : Composition of many MILEAGE
                               on mileageClaims.claim = $self;
 }
 
-entity ExpenseItems : managed {
+entity ITEMS : managed {
   key ID              : UUID;
-      claim           : Association to ExpenseClaims;
+      claim           : Association to CLAIMS;
       expenseDate     : Date @mandatory;
-      expenseType     : Association to ExpenseTypes @mandatory;
+      expenseType     : Association to EXPENSE_TYPES @mandatory;
       destination     : String(255);
       reasonForTrip   : String(500) @mandatory;
       vatType         : String(10) default 'STD';  // STD | ZR | EX
@@ -125,9 +125,9 @@ entity ExpenseItems : managed {
       receipt         : LargeBinary;
 }
 
-entity MileageClaims : managed {
+entity MILEAGE : managed {
   key ID            : UUID;
-      claim         : Association to ExpenseClaims;
+      claim         : Association to CLAIMS;
       tripDate      : Date @mandatory;
       destination   : String(255) @mandatory;
       reasonForTrip : String(500) @mandatory;
@@ -139,7 +139,7 @@ entity MileageClaims : managed {
 
 // ─── Governance: immutable audit trail ───────────────────────────────────────
 
-entity AuditLog {
+entity AUDITLOG {
   key ID          : UUID;
       timestamp   : DateTime;
       userId      : String(255);
@@ -151,7 +151,7 @@ entity AuditLog {
 
 // ─── Field labels & value helps (propagate to all service projections) ───────
 
-annotate ExpenseClaims with {
+annotate CLAIMS with {
   claimNumber       @title: 'Claim Number';
   country           @title: 'Country';
   claimPeriod       @title: 'Claim Period';
@@ -172,7 +172,7 @@ annotate ExpenseClaims with {
   rejectionReason   @title: 'Rejection Reason';
 }
 
-annotate ExpenseItems with {
+annotate ITEMS with {
   expenseDate     @title: 'Date';
   destination     @title: 'Destination';
   reasonForTrip   @title: 'Reason for Trip';
@@ -195,7 +195,7 @@ annotate ExpenseItems with {
                   @Core.ContentDisposition.Type    : 'inline';
 }
 
-annotate MileageClaims with {
+annotate MILEAGE with {
   tripDate      @title: 'Trip Date';
   destination   @title: 'Destination';
   reasonForTrip @title: 'Reason for Trip';

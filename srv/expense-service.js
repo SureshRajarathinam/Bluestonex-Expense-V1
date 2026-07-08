@@ -12,14 +12,14 @@ const LOG = cds.log('expense-service');
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, Employees, ExpensePolicy, ApprovalWorkflow } = cds.entities('com.bluestonex.expense');
+    const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW } = cds.entities('EXP');
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
     // Employees never type their own ID — it comes from $user (the login).
     const applyDefaults = async (req) => {
       req.data.status   = req.data.status || 'Draft';
       req.data.currency = req.data.currency || 'GBP';
-      const emp = await SELECT.one.from(Employees).where({ email: req.user?.id });
+      const emp = await SELECT.one.from(EMPLOYEES).where({ email: req.user?.id });
       if (!req.data.employee_ID && emp) {
         req.data.employee_ID = emp.ID;
         if (!req.data.payrollArea) req.data.payrollArea = emp.payrollArea;
@@ -39,7 +39,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       // Fallback: ensure the employee is set even if NEW didn't run
       if (!claim.employee_ID && req.user?.id) {
-        const emp = await SELECT.one.from(Employees).where({ email: req.user.id });
+        const emp = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
         if (emp) {
           claim.employee_ID = emp.ID;
           if (!claim.payrollArea) claim.payrollArea = emp.payrollArea;
@@ -48,7 +48,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       if (!claim.claimNumber) {
         const year = new Date().getFullYear();
-        const rows = await SELECT.from(ExpenseClaims).columns('claimNumber');
+        const rows = await SELECT.from(CLAIMS).columns('claimNumber');
         claim.claimNumber = `EXP-${year}-${String(rows.length + 1).padStart(4, '0')}`;
       }
 
@@ -56,7 +56,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const country = claim.country || 'UK';
       claim.currency = country === 'IN' ? 'INR' : 'GBP';
       // Per-country policy: load the row for this claim's country (UK | IN).
-      const policy = await SELECT.one.from(ExpensePolicy).where({ country });
+      const policy = await SELECT.one.from(POLICY).where({ country });
       const stdRate = taxRateFor(country, policy || {});
 
       for (const item of claim.items || []) {
@@ -75,7 +75,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.on('submitClaim', 'MyClaims', async (req) => {
       const p = req.params[0];
       const ID = p && typeof p === 'object' ? p.ID : p;
-      const claim = await SELECT.one.from(ExpenseClaims, ID);
+      const claim = await SELECT.one.from(CLAIMS, ID);
 
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (claim.status !== 'Draft')
@@ -91,18 +91,18 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       // Rule 7 — non-blocking warnings (e.g. possible duplicates)
       warnings.forEach((w) => req.warn(w));
 
-      await UPDATE(ExpenseClaims, ID).with({
+      await UPDATE(CLAIMS, ID).with({
         status: 'Submitted',
         submittedAt: new Date().toISOString()
       });
 
-      const employee = await SELECT.one.from(Employees).where({ email: req.user.id });
-      const wf = await SELECT.one.from(ApprovalWorkflow).where({ country: claim.country });
+      const employee = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
+      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover);
       await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total £${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);
-      return SELECT.one.from(ExpenseClaims, ID);
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     await super.init();

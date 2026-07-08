@@ -13,16 +13,16 @@ const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'objec
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, ApprovalWorkflow } = cds.entities('com.bluestonex.expense');
+    const { CLAIMS, WORKFLOW } = cds.entities('EXP');
 
     // ─── Action: approve (country-aware: UK 2-level, India 1-level) ──────────
     this.on('approve', 'Approvals', async (req) => {
       const ID = idOf(req);
       const { comment } = req.data;
-      const claim = await SELECT.one.from(ExpenseClaims, ID);
+      const claim = await SELECT.one.from(CLAIMS, ID);
       if (!claim) return req.error(404, 'Expense claim not found.');
 
-      const wf = await SELECT.one.from(ApprovalWorkflow).where({ country: claim.country });
+      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       if (!wf) return req.error(422, `No approval workflow is configured for ${claim.country}.`);
 
       const me = req.user.id;
@@ -33,14 +33,14 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           return req.error(403, `You are not the first-level approver for ${claim.country}.`);
 
         if (claim.country === 'UK') {
-          await UPDATE(ExpenseClaims, ID).with({
+          await UPDATE(CLAIMS, ID).with({
             status: 'FirstApproved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
           });
           await audit.record({ userId: me, action: 'FirstApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 1 approved; awaiting level 2 (${wf.secondApprover || 'n/a'})` });
           // Alert the configured second-level approver that it now awaits them.
           await notification.notifyLevel1Approved(claim, wf.secondApprover);
         } else {
-          await UPDATE(ExpenseClaims, ID).with({
+          await UPDATE(CLAIMS, ID).with({
             status: 'Approved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
           });
           await audit.record({ userId: me, action: 'Approved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Single-level (India) approval complete` });
@@ -48,7 +48,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       } else if (claim.status === 'FirstApproved') {
         if (me !== wf.secondApprover)
           return req.error(403, `You are not the second-level approver for ${claim.country}.`);
-        await UPDATE(ExpenseClaims, ID).with({
+        await UPDATE(CLAIMS, ID).with({
           status: 'Approved', level2ApprovedBy: me, level2ApprovedAt: now, level2Comment: comment || ''
         });
         await audit.record({ userId: me, action: 'Approved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 2 approval complete` });
@@ -57,7 +57,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       }
 
       LOG.info(`Claim ${claim.claimNumber} approved by ${me}`);
-      return SELECT.one.from(ExpenseClaims, ID);
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     // ─── Action: reject ─────────────────────────────────────────────────────
@@ -66,24 +66,24 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const { comment } = req.data;
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');
 
-      const claim = await SELECT.one.from(ExpenseClaims, ID);
+      const claim = await SELECT.one.from(CLAIMS, ID);
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (!['Submitted', 'FirstApproved'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be rejected (status '${claim.status}').`);
 
-      const wf = await SELECT.one.from(ApprovalWorkflow).where({ country: claim.country });
+      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       const me = req.user.id;
       const allowed =
         (claim.status === 'Submitted' && me === wf?.firstApprover) ||
         (claim.status === 'FirstApproved' && me === wf?.secondApprover);
       if (!allowed) return req.error(403, 'You are not the assigned approver for this claim.');
 
-      await UPDATE(ExpenseClaims, ID).with({ status: 'Rejected', rejectedBy: me, rejectionReason: comment });
+      await UPDATE(CLAIMS, ID).with({ status: 'Rejected', rejectedBy: me, rejectionReason: comment });
       await notification.notifyRejected(claim, me, comment);
       await audit.record({ userId: me, action: 'Rejected', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
 
       LOG.info(`Claim ${claim.claimNumber} rejected by ${me}`);
-      return SELECT.one.from(ExpenseClaims, ID);
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     // ─── Policy Configuration: validate + audit (draft SAVE) ────────────────
@@ -129,7 +129,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const d = req.data || {};
       const scope = d.scope === 'history' ? 'history' : 'approvals';
 
-      let rows = await SELECT.from(ExpenseClaims)
+      let rows = await SELECT.from(CLAIMS)
         .columns((c) => { c('*'); c.employee((e) => { e('fullName'); }); })
         .orderBy('submittedAt desc');
 

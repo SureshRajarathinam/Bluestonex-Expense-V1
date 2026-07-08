@@ -1,4 +1,4 @@
-using com.bluestonex.expense as db from '../db/schema';
+using EXP as db from '../db/schema';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ApprovalService — merged Approvals + Policy Config + Workflow Members
@@ -10,7 +10,7 @@ service ApprovalService {
 
   // ── Approvals queue: claims awaiting a decision ─────────────────────────────
   @restrict: [{ grant: ['READ', 'approve', 'reject'], to: 'Approver' }]
-  entity Approvals as select from db.ExpenseClaims {
+  entity Approvals as select from db.CLAIMS {
     *,
     employee.fullName       as employeeName   : String,
     employee.employeeNumber as employeeNumber : String,
@@ -42,15 +42,15 @@ service ApprovalService {
     action reject(comment : String(500)) returns Approvals;
   };
 
-  @readonly entity ApprovalItems   as projection on db.ExpenseItems;
-  @readonly entity ApprovalMileage as projection on db.MileageClaims;
+  @readonly entity ApprovalItems   as projection on db.ITEMS;
+  @readonly entity ApprovalMileage as projection on db.MILEAGE;
 
   // ── History: every non-draft claim (org-wide), read-only ────────────────────
   // Not a redirection target — keep Approvals as the target for items/mileage assocs.
   @cds.redirection.target: false
   @readonly
   @restrict: [{ grant: 'READ', to: 'Approver' }, { grant: 'READ', to: 'Admin' }]
-  entity ClaimHistory as select from db.ExpenseClaims {
+  entity ClaimHistory as select from db.CLAIMS {
     *,
     employee.fullName       as employeeName   : String,
     employee.employeeNumber as employeeNumber : String,
@@ -80,24 +80,24 @@ service ApprovalService {
   // ── Policy Configuration (Admin) — draft-enabled for Fiori Elements edit ───
   @odata.draft.enabled
   @restrict: [{ grant: '*', to: 'Admin' }]
-  entity Policies as projection on db.ExpensePolicy;
+  entity Policies as projection on db.POLICY;
 
   // ── Approval Workflow Members (Admin) — draft-enabled for FE edit ──────────
   @odata.draft.enabled
   @restrict: [{ grant: '*', to: 'Admin' }]
-  entity WorkflowMembers as projection on db.ApprovalWorkflow;
+  entity WorkflowMembers as projection on db.WORKFLOW;
 
   // ── Audit log (read-only) ──────────────────────────────────────────────────
   @readonly
   @restrict: [{ grant: 'READ', to: 'Admin' }]
-  entity AuditLogs as projection on db.AuditLog order by timestamp desc;
+  entity AuditLogs as projection on db.AUDITLOG order by timestamp desc;
 
   // ── Value helps ─────────────────────────────────────────────────────────────
-  @readonly entity Countries    as projection on db.Countries;
-  @readonly entity ExpenseTypes as projection on db.ExpenseTypes;
-  @readonly entity VATTypes     as projection on db.VATTypes;
-  @readonly entity Roles        as projection on db.Roles;
-  @readonly entity Employees    as projection on db.Employees
+  @readonly entity Countries    as projection on db.COUNTRIES;
+  @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
+  @readonly entity VATTypes     as projection on db.VAT_TYPES;
+  @readonly entity Roles        as projection on db.ROLES;
+  @readonly entity Employees    as projection on db.EMPLOYEES
                                    excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
 }
 

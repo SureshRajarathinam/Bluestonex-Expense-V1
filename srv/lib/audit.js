@@ -7,8 +7,8 @@ const LOG = cds.log('audit');
 // business flow if logging itself fails.
 async function record({ userId, action, objectType, objectKey, details }) {
   try {
-    const { AuditLog } = cds.entities('com.bluestonex.expense');
-    await INSERT.into(AuditLog).entries({
+    const { AUDITLOG } = cds.entities('EXP');
+    await INSERT.into(AUDITLOG).entries({
       ID: cds.utils.uuid(),
       timestamp: new Date().toISOString(),
       userId: userId || 'system',

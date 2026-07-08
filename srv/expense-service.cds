@@ -1,4 +1,4 @@
-using com.bluestonex.expense as db from '../db/schema';
+using EXP as db from '../db/schema';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ExpenseService — Employee app (My Expenses)
@@ -10,7 +10,7 @@ service ExpenseService {
 
   @odata.draft.enabled
   @restrict: [{ grant: '*', to: 'Employee', where: 'employeeEmail = $user' }]
-  entity MyClaims as projection on db.ExpenseClaims {
+  entity MyClaims as projection on db.CLAIMS {
     *,
     employee.fullName       as employeeName   : String,
     employee.employeeNumber as employeeNumber : String,
@@ -30,16 +30,16 @@ service ExpenseService {
     action submitClaim() returns MyClaims;
   };
 
-  entity MyClaimItems    as projection on db.ExpenseItems;
-  entity MyMileageClaims as projection on db.MileageClaims;
+  entity MyClaimItems    as projection on db.ITEMS;
+  entity MyMileageClaims as projection on db.MILEAGE;
 
-  @readonly entity Countries    as projection on db.Countries;
-  @readonly entity ExpenseTypes as projection on db.ExpenseTypes;
-  @readonly entity VATTypes     as projection on db.VATTypes;
+  @readonly entity Countries    as projection on db.COUNTRIES;
+  @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
+  @readonly entity VATTypes     as projection on db.VAT_TYPES;
   // Read-only so the UI can preview the net/VAT split live as gross is typed
   // (server before('SAVE') stays the source of truth for saved values).
-  @readonly entity Policies     as projection on db.ExpensePolicy;
-  @readonly entity Employees    as projection on db.Employees
+  @readonly entity Policies     as projection on db.POLICY;
+  @readonly entity Employees    as projection on db.EMPLOYEES
                                    excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
 }
 
