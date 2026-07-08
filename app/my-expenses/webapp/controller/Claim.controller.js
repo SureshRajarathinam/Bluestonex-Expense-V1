@@ -217,11 +217,19 @@ sap.ui.define([
 
     onSave: function () {
       var that = this;
+      var oCtx = this._claimCtx();
+      // Same ID caveat as onSubmit: resolve from the current draft context (draft
+      // and active share the ID), not draftActivate's return-value context.
+      var sId = oCtx && oCtx.getProperty("ID");
+      if (!sId) {
+        this.showError(new Error(this.getText("msgClaimNotReady")));
+        return;
+      }
       this.getView().setBusy(true);
-      this.callAction(this._claimCtx(), "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true })
-        .then(function (oActivated) {
+      this.callAction(oCtx, "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true })
+        .then(function () {
           that.getView().setBusy(false);
-          that._bindClaim("ID=" + oActivated.getProperty("ID") + ",IsActiveEntity=true");
+          that._bindClaim("ID=" + sId + ",IsActiveEntity=true");
           MessageToast.show(that.getText("msgSaved"));
         })
         .catch(function (e) { that.getView().setBusy(false); that.showError(e); });
@@ -230,18 +238,26 @@ sap.ui.define([
     onSubmit: function () {
       var that = this;
       var oCtx = this._claimCtx();
+      // Resolve the ID from the CURRENT context up front. Draft and active records
+      // share the same ID, so we must NOT read it from draftActivate's return-value
+      // context — that does not reliably expose the key synchronously and yields
+      // ID=undefined (same reason onEdit computes its own predicate). See below.
+      var sId = oCtx && oCtx.getProperty("ID");
+      if (!sId) {
+        this.showError(new Error(this.getText("msgClaimNotReady")));
+        return;
+      }
       var bDraft = oCtx.getPath().indexOf("IsActiveEntity=false") > -1;
       this.getView().setBusy(true);
 
-      // Resolve the active entity's ID (activating the draft if needed). Validation
-      // runs inside submitClaim on the active record, so we must activate first.
-      var pId = bDraft
+      // Validation runs inside submitClaim on the ACTIVE record, so activate the
+      // draft first (if we are on one), then submit against the active entity.
+      var pActivate = bDraft
         ? this.callAction(oCtx, "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true })
-            .then(function (oActivated) { return oActivated.getProperty("ID"); })
-        : Promise.resolve(oCtx.getProperty("ID"));
+        : Promise.resolve();
 
-      pId
-        .then(function (sId) {
+      pActivate
+        .then(function () {
           var oActive = that.getModel().bindContext("/MyClaims(ID=" + sId + ",IsActiveEntity=true)").getBoundContext();
           return that.callAction(oActive, "ExpenseService.submitClaim").then(function () {
             that.getView().setBusy(false);
