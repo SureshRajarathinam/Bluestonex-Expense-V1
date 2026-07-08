@@ -1,0 +1,133 @@
+### ─────────────────────────────────────────────────────────────────────────────
+### BluestoneX Expense — runnable OData V4 request collection
+###
+### Run against a local server:  cds watch    (base = http://localhost:4004)
+### Tooling: VS Code "REST Client" or JetBrains .http runner.
+### Each request notes its EXPECTED status. `###` separates requests; `# @name`
+### captures a response so later requests can reuse values (id / csrf token).
+###
+### Auth: HTTP Basic. REST Client encodes `Basic <user> <pass>` for you.
+### Mock users (dev): full email is the username.
+### ─────────────────────────────────────────────────────────────────────────────
+
+@host = http://localhost:4004
+@emp  = sabarinathan.chandrasekar@bluestonex.com sab
+@mgr  = manager@bluestonex.com mgr
+@dan  = Dan.Barton@bluestonex.com dan
+@yuv  = yuvaraj.kumar@bluestonex.com yuvaraj
+@clerk = clerk@bluestonex.com clerk
+@priya = priya.sharma@bluestonex.com priya
+
+### 1. $metadata — EXPECT 200, XML with EntitySet "MyClaims" + Action "submitClaim"
+GET {{host}}/expense/$metadata
+Authorization: Basic {{emp}}
+
+### 2. CSRF: fetch a token (needed for the manual receipt PUT) — EXPECT 200 + x-csrf-token header
+# @name csrf
+HEAD {{host}}/expense/
+Authorization: Basic {{emp}}
+x-csrf-token: Fetch
+
+### 3. Create a draft claim (UK) — EXPECT 201; capture the new ID
+# @name newClaim
+POST {{host}}/expense/MyClaims
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "country": "UK", "claimPeriod": "2026-02-28" }
+
+### 4. Add an expense item to the draft — EXPECT 201
+POST {{host}}/expense/MyClaims(ID={{newClaim.response.body.ID}},IsActiveEntity=false)/items
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "expenseDate": "2026-02-16", "expenseType_code": "HOTEL", "reasonForTrip": "Client visit", "vatType": "STD", "grossAmount": 120, "receiptAttached": true }
+
+### 5. Activate the draft (draftActivate) — EXPECT 200/201; server computes net=100, VAT=20
+POST {{host}}/expense/MyClaims(ID={{newClaim.response.body.ID}},IsActiveEntity=false)/ExpenseService.draftActivate
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{}
+
+### 6. Read back with $expand=items — EXPECT 200; items[0].netAmount=100, vatAmount=20
+GET {{host}}/expense/MyClaims(ID={{newClaim.response.body.ID}},IsActiveEntity=true)?$expand=items
+Authorization: Basic {{emp}}
+
+### 7. Submit for approval (submitClaim) — EXPECT 200 (status → Submitted)
+POST {{host}}/expense/MyClaims(ID={{newClaim.response.body.ID}},IsActiveEntity=true)/ExpenseService.submitClaim
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{}
+
+### 8. Approve as the WRONG person (sab, not configured L1) — EXPECT 403
+POST {{host}}/approval/Approvals({{newClaim.response.body.ID}})/ApprovalService.approve
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "comment": "should be blocked" }
+
+### 9. Approve as the configured UK L1 (manager) — EXPECT 200 (status → FirstApproved)
+POST {{host}}/approval/Approvals({{newClaim.response.body.ID}})/ApprovalService.approve
+Authorization: Basic {{mgr}}
+Content-Type: application/json
+
+{ "comment": "L1 ok" }
+
+### 10. Approve as UK L2 (Dan) — EXPECT 200 (status → Approved)
+POST {{host}}/approval/Approvals({{newClaim.response.body.ID}})/ApprovalService.approve
+Authorization: Basic {{dan}}
+Content-Type: application/json
+
+{ "comment": "L2 ok" }
+
+### ─── Query options ───────────────────────────────────────────────────────────
+### 11. $filter eq — EXPECT 200, exactly the UK row
+GET {{host}}/expense/Countries?$filter=code eq 'UK'
+Authorization: Basic {{emp}}
+
+### 12. $top + $count — EXPECT 200, value.length=2, @odata.count=10
+GET {{host}}/expense/ExpenseTypes?$top=2&$count=true
+Authorization: Basic {{emp}}
+
+### 13. $orderby desc — EXPECT 200, codes sorted descending
+GET {{host}}/expense/ExpenseTypes?$orderby=code desc
+Authorization: Basic {{emp}}
+
+### ─── Negative / security ─────────────────────────────────────────────────────
+### 14. Unauthenticated — EXPECT 401
+GET {{host}}/expense/MyClaims
+
+### 15. Employee-only user hitting the approvals queue — EXPECT 403
+GET {{host}}/approval/Approvals
+Authorization: Basic {{priya}}
+
+### 16. CSRF NEGATIVE: state-changing POST WITHOUT a token — EXPECT 403
+###     (Meaningful only against the approuter/deployed server or `cds watch`
+###      with a cookie session; stateless basic-auth may relax this.)
+POST {{host}}/expense/MyClaims
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "country": "UK", "claimPeriod": "2026-02-28" }
+
+### 17. BYPASS D10 — employee reads line items directly — EXPECT (secure) 403/empty; ACTUAL today: 200 with rows
+GET {{host}}/expense/MyClaimItems
+Authorization: Basic {{priya}}
+
+### 18. BYPASS D9 — employee reads all approval line items — EXPECT (secure) 403; ACTUAL today: 200 with rows
+GET {{host}}/approval/ApprovalItems
+Authorization: Basic {{priya}}
+
+### 19. Invalid $filter (unknown property) — EXPECT 400
+GET {{host}}/expense/Countries?$filter=nosuchprop eq 1
+Authorization: Basic {{emp}}
+
+### 20. GET a non-existent key — EXPECT 404
+GET {{host}}/expense/MyClaims(ID=00000000-0000-0000-0000-000000000000,IsActiveEntity=true)
+Authorization: Basic {{emp}}
+
+### 21. PDF export as approver — EXPECT 200, base64 body starting %PDF- ; as employee-only EXPECT 403
+GET {{host}}/approval/exportClaimsPdf(scope='history',status=null,country=null,claimNo=null,fromDate=null,toDate=null)
+Authorization: Basic {{mgr}}

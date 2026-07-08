@@ -30,7 +30,12 @@ service ExpenseService {
     action submitClaim() returns MyClaims;
   };
 
+  // Own-rows only: these child sets are reachable directly (e.g. the receipt
+  // media PUT), so they carry the same per-employee filter as MyClaims —
+  // otherwise the row-level security on the header is bypassable (fix D10).
+  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.employee.email = $user' }]
   entity MyClaimItems    as projection on db.ITEMS;
+  @restrict: [{ grant: '*', to: 'Employee', where: 'claim.employee.email = $user' }]
   entity MyMileageClaims as projection on db.MILEAGE;
 
   @readonly entity Countries    as projection on db.COUNTRIES;

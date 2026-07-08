@@ -42,8 +42,14 @@ service ApprovalService {
     action reject(comment : String(500)) returns Approvals;
   };
 
-  @readonly entity ApprovalItems   as projection on db.ITEMS;
-  @readonly entity ApprovalMileage as projection on db.MILEAGE;
+  // Transactional line data — restrict to approvers/admins (fix D9); previously
+  // readable by ANY authenticated user, including employee-only accounts.
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'Approver' }, { grant: 'READ', to: 'Admin' }]
+  entity ApprovalItems   as projection on db.ITEMS;
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'Approver' }, { grant: 'READ', to: 'Admin' }]
+  entity ApprovalMileage as projection on db.MILEAGE;
 
   // ── History: every non-draft claim (org-wide), read-only ────────────────────
   // Not a redirection target — keep Approvals as the target for items/mileage assocs.

@@ -24,7 +24,8 @@
     "start": "cds-serve",
     "watch": "cds watch",
     "build": "cds build --production",
-    "test": "node --test"
+    "test": "node --test test/*.test.js",
+    "test:ui": "echo \"UI5 OPA5/QUnit tests run in a browser/Karma runner, not node — see app/*/webapp/test/ and test/e2e/\""
   },
   "cds": {
     "requires": {
