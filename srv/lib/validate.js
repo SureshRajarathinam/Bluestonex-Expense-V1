@@ -15,7 +15,7 @@ const blank = (s) => s == null || String(s).trim() === '';
 //   policy  : { receiptThreshold, mealDailyLimit, hotelDailyLimit, mileageRate }
 //   types   : { CODE: { requiresReceipt } }
 //   today   : 'YYYY-MM-DD'
-function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, today }) {
+function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, vatTypes = new Set(), today }) {
   const errors = [];
   const warnings = [];
 
@@ -52,6 +52,12 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     // Rule 2 — date not in the future
     if (it.expenseDate && today && ymd(it.expenseDate) > today)
       errors.push(`${n}: date ${ymd(it.expenseDate)} cannot be in the future.`);
+
+    // Rule 4b — tax type must be a known code (STD/ZR/EX); reject typos that
+    // would otherwise be silently zero-rated (fix D4). Skipped when no code list
+    // is supplied (pure unit tests).
+    if (vatTypes.size && !blank(it.vatType) && !vatTypes.has(it.vatType))
+      errors.push(`${n}: invalid tax type '${it.vatType}'.`);
 
     // Rule 4 — receipt mandatory at/above threshold (or when the type requires it)
     const type = types[it.expenseType_code] || {};

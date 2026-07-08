@@ -185,8 +185,8 @@ test('D5 safety-net: a negative gross item is rejected at submit (rule 1, 422)',
   assert.equal(s.status, 422, `negative gross must block submit, got ${s.status}`);
 });
 
-// DESIRED (todo) — D4: an invalid tax type should be rejected, not silently zero-rated.
-test('D4 desired: item with mistyped vatType "std" should be rejected at submit', { todo: 'no vatType validation exists yet (D4)' }, async () => {
+// D4 (FIXED): an invalid tax type is now rejected, not silently zero-rated.
+test('D4 (fixed): item with mistyped vatType "std" is rejected at submit', async () => {
   const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
   const id = c.data.ID;
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'X', vatType: 'std', grossAmount: 120, receiptAttached: true }, { auth: EMP });
@@ -195,8 +195,8 @@ test('D4 desired: item with mistyped vatType "std" should be rejected at submit'
   assert.equal(s.status, 422, 'an invalid tax type should be rejected');
 });
 
-// DESIRED (todo) — D6: INR claim audit/notification money should use ₹, not £.
-test('D6 desired: an India claim audit entry should render money as ₹, not £', { todo: 'audit/notification hardcode £ (D6)' }, async () => {
+// D6 (FIXED): INR claim audit/notification money now renders ₹, not £.
+test('D6 (fixed): an India claim audit entry renders money as ₹, not £', async () => {
   const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
   const id = c.data.ID;
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'X', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });

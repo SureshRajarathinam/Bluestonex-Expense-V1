@@ -131,18 +131,27 @@ sap.ui.define([
         return;
       }
 
+      // Guard against a double-submit: the Approve/Reject buttons live in the
+      // dialog (static area), which view.setBusy does NOT cover, so a fast
+      // double-click could fire the action twice. Busy the DIALOG and gate on a
+      // reentrancy flag (fix D3).
+      if (this._deciding) { return; }
+      this._deciding = true;
+
       var that = this;
-      this.getView().setBusy(true);
+      oDialog.setBusy(true);
       this.callAction(oCtx, "ApprovalService." + sAction, { comment: sComment })
         .then(function () {
-          that.getView().setBusy(false);
+          that._deciding = false;
+          oDialog.setBusy(false);
           oDialog.close();
           MessageToast.show(that.getText(sMsgKey));
           that.byId("approvalsTable").getBinding("items").refresh();
           that._loadCounts();
         })
         .catch(function (e) {
-          that.getView().setBusy(false);
+          that._deciding = false;
+          oDialog.setBusy(false);
           that.showError(e);
         });
     },

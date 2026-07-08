@@ -101,7 +101,7 @@ class NotificationService {
         resourceInstance: claim.ID,
         tags: {
           employee:  employee.fullName,
-          amount:    `£${(claim.totalGross || 0).toFixed(2)}`,
+          amount:    `${money(claim)}`,
           period:    claim.claimPeriod || '',
           // First-level approver so ANS can route the alert to the right person.
           approver:  firstApprover || ''
@@ -111,7 +111,7 @@ class NotificationService {
       category: 'NOTIFICATION',
       subject:  `Expense Claim ${claim.claimNumber} Submitted for Approval`,
       body:     `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
-                `for £${(claim.totalGross || 0).toFixed(2)}. Please review and approve.`
+                `for ${money(claim)}. Please review and approve.`
     });
 
     // Targeted email to the configured first-level approver for this claim.
@@ -133,14 +133,14 @@ class NotificationService {
         resourceType:     'ExpenseClaim',
         resourceInstance: claim.ID,
         tags: {
-          amount:       `£${(claim.totalGross || 0).toFixed(2)}`,
+          amount:       `${money(claim)}`,
           nextApprover: nextApprover || ''
         }
       },
       severity: 'INFO',
       category: 'NOTIFICATION',
       subject:  `Expense Claim ${claim.claimNumber} — Level 1 Approved, Awaiting Level 2`,
-      body:     `Claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} has ` +
+      body:     `Claim ${claim.claimNumber} for ${money(claim)} has ` +
                 `passed first-level approval and now awaits second-level approval from ` +
                 `${nextApprover || 'the configured approver'}.`
     });
@@ -166,7 +166,7 @@ class NotificationService {
       severity: 'INFO',
       category: 'NOTIFICATION',
       subject:  `Expense Claim ${claim.claimNumber} Approved by Line Manager`,
-      body:     `Claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} has been ` +
+      body:     `Claim ${claim.claimNumber} for ${money(claim)} has been ` +
                 `approved by the line manager and is now pending finance sign-off.`
     });
   }
@@ -183,7 +183,7 @@ class NotificationService {
       severity: 'INFO',
       category: 'NOTIFICATION',
       subject:  `Expense Claim ${claim.claimNumber} — Finance Approved`,
-      body:     `Claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} has ` +
+      body:     `Claim ${claim.claimNumber} for ${money(claim)} has ` +
                 `received final finance approval. It will be included in the next payroll run.`
     });
   }
@@ -195,12 +195,12 @@ class NotificationService {
         resourceName:     claim.claimNumber,
         resourceType:     'ExpenseClaim',
         resourceInstance: claim.ID,
-        tags: { amount: `£${(claim.totalGross || 0).toFixed(2)}` }
+        tags: { amount: `${money(claim)}` }
       },
       severity: 'INFO',
       category: 'NOTIFICATION',
-      subject:  `Expense Claim ${claim.claimNumber} Settled — £${(claim.totalGross || 0).toFixed(2)} Reimbursed`,
-      body:     `Your expense claim ${claim.claimNumber} for £${(claim.totalGross || 0).toFixed(2)} ` +
+      subject:  `Expense Claim ${claim.claimNumber} Settled — ${money(claim)} Reimbursed`,
+      body:     `Your expense claim ${claim.claimNumber} for ${money(claim)} ` +
                 `has been settled and will appear in your next payroll.`
     });
   }

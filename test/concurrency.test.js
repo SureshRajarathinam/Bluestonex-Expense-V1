@@ -40,16 +40,19 @@ async function makeDraftWithItem() {
   return id;
 }
 
-// ═══ D1 — optimistic concurrency (no ETag exposed) ════════════════════════════
-test('D1: a mutable entity should expose an ETag for optimistic concurrency', { todo: 'no @odata.etag on any mutable entity (D1)' }, async () => {
+// ═══ D1 (DEFERRED) — full ETag needs If-Match plumbing in the freestyle UI ════
+// A blanket @odata.etag breaks draftActivate (428) on these draft-enabled
+// entities. Concurrency is mitigated meanwhile by draft locks (CON-03) + status
+// guards. This stays todo until If-Match is wired through callAction.
+test('D1: a mutable entity should expose an ETag for optimistic concurrency', { todo: 'ETag deferred — draft flow needs If-Match plumbing (D1)' }, async () => {
   const list = await GET('/approval/Policies', { auth: MGR });
   const id = list.data.value[0].ID;
   const r = await GET(`/approval/Policies(ID=${id},IsActiveEntity=true)`, { auth: MGR });
   assert.ok(r.headers.etag, 'a concurrency-safe entity must return an ETag header so If-Match can guard updates');
 });
 
-// ═══ D2 — claimNumber uniqueness under concurrent activation ══════════════════
-test('D2: concurrent draftActivate must not mint duplicate claimNumbers', { todo: 'count-based claimNumber + no unique constraint (D2)' }, async () => {
+// ═══ D2 (FIXED) — claimNumber uniqueness under concurrent activation ══════════
+test('D2 (fixed): concurrent draftActivate does not mint duplicate claimNumbers', async () => {
   const [a, b] = await Promise.all([makeDraftWithItem(), makeDraftWithItem()]);
   await Promise.all([
     POST(`/expense/MyClaims${draft(a)}/ExpenseService.draftActivate`, {}, { auth: EMP }),

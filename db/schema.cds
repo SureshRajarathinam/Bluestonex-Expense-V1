@@ -70,6 +70,7 @@ entity WORKFLOW : managed {
 
 // ─── Transactional ───────────────────────────────────────────────────────────
 
+@assert.unique.claimNumber: [claimNumber]   // no two claims share a number (fix D2)
 entity CLAIMS : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
@@ -204,3 +205,12 @@ annotate MILEAGE with {
   ratePerMile   @title: 'Rate per Mile (£)';
   totalAmount   @title: 'Total Amount (£)';
 }
+
+// ─── D1 concurrency note ─────────────────────────────────────────────────────
+// A blanket @odata.etag was evaluated and REVERTED: all mutable entities here
+// are draft-enabled, and enabling ETag makes CAP require If-Match on
+// draftActivate/bound actions (428), which the freestyle callAction does not
+// send — it breaks the whole draft flow. Concurrency is instead handled by CAP
+// DRAFT LOCKS (a 2nd concurrent draftEdit → 409, see test CON-03) plus
+// STATUS-GUARDED actions (approve/reject re-check status → 409). A full ETag
+// rollout requires wiring If-Match through the UI's callAction (deferred).

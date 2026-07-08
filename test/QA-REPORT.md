@@ -2,13 +2,22 @@
 
 **System under test:** SAP CAP (Node.js, OData V4) backend + two freestyle SAPUI5 apps
 (`my-expenses`, `approval`). **Test bed:** local `cds.test` on in-memory SQLite + seed data
-(HANA not deployed). **Date:** 2026-07-08. **Baseline:** 38 tests → **98 tests** (92 pass,
-0 fail, 1 skip, 5 todo). Every finding cites `file:line`.
+(HANA not deployed). **Date:** 2026-07-08. **Baseline:** 38 tests → **98 tests** (95 pass,
+0 fail, 1 skip, 2 todo). Every finding cites `file:line`.
 
-**Fixes applied this run (P1):** D10 + D9 — the two authorization bypasses are closed
-(`MyClaimItems`/`MyMileageClaims` now own-rows-only; `ApprovalItems`/`ApprovalMileage` now
-Approver/Admin-only). Their tests flipped from `todo` to green, plus an owner-path regression
-guard. D3/D2/D1/D4/D6 remain reported and available to fix on request.
+**Fixes applied (all confirmed by tests / code):**
+- **D10, D9** (P1 security bypasses) — `MyClaimItems`/`MyMileageClaims` now own-rows-only;
+  `ApprovalItems`/`ApprovalMileage` now Approver/Admin-only. + owner-path regression guard.
+- **D2** (claimNumber) — max-suffix+1 generation + `@assert.unique.claimNumber`.
+- **D4** (vatType) — mistyped/unknown tax type rejected at submit (validated against `VAT_TYPES`).
+- **D6** (currency) — audit + all notification bodies use currency-aware `money()` (₹ for India).
+- **D3** (double-submit) — Approve/Reject now busy the dialog + reentrancy flag.
+- **D1** (ETag) — **DEFERRED**: a blanket `@odata.etag` breaks `draftActivate` (428) on these
+  draft-enabled entities and the freestyle `callAction` sends no `If-Match`. Mitigated meanwhile
+  by CAP **draft locks** (CON-03: 2nd `draftEdit` → 409) + **status-guarded actions**. Full ETag
+  needs `If-Match` wired through `callAction` (tracked as remaining work).
+
+Remaining `todo`: D1 (deferred, above) and D11 (framework `$top` laxity — accept).
 
 ---
 
@@ -142,7 +151,7 @@ Confirmed = reproduced by a test or a direct `file:line` cause. Suspected = need
 - **Evidence:** `test/security.test.js` BYPASS-D9 (todo, reproduced).
 - **Fix:** add `@restrict:[{grant:'READ',to:'Approver'}]` (and Admin if history needs it) to both.
 
-### D3 — Approve/Reject double-submit  ·  **High (P2)**  ·  CONFIRMED (code)
+### D3 — Approve/Reject double-submit  ·  **High (P2)**  ·  ✅ FIXED
 - **Component:** `app/approval/webapp/controller/Approvals.controller.js:135` vs
   `ReviewDialog.fragment.xml:72-73`.
 - **Cause:** `_decide` calls `this.getView().setBusy(true)`, but Approve/Reject live in the
@@ -151,7 +160,7 @@ Confirmed = reproduced by a test or a direct `file:line` cause. Suspected = need
 - **Impact:** duplicate decision / spurious 422 on the second call; risk of double state transition.
 - **Fix:** disable the pressed button (or `oDialog.setBusy(true)`) for the in-flight action.
 
-### D2 — claimNumber is count-based with no uniqueness guard  ·  **High (P2)**  ·  CONFIRMED (code)
+### D2 — claimNumber is count-based with no uniqueness guard  ·  **High (P2)**  ·  ✅ FIXED
 - **Component:** `srv/expense-service.js:49-53`; `db/schema.cds:75` (no unique).
 - **Cause:** `EXP-{year}-{rows.length+1}` from a full-table COUNT in `before('SAVE')`, no lock, no
   DB unique constraint. Concurrent activations can mint the same number; a delete makes the counter
@@ -161,13 +170,13 @@ Confirmed = reproduced by a test or a direct `file:line` cause. Suspected = need
 - **Fix:** derive from `MAX(suffix)+1` inside the transaction (or a DB sequence) **and** add a
   unique constraint on `claimNumber`.
 
-### D1 — No optimistic concurrency (no ETag)  ·  **Medium/High (P2)**  ·  CONFIRMED
+### D1 — No optimistic concurrency (no ETag)  ·  **Medium/High (P2)**  ·  ⏸ DEFERRED (mitigated)
 - **Component:** entire model — zero `@odata.etag`/`@cds.on.update` in `db/`+`srv/`.
 - **Impact:** two approvers, or submit+approve, racing the same claim → lost update / double
   transition; no `If-Match`/412 protection. `CON-01` shows no ETag header is returned.
 - **Fix:** annotate mutable entities `@odata.etag` on managed `modifiedAt` (validate draft behaviour).
 
-### D4 — Unknown/mistyped vatType silently zero-rated  ·  **Medium (P2/P3)**  ·  CONFIRMED
+### D4 — Unknown/mistyped vatType silently zero-rated  ·  **Medium (P2/P3)**  ·  ✅ FIXED
 - **Component:** `srv/lib/calc.js:19`; no `vatType` validation in `validate.js`.
 - **Cause:** only exact `'STD'` applies tax; `'std'`, `'Std'`, or any bad code → 0 tax, no error.
   `VAT_TYPES.rate` (seeded) is never read.
@@ -175,7 +184,7 @@ Confirmed = reproduced by a test or a direct `file:line` cause. Suspected = need
 - **Fix:** validate `vatType ∈ VAT_TYPES` in `before('SAVE')`/`validate.js`; or drive the rate from
   `VAT_TYPES.rate`.
 
-### D6 — INR claims render `£` in audit + ANS bodies  ·  **Medium (P3)**  ·  CONFIRMED
+### D6 — INR claims render `£` in audit + ANS bodies  ·  **Medium (P3)**  ·  ✅ FIXED
 - **Component:** `srv/expense-service.js:102`; `srv/notification.js:104,136,…`.
 - **Cause:** hardcoded `£` in the audit "Total £…" and several ANS/event strings, despite a
   currency-aware `money()` helper existing (`notification.js:9`).
@@ -228,9 +237,13 @@ entities, OData query-option surface, and — newly — **direct-OData authoriza
   (growing tables, `_loadCounts` 999-cap) are reviewed but not automated.
 - **Media upload** (`receipt` stream/CSRF) is not covered by an automated test.
 
-### Top 5 to fix before go-live (ranked)
-1. ~~**D10** — add `@restrict` to `MyClaimItems`/`MyMileageClaims`~~ ✅ **FIXED this run**.
-2. ~~**D9** — add `@restrict` to `ApprovalItems`/`ApprovalMileage`~~ ✅ **FIXED this run**.
-3. **D3** — guard Approve/Reject against double-submit. *(open)*
-4. **D2** — make `claimNumber` collision-proof (max+1 in txn + unique constraint). *(open)*
-5. **D1** — add optimistic concurrency (`@odata.etag`) on mutable entities. *(open)*
+### Top 5 to fix before go-live (ranked) — status
+1. ~~**D10** — `@restrict` on `MyClaimItems`/`MyMileageClaims`~~ ✅ **FIXED**.
+2. ~~**D9** — `@restrict` on `ApprovalItems`/`ApprovalMileage`~~ ✅ **FIXED**.
+3. ~~**D3** — Approve/Reject double-submit guard~~ ✅ **FIXED**.
+4. ~~**D2** — collision-proof `claimNumber` (max+1 + unique)~~ ✅ **FIXED**.
+5. **D1** — optimistic concurrency (`@odata.etag`). ⏸ **DEFERRED** — mitigated by draft locks +
+   status guards; full ETag needs `If-Match` wired through the freestyle `callAction`.
+
+Also fixed this run: **D4** (vatType validation), **D6** (currency-aware money). Remaining open:
+D5/D7/D8 (P3), D11/S1/S2 (P4), S3 (P3) — all reported above, none blocking.

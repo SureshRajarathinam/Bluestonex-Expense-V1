@@ -47,9 +47,17 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       }
 
       if (!claim.claimNumber) {
+        // Derive from the highest existing suffix for the year (not a row COUNT):
+        // survives deletions and, with the @assert.unique on claimNumber, a
+        // concurrent collision surfaces as an error instead of a silent dup (D2).
         const year = new Date().getFullYear();
-        const rows = await SELECT.from(CLAIMS).columns('claimNumber');
-        claim.claimNumber = `EXP-${year}-${String(rows.length + 1).padStart(4, '0')}`;
+        const rows = await SELECT.from(CLAIMS).columns('claimNumber').where({ claimNumber: { like: `EXP-${year}-%` } });
+        let max = 0;
+        for (const r of rows) {
+          const n = parseInt(String(r.claimNumber || '').split('-')[2], 10);
+          if (Number.isFinite(n) && n > max) max = n;
+        }
+        claim.claimNumber = `EXP-${year}-${String(max + 1).padStart(4, '0')}`;
       }
 
       // Country drives tax (VAT for UK, GST for India) and currency
@@ -99,7 +107,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const employee = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover);
-      await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total £${claim.totalGross}` });
+      const sym = claim.currency === 'INR' ? '₹' : '£';
+      await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);
       return SELECT.one.from(CLAIMS, ID);

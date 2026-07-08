@@ -5,7 +5,7 @@ const cds = require('@sap/cds');
 // Loads everything the validator needs for a claim: header, items, mileage,
 // the active policy, and a code→type map. Used by submit and finance approval.
 async function loadValidationContext(claimId) {
-  const { CLAIMS, ITEMS, MILEAGE, POLICY, EXPENSE_TYPES } =
+  const { CLAIMS, ITEMS, MILEAGE, POLICY, EXPENSE_TYPES, VAT_TYPES } =
     cds.entities('EXP');
 
   const claim = await SELECT.one.from(CLAIMS, claimId);
@@ -22,8 +22,12 @@ async function loadValidationContext(claimId) {
   const policy = (await SELECT.one.from(POLICY).where({ country: claim.country })) || {};
   const typeRows = await SELECT.from(EXPENSE_TYPES);
   const types = Object.fromEntries(typeRows.map((t) => [t.code, t]));
+  // Valid tax-type codes (STD/ZR/EX) so the validator can reject a mistyped
+  // vatType instead of it being silently zero-rated (fix D4).
+  const vatTypeRows = await SELECT.from(VAT_TYPES);
+  const vatTypes = new Set(vatTypeRows.map((v) => v.code));
 
-  return { claim, items, mileage, policy, types };
+  return { claim, items, mileage, policy, types, vatTypes };
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
