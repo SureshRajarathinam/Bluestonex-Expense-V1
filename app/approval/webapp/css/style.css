@@ -109,4 +109,49 @@ html, body, .sapUiBody, .bsxBody,
 .bsxKpiNum.sapMTitle { font-size: 1.9rem; line-height: 1.1; font-weight: 700; margin: .25rem 0; }
 .bsxKpiOk.sapMTitle { color: #2f8a4c; }
 .bsxKpiNo.sapMTitle { color: #d63a3a; }
+.bsxKpiWait.sapMTitle { color: #b9700a; }
 .bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }
+
+/* ---- Dashboard: KPI split pills ------------------------------------------ */
+.bsxPills { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }
+.bsxPill {
+  display: inline-block; padding: .1rem .5rem; border-radius: 1rem;
+  font-size: .75rem; font-weight: 600; line-height: 1.15rem;
+}
+.bsxPill--uk { background: #eaf1f8; color: var(--bsx-blue); }
+.bsxPill--in { background: #e7f3ec; color: #2f8a4c; }
+
+/* ---- Dashboard: hand-built chart bodies (in a core:HTML host) ------------ */
+.bsxChart { padding: .25rem 1rem 1rem; }
+.bsxLegend { display: flex; gap: 1.25rem; margin: .25rem 0 .75rem; color: var(--bsx-muted); font-size: .8125rem; }
+.bsxLegend span { display: inline-flex; align-items: center; }
+.bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
+.bsxDot--ok  { background: #4a9c68; }
+.bsxDot--no  { background: #d05a5a; }
+.bsxDot--sub { background: #a9c2e8; }
+
+/* Grouped vertical bars (Approved vs Rejected · Trend) */
+.bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
+.bsxVChart--trend { gap: 1rem; justify-content: space-between; }
+.bsxVGroup { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; height: 100%; }
+.bsxVBars { display: flex; align-items: flex-end; gap: .5rem; flex: 1 1 auto; width: 100%; justify-content: center; }
+.bsxVChart--trend .bsxVBars { gap: .25rem; }
+.bsxVCol { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 2.4rem; }
+.bsxVChart--trend .bsxVCol { width: 1.1rem; }
+.bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
+.bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
+.bsxVBar--ok  { background: #4a9c68; }
+.bsxVBar--no  { background: #d05a5a; }
+.bsxVBar--sub { background: #a9c2e8; }
+.bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); }
+
+/* Horizontal tracked bars (Spend by category / team) */
+.bsxHBars { padding: .5rem 1rem 1rem; }
+.bsxHRow { display: flex; align-items: center; gap: .75rem; padding: .3rem 0; }
+.bsxHLabel { flex: 0 0 8rem; font-size: .875rem; color: var(--bsx-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bsxHTrack { flex: 1 1 auto; height: .85rem; background: #eef0f2; border-radius: 1rem; overflow: hidden; }
+.bsxHFill { display: block; height: 100%; border-radius: 1rem; min-width: 2px; transition: width .3s ease; }
+.bsxHFill--blue   { background: var(--bsx-blue); }
+.bsxHFill--violet { background: #6b6ce0; }
+.bsxHFill--muted  { background: #b9c0e8; }
+.bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }

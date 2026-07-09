@@ -4,7 +4,6 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   xmlns:l="sap.ui.layout"
-  xmlns:micro="sap.suite.ui.microchart"
   height="100%"
   busy="{dash>/busy}">
 
@@ -44,6 +43,7 @@
           </SegmentedButton>
         </VBox>
       </l:Grid>
+      <Text text="{dash>/rangeText}" class="bsxKpiSub bsxCardPad" />
     </VBox>
 
     <MessageStrip visible="{= !${dash>/hasData} || !!${dash>/error} }"
@@ -51,17 +51,22 @@
                   type="{= ${dash>/error} ? 'Warning' : 'Information' }"
                   showIcon="true" class="bsxCardPad" />
 
-    <!-- ── KPI tiles ──────────────────────────────────────────────────────── -->
-    <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1">
+    <!-- ── KPI tiles (Awaiting first) ─────────────────────────────────────── -->
+    <l:Grid defaultSpan="XL2 L3 M4 S12" hSpacing="1" vSpacing="1">
+      <VBox class="bsxCard bsxKpi">
+        <Text text="{i18n>dashAwaiting}" class="bsxFieldLbl" />
+        <Title text="{dash>/awaitingTotal}" level="H1" class="bsxKpiNum bsxKpiWait" />
+        <core:HTML content="{dash>/awaitingPills}" />
+      </VBox>
       <VBox class="bsxCard bsxKpi">
         <Text text="{i18n>dashApproved}" class="bsxFieldLbl" />
         <Title text="{dash>/approvedTotal}" level="H1" class="bsxKpiNum bsxKpiOk" />
-        <Text text="{dash>/approvedSplit}" class="bsxKpiSub" />
+        <core:HTML content="{dash>/approvedPills}" />
       </VBox>
       <VBox class="bsxCard bsxKpi">
         <Text text="{i18n>dashRejected}" class="bsxFieldLbl" />
         <Title text="{dash>/rejectedTotal}" level="H1" class="bsxKpiNum bsxKpiNo" />
-        <Text text="{dash>/rejectedSplit}" class="bsxKpiSub" />
+        <core:HTML content="{dash>/rejectedPills}" />
       </VBox>
       <VBox class="bsxCard bsxKpi" visible="{dash>/showGbp}">
         <Text text="{i18n>dashReimbursedUK}" class="bsxFieldLbl" />
@@ -80,31 +85,24 @@
 
       <VBox class="bsxCard bsxPremiumCard">
         <Title text="{i18n>dashApprRej}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/avr}">
-          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
-        </micro:ComparisonMicroChart>
+        <core:HTML content="{dash>/avrHtml}" />
       </VBox>
 
       <VBox class="bsxCard bsxPremiumCard">
         <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
-        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/cat}">
-          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
-        </micro:ComparisonMicroChart>
+        <core:HTML content="{dash>/catHtml}" />
       </VBox>
 
       <VBox class="bsxCard bsxPremiumCard">
         <Title text="{= ${i18n>dashSpendTeam} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
-        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/team}">
-          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
-        </micro:ComparisonMicroChart>
+        <core:HTML content="{dash>/teamHtml}" />
+        <Text text="{i18n>dashTeamHint}" class="bsxKpiSub bsxCardPad" />
       </VBox>
 
       <VBox class="bsxCard bsxPremiumCard">
         <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/trendHtml}" />
         <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
-        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/trend}">
-          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
-        </micro:ComparisonMicroChart>
       </VBox>
 
     </l:Grid>

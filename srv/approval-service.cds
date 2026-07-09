@@ -11,6 +11,7 @@ type DashCat   : { code : String; description : String; gbp : Decimal(15,2); inr
 type DashTeam  : { department : String; gbp : Decimal(15,2); inr : Decimal(15,2); }
 type DashTrend : { month : String; submitted : Integer; approved : Integer; }
 type DashStats : {
+  awaiting        : DashCount;
   approved        : DashCount;
   rejected        : DashCount;
   reimbursed      : DashMoney;

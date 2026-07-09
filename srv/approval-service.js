@@ -188,6 +188,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       };
       rows = rows.filter((r) => r.status !== 'Draft' && inCountry(r) && inWindow(r));
 
+      const awaiting = { UK: 0, IN: 0, total: 0 };
       const approved = { UK: 0, IN: 0, total: 0 };
       const rejected = { UK: 0, IN: 0, total: 0 };
       const reimbursed = { gbp: 0, inr: 0 };
@@ -224,6 +225,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           }
         } else if (r.status === 'Rejected') {
           rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
+        } else if (r.status === 'Submitted' || r.status === 'FirstApproved') {
+          awaiting[isIN(r) ? 'IN' : 'UK'] += 1; awaiting.total += 1;
         }
       }
 
@@ -232,6 +235,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         .sort((a, b) => (b.gbp + b.inr) - (a.gbp + a.inr));
 
       return {
+        awaiting,
         approved,
         rejected,
         reimbursed: { gbp: round2(reimbursed.gbp), inr: round2(reimbursed.inr) },

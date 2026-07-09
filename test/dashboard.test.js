@@ -64,6 +64,9 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
   assert.equal(d.rejected.total, 1, 'rejected total');
   assert.equal(d.rejected.UK, 1);
 
+  // All seeded claims here are decided (approved/rejected) → nothing awaiting yet.
+  assert.equal(d.awaiting.total, 0, 'nothing awaiting yet');
+
   // Currency-separated reimbursed (approved): UK £300, India ₹118 — never combined.
   assert.equal(Number(d.reimbursed.gbp), 300);
   assert.equal(Number(d.reimbursed.inr), 118);
@@ -127,6 +130,14 @@ test('unknown country returns an empty (graceful) result, not an error', async (
 
 test('unauthenticated request is rejected (401)', async () => {
   assert.equal((await GET(stats('2020-01-01', '2030-12-31', 'ALL'))).status, 401);
+});
+
+test('awaiting counts undecided (Submitted/FirstApproved) claims', async () => {
+  await mkApprovedOrRejected(EMP, 'UK', 50); // seeded, then left Submitted (undecided)
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: MGR });
+  assert.equal(r.status, 200);
+  assert.ok(r.data.awaiting.total >= 1, 'awaiting total counts the undecided claim');
+  assert.ok(r.data.awaiting.UK >= 1, 'awaiting UK counts it');
 });
 
 test('trend integrity: approved never exceeds submitted per month', async () => {
