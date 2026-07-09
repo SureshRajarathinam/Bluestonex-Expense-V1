@@ -99,3 +99,38 @@ test('dashboardStats is Approver/Admin-only (403 for employee-only users)', asyn
   assert.equal((await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: CLERK })).status, 403);
   assert.equal((await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: PRIYA })).status, 403);
 });
+
+test('country filter scopes every figure (UK only)', async () => {
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'UK'), { auth: MGR });
+  assert.equal(r.status, 200);
+  assert.equal(r.data.approved.IN, 0, 'no India when filtered to UK');
+  assert.equal(Number(r.data.reimbursed.inr), 0, 'no ₹ when filtered to UK');
+  assert.ok(r.data.approved.UK >= 2);
+  assert.ok(Number(r.data.reimbursed.gbp) >= 300);
+});
+
+test('payload carries BOTH currencies per row (drives the £/₹ toggle)', async () => {
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: MGR });
+  const hotel = r.data.spendByCategory.find((c) => c.code === 'HOTEL');
+  assert.ok(hotel, 'HOTEL present');
+  assert.equal(Number(hotel.gbp), 300, 'UK hotel spend in gbp');
+  assert.equal(Number(hotel.inr), 118, 'India hotel spend in inr');
+});
+
+test('unknown country returns an empty (graceful) result, not an error', async () => {
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'FR'), { auth: MGR });
+  assert.equal(r.status, 200);
+  assert.equal(r.data.approved.total, 0);
+  assert.equal(r.data.spendByCategory.length, 0);
+  assert.equal(r.data.trend.length, 0);
+});
+
+test('unauthenticated request is rejected (401)', async () => {
+  assert.equal((await GET(stats('2020-01-01', '2030-12-31', 'ALL'))).status, 401);
+});
+
+test('trend integrity: approved never exceeds submitted per month', async () => {
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: MGR });
+  assert.ok(r.data.trend.length >= 1);
+  r.data.trend.forEach((t) => assert.ok((t.approved || 0) <= (t.submitted || 0), `month ${t.month}`));
+});

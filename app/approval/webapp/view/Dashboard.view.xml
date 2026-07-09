@@ -46,7 +46,10 @@
       </l:Grid>
     </VBox>
 
-    <MessageStrip visible="{= !${dash>/hasData} }" text="{i18n>dashNoData}" type="Information" showIcon="true" class="bsxCardPad" />
+    <MessageStrip visible="{= !${dash>/hasData} || !!${dash>/error} }"
+                  text="{= ${dash>/error} ? ${dash>/error} : ${i18n>dashNoData} }"
+                  type="{= ${dash>/error} ? 'Warning' : 'Information' }"
+                  showIcon="true" class="bsxCardPad" />
 
     <!-- ── KPI tiles ──────────────────────────────────────────────────────── -->
     <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1">
