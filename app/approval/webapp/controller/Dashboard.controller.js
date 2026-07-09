@@ -1,8 +1,11 @@
 sap.ui.define([
   "com/bluestonex/expense/approval/controller/BaseController",
   "com/bluestonex/expense/approval/model/formatter",
-  "sap/ui/model/json/JSONModel"
-], function (BaseController, formatter, JSONModel) {
+  "sap/ui/model/json/JSONModel",
+  "sap/m/ResponsivePopover",
+  "sap/m/VBox",
+  "sap/m/Text"
+], function (BaseController, formatter, JSONModel, ResponsivePopover, VBox, MText) {
   "use strict";
 
   var SVC = "/approval";
@@ -133,7 +136,7 @@ sap.ui.define([
       var today = new Date();
       var from = new Date(); from.setMonth(from.getMonth() - 5); from.setDate(1);
       this._m = new JSONModel({
-        from: ymd(from), to: ymd(today), country: "ALL", cur: "£",
+        fromDate: from, toDate: today, preset: "", country: "ALL", cur: "£",
         busy: false, hasData: true, error: "", showCurToggle: true, curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
@@ -151,8 +154,8 @@ sap.ui.define([
 
     _load: function () {
       var m = this._m, that = this;
-      var url = SVC + "/dashboardStats(fromDate=" + m.getProperty("/from") +
-        ",toDate=" + m.getProperty("/to") + ",country='" + m.getProperty("/country") + "')";
+      var url = SVC + "/dashboardStats(fromDate=" + ymd(m.getProperty("/fromDate")) +
+        ",toDate=" + ymd(m.getProperty("/toDate")) + ",country='" + m.getProperty("/country") + "')";
       m.setProperty("/busy", true); m.setProperty("/error", "");
       fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" })
         .then(function (r) { if (!r.ok) { throw new Error("HTTP " + r.status); } return r.json(); })
@@ -210,7 +213,10 @@ sap.ui.define([
         return {
           code: r.code,
           color: geoTier(r.approved, gmax),
-          tooltip: (GEO_NAMES[r.code] || r.country) + " · " + money(sym, amt) + " · " + (r.approved || 0) + " approved"
+          tooltip: (GEO_NAMES[r.code] || r.country) + " · " + money(sym, amt) + " · " + (r.approved || 0) + " approved",
+          name: GEO_NAMES[r.code] || r.country || r.code,
+          spendText: money(sym, amt),
+          claims: r.claims || 0
         };
       }));
       m.setProperty("/geoSvgHtml", geoChart(geoRows, gmax)); // fallback body (see view comment)
@@ -229,27 +235,68 @@ sap.ui.define([
     // "Feb – Jul 2026 · 6 months" from the selected range.
     _rangeText: function () {
       var m = this._m;
-      var f = new Date(m.getProperty("/from")), t = new Date(m.getProperty("/to"));
-      if (isNaN(f) || isNaN(t)) { return ""; }
+      var f = m.getProperty("/fromDate"), t = m.getProperty("/toDate");
+      if (!f || !t || isNaN(f) || isNaN(t)) { return ""; }
       var months = (t.getFullYear() - f.getFullYear()) * 12 + (t.getMonth() - f.getMonth()) + 1;
       var head = MON[f.getMonth()] + (f.getFullYear() !== t.getFullYear() ? " " + f.getFullYear() : "") +
         " – " + MON[t.getMonth()] + " " + t.getFullYear();
       return head + " · " + months + " month" + (months === 1 ? "" : "s");
     },
 
-    onDateChange: function (oEvent) {
-      var d = oEvent.getSource().getDateValue();
-      if (!d) { return; }
-      this._m.setProperty(oEvent.getSource().data("edge") === "to" ? "/to" : "/from", ymd(d));
+    // Rolling quick-ranges (each ending today): Day / Week(7d) / Month(30d) / Year(365d).
+    onPreset: function (oEvent) {
+      var key = oEvent.getParameter("item").getKey();
+      var to = new Date(), from = new Date();
+      if (key === "W") { from.setDate(to.getDate() - 6); }
+      else if (key === "M") { from.setDate(to.getDate() - 29); }
+      else if (key === "Y") { from.setDate(to.getDate() - 364); }
+      // "D" → from = to = today
+      this._m.setProperty("/fromDate", from);
+      this._m.setProperty("/toDate", to);
+      this._load();
+    },
+    onRange: function (oEvent) {
+      var d1 = oEvent.getParameter("from") || oEvent.getSource().getDateValue();
+      var d2 = oEvent.getParameter("to") || oEvent.getSource().getSecondDateValue();
+      if (!d1 || !d2) { return; }
+      this._m.setProperty("/preset", ""); // a manual range clears the preset selection
+      this._m.setProperty("/fromDate", d1);
+      this._m.setProperty("/toDate", d2);
       this._load();
     },
     onCountry: function (oEvent) {
-      this._m.setProperty("/country", oEvent.getParameter("item").getKey());
+      this._m.setProperty("/country", oEvent.getSource().getSelectedKey());
       this._load();
     },
     onCurrency: function (oEvent) {
-      this._m.setProperty("/cur", oEvent.getParameter("item").getKey());
+      this._m.setProperty("/cur", oEvent.getSource().getSelectedKey());
       this._apply(); // payload already carries both currencies — no refetch
+    },
+
+    // Geo region click → popover with country · native-currency spend · claims.
+    onRegionClick: function (oEvent) {
+      var oCtx = oEvent.getSource().getBindingContext("dash");
+      var d = oCtx && oCtx.getObject();
+      if (!d) { return; }
+      if (!this._geoPop) {
+        this._geoPopModel = new JSONModel({});
+        this._geoPop = new ResponsivePopover({
+          placement: "Auto", showHeader: true, contentWidth: "16rem",
+          title: "{dashPop>/name}",
+          content: [ new VBox({ items: [
+            new MText({ text: "{dashPop>/spendText}" }).addStyleClass("bsxPopSpend sapUiTinyMargin"),
+            new MText({ text: "{dashPop>/claimsText}" }).addStyleClass("bsxKpiSub sapUiTinyMarginBegin sapUiTinyMarginBottom")
+          ] }) ]
+        });
+        this._geoPop.setModel(this._geoPopModel, "dashPop");
+        this.getView().addDependent(this._geoPop);
+      }
+      this._geoPopModel.setData({
+        name: d.name || d.code,
+        spendText: d.spendText || "",
+        claimsText: (d.claims || 0) + " " + (this.getText ? this.getText("dashGeoClaims") : "claims")
+      });
+      this._geoPop.openBy(this.byId("geoMap"));
     },
 
     // ── Drag-and-drop card personalisation (persisted to localStorage) ───────
