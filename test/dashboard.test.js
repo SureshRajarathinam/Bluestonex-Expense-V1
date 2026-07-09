@@ -78,6 +78,16 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
   // Spend-by-team was removed (USERS_MASTER has no department) — must not be in the payload.
   assert.equal(d.spendByTeam, undefined, 'spendByTeam removed from payload');
 
+  // Spend by country — ISO-keyed (UK→GB), currency-separated, count fields present.
+  const gb = d.spendByCountry.find((c) => c.code === 'GB');
+  const inn = d.spendByCountry.find((c) => c.code === 'IN');
+  assert.ok(gb && inn, 'both GB and IN geo rows present');
+  assert.equal(gb.approved, 2, 'GB approved count');
+  assert.equal(inn.approved, 1, 'IN approved count');
+  assert.equal(Number(gb.gbp), 300, 'GB approved spend in gbp');
+  assert.equal(Number(inn.inr), 118, 'IN approved spend in inr');
+  assert.equal(gb.rejected, 1, 'GB rejected count');
+
   assert.ok(Array.isArray(d.trend) && d.trend.length >= 1, 'trend has months');
 });
 
@@ -109,6 +119,13 @@ test('country filter scopes every figure (UK only)', async () => {
   assert.equal(Number(r.data.reimbursed.inr), 0, 'no ₹ when filtered to UK');
   assert.ok(r.data.approved.UK >= 2);
   assert.ok(Number(r.data.reimbursed.gbp) >= 300);
+});
+
+test('spendByCountry follows the country filter', async () => {
+  const uk = await GET(stats('2020-01-01', '2030-12-31', 'UK'), { auth: MGR });
+  assert.ok(uk.data.spendByCountry.every((c) => c.code === 'GB'), 'UK filter → only GB geo rows');
+  const ind = await GET(stats('2020-01-01', '2030-12-31', 'IN'), { auth: MGR });
+  assert.ok(ind.data.spendByCountry.every((c) => c.code === 'IN'), 'IN filter → only IN geo rows');
 });
 
 test('payload carries BOTH currencies per row (drives the £/₹ toggle)', async () => {

@@ -160,7 +160,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     // Read-only. Scopes non-draft claims by [fromDate,toDate] (on submittedAt,
     // falling back to claimPeriod) and by country ('ALL' | 'UK' | 'IN'), then
     // aggregates. Currencies are kept SEPARATE (GBP for UK, INR for India) — never
-    // summed. Spend-by-team groups on employee.department; null/blank → 'Unassigned'.
+    // summed. spendByCountry is keyed by ISO alpha-2 (UK → GB, IN → IN) for the map.
     this.on('dashboardStats', async (req) => {
       const { fromDate, toDate, country } = req.data || {};
       const ymd = (d) => (d ? String(d).slice(0, 10) : null);
@@ -168,6 +168,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const to = ymd(toDate);
       const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
       const isIN = (r) => r.country === 'IN';
+      const isoOf = (r) => (r.country === 'IN' ? 'IN' : 'GB'); // UK → GB (ISO 3166 alpha-2)
 
       // Non-draft claims with employee dept + items (+ expense type) for grouping.
       let rows = await SELECT.from(CLAIMS).columns((c) => {
@@ -192,6 +193,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const rejected = { UK: 0, IN: 0, total: 0 };
       const reimbursed = { gbp: 0, inr: 0 };
       const catMap = new Map();
+      const geoMap = new Map();
       const trendMap = new Map();
 
       for (const r of rows) {
@@ -203,6 +205,15 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           if (r.status === 'Approved') t.approved += 1;
           trendMap.set(mk, t);
         }
+
+        // Per-country (ISO) rollup for the geographic card — every in-window claim.
+        const iso = isoOf(r);
+        const gc = geoMap.get(iso) || { code: iso, country: r.country, claims: 0, approved: 0, awaiting: 0, rejected: 0, gbp: 0, inr: 0 };
+        gc.claims += 1;
+        if (r.status === 'Approved') { gc.approved += 1; if (isIN(r)) gc.inr += g; else gc.gbp += g; }
+        else if (r.status === 'Rejected') gc.rejected += 1;
+        else if (r.status === 'Submitted' || r.status === 'FirstApproved') gc.awaiting += 1;
+        geoMap.set(iso, gc);
 
         if (r.status === 'Approved') {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
@@ -233,6 +244,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         rejected,
         reimbursed: { gbp: round2(reimbursed.gbp), inr: round2(reimbursed.inr) },
         spendByCategory: fin([...catMap.values()]),
+        spendByCountry: [...geoMap.values()].map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) })),
         trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
       };
     });

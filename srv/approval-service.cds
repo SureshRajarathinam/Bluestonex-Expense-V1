@@ -8,6 +8,9 @@ using EXP as db from '../db/schema';
 type DashCount : { UK : Integer; ![IN] : Integer; total : Integer; }
 type DashMoney : { gbp : Decimal(15,2); inr : Decimal(15,2); }
 type DashCat   : { code : String; description : String; gbp : Decimal(15,2); inr : Decimal(15,2); }
+type DashGeo   : { code : String; country : String; claims : Integer;
+                   approved : Integer; awaiting : Integer; rejected : Integer;
+                   gbp : Decimal(15,2); inr : Decimal(15,2); }
 type DashTrend : { month : String; submitted : Integer; approved : Integer; }
 type DashStats : {
   awaiting        : DashCount;
@@ -15,6 +18,7 @@ type DashStats : {
   rejected        : DashCount;
   reimbursed      : DashMoney;
   spendByCategory : many DashCat;
+  spendByCountry  : many DashGeo;
   trend           : many DashTrend;
 }
 

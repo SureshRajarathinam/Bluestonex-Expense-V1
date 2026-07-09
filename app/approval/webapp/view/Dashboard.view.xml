@@ -5,6 +5,7 @@
   xmlns:core="sap.ui.core"
   xmlns:l="sap.ui.layout"
   xmlns:dnd="sap.ui.core.dnd"
+  xmlns:vbm="sap.ui.vbm"
   height="100%"
   busy="{dash>/busy}">
 
@@ -124,6 +125,21 @@
         <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/trendHtml}" />
         <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
+      </VBox>
+
+      <!-- Spend by country (geographic choropleth). Primary renderer = AnalyticMap.
+           FALLBACK (if the map renders blank live): replace the <vbm:AnalyticMap>
+           block below with:  <core:HTML content="{dash>/geoSvgHtml}" />
+           (same /geo model; geoSvgHtml is already built in the controller). -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="geo" /></customData>
+        <Title text="{i18n>dashGeo}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <vbm:AnalyticMap regions="{dash>/geo}" width="100%" height="300px" class="bsxCardPad">
+          <vbm:regions>
+            <vbm:Region code="{dash>code}" color="{dash>color}" tooltip="{dash>tooltip}" />
+          </vbm:regions>
+        </vbm:AnalyticMap>
+        <core:HTML content="{dash>/geoLegendHtml}" />
       </VBox>
     </FlexBox>
 

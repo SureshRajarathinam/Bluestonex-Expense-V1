@@ -25,6 +25,36 @@ sap.ui.define([
   }
   function pct(v, max) { return Math.max(0, Math.round((v / (max || 1)) * 100)); }
 
+  // Geographic card: ISO alpha-2 → display name, tier colours, static legend.
+  var GEO_NAMES = { GB: "United Kingdom", IN: "India" };
+  var GEO_LEGEND_HTML =
+    "<div class='bsxLegend bsxCardPad'>" +
+      "<span><i class='bsxDot' style='background:#1b3fae'></i>High</span>" +
+      "<span><i class='bsxDot' style='background:#4a90e2'></i>Medium</span>" +
+      "<span><i class='bsxDot' style='background:#a9c8f0'></i>Low</span>" +
+      "<span><i class='bsxDot' style='background:#e4e8ec'></i>No activity</span>" +
+    "</div>";
+  // Shade tier from approved count (relative to the max in the current result set).
+  function geoTier(n, max) {
+    var r = (n || 0) / (max || 1);
+    return r > 0.66 ? "rgba(27,63,174,1)" : r > 0.33 ? "rgba(74,144,226,1)" : "rgba(169,200,240,1)";
+  }
+  // Inline fallback (only used if AnalyticMap renders blank): a compact per-country
+  // summary shaded by the same tier, currency-native — driven by the SAME /geo data.
+  function geoChart(rows, max) {
+    if (!rows.length) { return ""; }
+    var body = rows.map(function (r) {
+      var sym = r.code === "IN" ? "₹" : "£";
+      var amt = r.code === "IN" ? r.inr : r.gbp;
+      return "<div class='bsxHRow'>" +
+        "<span class='bsxHLabel'><i class='bsxDot' style='background:" + geoTier(r.approved, max) + "'></i>" +
+          esc(GEO_NAMES[r.code] || r.country || r.code) + "</span>" +
+        "<span class='bsxHVal'>" + (r.approved || 0) + " approved · " + money(sym, amt) + "</span>" +
+      "</div>";
+    }).join("");
+    return "<div class='bsxHBars'>" + body + "</div>";
+  }
+
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
   // Grouped VERTICAL bars: Approved (green) vs Rejected (red), per country group.
   function avrChart(groups) {
@@ -108,7 +138,8 @@ sap.ui.define([
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
         showGbp: true, showInr: true, reimbursedGbp: money("£", 0), reimbursedInr: money("₹", 0),
-        avrHtml: "", catHtml: "", trendHtml: ""
+        avrHtml: "", catHtml: "", trendHtml: "",
+        geo: [], geoLegendHtml: GEO_LEGEND_HTML, geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
       this._loaded = false;
@@ -168,6 +199,21 @@ sap.ui.define([
         return { title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur, "bsxHFill--blue"));
+
+      // Spend by country — shade each region by approved count (currency-agnostic;
+      // native-currency spend rides in the tooltip). Country filter already scoped it.
+      var geoRows = j.spendByCountry || [];
+      var gmax = geoRows.reduce(function (mx, r) { return Math.max(mx, r.approved || 0); }, 0);
+      m.setProperty("/geo", geoRows.map(function (r) {
+        var sym = r.code === "IN" ? "₹" : "£";
+        var amt = r.code === "IN" ? r.inr : r.gbp;
+        return {
+          code: r.code,
+          color: geoTier(r.approved, gmax),
+          tooltip: (GEO_NAMES[r.code] || r.country) + " · " + money(sym, amt) + " · " + (r.approved || 0) + " approved"
+        };
+      }));
+      m.setProperty("/geoSvgHtml", geoChart(geoRows, gmax)); // fallback body (see view comment)
 
       var tr = (j.trend || []).map(function (t) {
         var parts = (t.month || "").split("-");
