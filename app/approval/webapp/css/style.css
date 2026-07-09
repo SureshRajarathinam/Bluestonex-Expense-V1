@@ -118,6 +118,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxCardRow { width: 100%; box-sizing: border-box; }
 .bsxKpiTile { flex: 1 1 190px; min-width: 165px; box-sizing: border-box; }
 .bsxChartCard { flex: 1 1 26rem; min-width: 20rem; box-sizing: border-box; }
+/* Draggable dashboard cards: grab affordance + drop-indicator polish */
+.bsxDragCard { cursor: grab; }
+.bsxDragCard:active { cursor: grabbing; }
 
 /* ---- Dashboard: KPI split pills ------------------------------------------ */
 .bsxPills { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }

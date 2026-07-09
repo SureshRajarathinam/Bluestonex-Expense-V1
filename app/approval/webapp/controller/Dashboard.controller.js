@@ -7,6 +7,7 @@ sap.ui.define([
 
   var SVC = "/approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var LKEY = "bsx.dash.layout.v1"; // localStorage key for the user's custom card order
 
   function ymd(d) {
     if (!d) { return ""; }
@@ -207,6 +208,69 @@ sap.ui.define([
     onCurrency: function (oEvent) {
       this._m.setProperty("/cur", oEvent.getParameter("item").getKey());
       this._apply(); // payload already carries both currencies — no refetch
+    },
+
+    // ── Drag-and-drop card personalisation (persisted to localStorage) ───────
+    // On first render, capture the markup default, then apply any saved order.
+    onAfterRendering: function () {
+      if (!this.byId("dashRow0")) { return; }
+      if (!this._defaultLayout) { this._defaultLayout = this._readLayout(); }
+      if (this._layoutApplied) { return; }
+      this._layoutApplied = true;
+      var saved = null;
+      try { saved = JSON.parse(window.localStorage.getItem(LKEY) || "null"); } catch (e) { saved = null; }
+      if (saved) { this._applyLayout(saved); }
+    },
+
+    _rows: function () { return [this.byId("dashRow0"), this.byId("dashRow1"), this.byId("dashRow2")]; },
+
+    // Current layout as an array (per row) of card keys.
+    _readLayout: function () {
+      return this._rows().map(function (r) {
+        return r ? r.getItems().map(function (it) { return it.data("card"); }) : [];
+      });
+    },
+
+    // Move cards into the rows/order described by `layout` (keys not found are skipped).
+    _applyLayout: function (layout) {
+      var rows = this._rows(), byKey = {};
+      rows.forEach(function (r) {
+        if (r) { r.getItems().forEach(function (it) { byKey[it.data("card")] = it; }); }
+      });
+      layout.forEach(function (keys, ri) {
+        var row = rows[ri];
+        if (!row || !keys) { return; }
+        keys.forEach(function (k, idx) {
+          var c = byKey[k];
+          if (c) {
+            var p = c.getParent();
+            if (p) { p.removeItem(c); }
+            row.insertItem(c, idx);
+          }
+        });
+      });
+    },
+
+    onCardDrop: function (oEvent) {
+      var oDragged = oEvent.getParameter("draggedControl");
+      var oDropped = oEvent.getParameter("droppedControl");
+      if (!oDragged || oDragged === oDropped) { return; }
+      var sPos = oEvent.getParameter("dropPosition"); // Before | After
+      var oTarget = oDropped ? oDropped.getParent() : oEvent.getSource().getParent();
+      var oSource = oDragged.getParent();
+      if (oSource) { oSource.removeItem(oDragged); }
+      var iIdx = oDropped ? oTarget.indexOfItem(oDropped) + (sPos === "After" ? 1 : 0) : oTarget.getItems().length;
+      oTarget.insertItem(oDragged, iIdx);
+      this._saveLayout();
+    },
+
+    _saveLayout: function () {
+      try { window.localStorage.setItem(LKEY, JSON.stringify(this._readLayout())); } catch (e) { /* storage off — ignore */ }
+    },
+
+    onResetLayout: function () {
+      try { window.localStorage.removeItem(LKEY); } catch (e) { /* ignore */ }
+      if (this._defaultLayout) { this._applyLayout(this._defaultLayout); }
     }
   });
 });

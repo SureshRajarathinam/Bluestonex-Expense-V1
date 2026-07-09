@@ -4,6 +4,7 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   xmlns:l="sap.ui.layout"
+  xmlns:dnd="sap.ui.core.dnd"
   height="100%"
   busy="{dash>/busy}">
 
@@ -11,7 +12,11 @@
 
     <!-- ── Filters (drive every card) ─────────────────────────────────────── -->
     <VBox class="bsxCard bsxPremiumCard">
-      <Title text="{i18n>tabDashboard}" class="bsxCardTitle bsxCardPad" level="H3" />
+      <OverflowToolbar class="bsxCardPad">
+        <Title text="{i18n>tabDashboard}" class="bsxCardTitle" level="H3" />
+        <ToolbarSpacer />
+        <Button text="{i18n>dashResetLayout}" icon="sap-icon://reset" type="Transparent" tooltip="{i18n>dashResetLayout}" press=".onResetLayout" />
+      </OverflowToolbar>
       <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
         <VBox>
           <Label text="{i18n>dashFrom}" class="bsxFieldLbl" />
@@ -43,7 +48,7 @@
           </SegmentedButton>
         </VBox>
       </l:Grid>
-      <Text text="{dash>/rangeText}" class="bsxKpiSub bsxCardPad" />
+      <Text text="{= ${dash>/rangeText} + '  ·  ' + ${i18n>dashDragHint} }" class="bsxKpiSub bsxCardPad" />
     </VBox>
 
     <MessageStrip visible="{= !${dash>/hasData} || !!${dash>/error} }"
@@ -51,29 +56,39 @@
                   type="{= ${dash>/error} ? 'Warning' : 'Information' }"
                   showIcon="true" class="bsxCardPad" />
 
-    <!-- ── Layer 1 · KPI tiles (flex row — hidden tiles collapse, no gaps) ── -->
-    <FlexBox wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
-      <VBox class="bsxCard bsxKpi bsxKpiTile">
+    <!-- ── Layer 1 · KPI tiles ────────────────────────────────────────────── -->
+    <!-- Each row shares groupName 'cards' so any card can be dragged to any row. -->
+    <FlexBox id="dashRow0" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="awaiting" /></customData>
         <Text text="{i18n>dashAwaiting}" class="bsxFieldLbl" />
         <Title text="{dash>/awaitingTotal}" level="H1" class="bsxKpiNum bsxKpiWait" />
         <core:HTML content="{dash>/awaitingPills}" />
       </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile">
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="approved" /></customData>
         <Text text="{i18n>dashApproved}" class="bsxFieldLbl" />
         <Title text="{dash>/approvedTotal}" level="H1" class="bsxKpiNum bsxKpiOk" />
         <core:HTML content="{dash>/approvedPills}" />
       </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile">
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="rejected" /></customData>
         <Text text="{i18n>dashRejected}" class="bsxFieldLbl" />
         <Title text="{dash>/rejectedTotal}" level="H1" class="bsxKpiNum bsxKpiNo" />
         <core:HTML content="{dash>/rejectedPills}" />
       </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile" visible="{dash>/showGbp}">
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard" visible="{dash>/showGbp}">
+        <customData><core:CustomData key="card" value="reimUK" /></customData>
         <Text text="{i18n>dashReimbursedUK}" class="bsxFieldLbl" />
         <Title text="{dash>/reimbursedGbp}" level="H2" class="bsxKpiNum" />
         <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
       </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile" visible="{dash>/showInr}">
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard" visible="{dash>/showInr}">
+        <customData><core:CustomData key="card" value="reimIN" /></customData>
         <Text text="{i18n>dashReimbursedIN}" class="bsxFieldLbl" />
         <Title text="{dash>/reimbursedInr}" level="H2" class="bsxKpiNum" />
         <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
@@ -81,12 +96,18 @@
     </FlexBox>
 
     <!-- ── Layer 2 · Spend by category + Spend by team ─────────────────────── -->
-    <FlexBox wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard">
+    <FlexBox id="dashRow1" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="spendCat" /></customData>
         <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/catHtml}" />
       </VBox>
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard">
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="spendTeam" /></customData>
         <Title text="{= ${i18n>dashSpendTeam} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/teamHtml}" />
         <Text text="{i18n>dashTeamHint}" class="bsxKpiSub bsxCardPad" />
@@ -94,16 +115,23 @@
     </FlexBox>
 
     <!-- ── Layer 3 · Approved vs Rejected + Trend ──────────────────────────── -->
-    <FlexBox wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard">
+    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="avr" /></customData>
         <Title text="{i18n>dashApprRej}" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/avrHtml}" />
       </VBox>
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard">
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="trend" /></customData>
         <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/trendHtml}" />
         <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
       </VBox>
     </FlexBox>
+
   </ScrollContainer>
 </mvc:View>

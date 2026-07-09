@@ -9,7 +9,8 @@
       "Bash(git commit *)",
       "Bash(node --check app/my-expenses/webapp/controller/Claim.controller.js)",
       "Bash(node --check app/approval/webapp/controller/Dashboard.controller.js)",
-      "Bash(python3 -c \"import xml.dom.minidom,sys; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('Dashboard.view.xml: well-formed'\\)\")"
+      "Bash(python3 -c \"import xml.dom.minidom,sys; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('Dashboard.view.xml: well-formed'\\)\")",
+      "Bash(python3 -c \"import xml.dom.minidom; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('view: well-formed'\\)\")"
     ]
   },
   "hooks": {
