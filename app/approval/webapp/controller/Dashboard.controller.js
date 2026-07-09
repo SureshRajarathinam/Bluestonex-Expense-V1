@@ -108,7 +108,7 @@ sap.ui.define([
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
         showGbp: true, showInr: true, reimbursedGbp: money("£", 0), reimbursedInr: money("₹", 0),
-        avrHtml: "", catHtml: "", teamHtml: "", trendHtml: ""
+        avrHtml: "", catHtml: "", trendHtml: ""
       });
       this.getView().setModel(this._m, "dash");
       this._loaded = false;
@@ -167,11 +167,7 @@ sap.ui.define([
       var cat = (j.spendByCategory || []).map(function (c) {
         return { title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });
-      var team = (j.spendByTeam || []).map(function (t) {
-        return { title: t.department, value: pick(t), mod: t.department === "Unassigned" ? "bsxHFill--muted" : "" };
-      }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur, "bsxHFill--blue"));
-      m.setProperty("/teamHtml", hBars(team, cur, "bsxHFill--violet"));
 
       var tr = (j.trend || []).map(function (t) {
         var parts = (t.month || "").split("-");

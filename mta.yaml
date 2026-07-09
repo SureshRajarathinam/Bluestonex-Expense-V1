@@ -148,6 +148,18 @@ resources:
       service: hana
       service-plan: hdi-shared
 
+  # ── External org-apps HDI container (classic USERS_MASTER) — STAGED ────────
+  # Prepared for reusing the existing USERS_MASTER employee master, NOT active
+  # until the grantor is confirmed and a HANA deploy is approved. To activate,
+  # uncomment this resource, add it to both `expense-management-srv.requires`
+  # and `expense-management-db-deployer.requires`, set the real service-name,
+  # and fill db/src/USERS_MASTER.hdb{synonym,grants}. See db/external/README.md.
+  #
+  # - name: bsx-org-apps-db
+  #   type: org.cloudfoundry.existing-service
+  #   parameters:
+  #     service-name: <EXISTING_HDI_SERVICE_INSTANCE_FOR_hdi_bsx-org-apps-db>
+
   # ── XSUAA (Authentication & Authorization) ────────────────────────────────
   - name: expense-management-xsuaa
     type: org.cloudfoundry.managed-service

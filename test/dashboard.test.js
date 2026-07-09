@@ -75,9 +75,8 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
   const hotel = d.spendByCategory.find((c) => c.code === 'HOTEL');
   assert.ok(hotel && Number(hotel.gbp) === 300, 'HOTEL category gbp');
 
-  // Spend by team — the clerk (non-seeded) claim lands in the Unassigned bucket.
-  assert.ok(d.spendByTeam.some((t) => t.department === 'Unassigned'), 'Unassigned team bucket');
-  assert.ok(d.spendByTeam.some((t) => t.department === 'Operations'), 'seeded dept bucket');
+  // Spend-by-team was removed (USERS_MASTER has no department) — must not be in the payload.
+  assert.equal(d.spendByTeam, undefined, 'spendByTeam removed from payload');
 
   assert.ok(Array.isArray(d.trend) && d.trend.length >= 1, 'trend has months');
 });

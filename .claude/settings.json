@@ -10,7 +10,8 @@
       "Bash(node --check app/my-expenses/webapp/controller/Claim.controller.js)",
       "Bash(node --check app/approval/webapp/controller/Dashboard.controller.js)",
       "Bash(python3 -c \"import xml.dom.minidom,sys; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('Dashboard.view.xml: well-formed'\\)\")",
-      "Bash(python3 -c \"import xml.dom.minidom; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('view: well-formed'\\)\")"
+      "Bash(python3 -c \"import xml.dom.minidom; xml.dom.minidom.parse\\('app/approval/webapp/view/Dashboard.view.xml'\\); print\\('view: well-formed'\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.cds||{},null,2\\)\\); console.log\\('deps:',Object.keys\\(p.dependencies||{}\\).join\\(', '\\)\\)\")"
     ]
   },
   "hooks": {

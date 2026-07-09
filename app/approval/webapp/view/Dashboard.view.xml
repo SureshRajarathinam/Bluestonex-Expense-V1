@@ -95,7 +95,7 @@
       </VBox>
     </FlexBox>
 
-    <!-- ── Layer 2 · Spend by category + Spend by team ─────────────────────── -->
+    <!-- ── Layer 2 · Spend by category (team card removed; slot reserved) ───── -->
     <FlexBox id="dashRow1" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
@@ -105,12 +105,6 @@
         <customData><core:CustomData key="card" value="spendCat" /></customData>
         <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/catHtml}" />
-      </VBox>
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
-        <customData><core:CustomData key="card" value="spendTeam" /></customData>
-        <Title text="{= ${i18n>dashSpendTeam} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/teamHtml}" />
-        <Text text="{i18n>dashTeamHint}" class="bsxKpiSub bsxCardPad" />
       </VBox>
     </FlexBox>
 

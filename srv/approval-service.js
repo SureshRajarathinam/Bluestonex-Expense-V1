@@ -173,7 +173,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       let rows = await SELECT.from(CLAIMS).columns((c) => {
         c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
         c('submittedAt'); c('claimPeriod');
-        c.employee((e) => { e('department'); });
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
 
@@ -193,7 +192,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const rejected = { UK: 0, IN: 0, total: 0 };
       const reimbursed = { gbp: 0, inr: 0 };
       const catMap = new Map();
-      const teamMap = new Map();
       const trendMap = new Map();
 
       for (const r of rows) {
@@ -209,11 +207,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         if (r.status === 'Approved') {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
           if (isIN(r)) reimbursed.inr += g; else reimbursed.gbp += g;
-
-          const dept = (r.employee && r.employee.department) ? r.employee.department : 'Unassigned';
-          const team = teamMap.get(dept) || { department: dept, gbp: 0, inr: 0 };
-          if (isIN(r)) team.inr += g; else team.gbp += g;
-          teamMap.set(dept, team);
 
           for (const it of (r.items || [])) {
             const code = (it.expenseType && it.expenseType.code) || it.expenseType_code || 'OTHER';
@@ -240,7 +233,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         rejected,
         reimbursed: { gbp: round2(reimbursed.gbp), inr: round2(reimbursed.inr) },
         spendByCategory: fin([...catMap.values()]),
-        spendByTeam: fin([...teamMap.values()]),
         trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
       };
     });

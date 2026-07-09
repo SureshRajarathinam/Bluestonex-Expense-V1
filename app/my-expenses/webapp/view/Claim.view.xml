@@ -39,6 +39,7 @@
             <Text text="{payrollArea}" />
             <Label text="{i18n>lblStatus}" />
             <ObjectStatus
+              inverted="true"
               icon="{path: 'status', formatter: '.formatter.statusIcon'}"
               text="{path: 'status', formatter: '.formatter.statusText'}"
               state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
@@ -103,10 +104,10 @@
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center">
                   <ObjectStatus
-                    icon="{= ${receiptAttached} ? 'sap-icon://document' : '' }"
-                    text="{path: 'receiptAttached', formatter: '.formatter.receiptText'}"
-                    state="{= ${receiptAttached} ? 'Success' : 'None' }" />
-                  <Link text="{i18n>btnView}" class="sapUiTinyMarginBegin" visible="{= !!${receiptAttached} }" press=".onViewReceipt" />
+                    icon="{= ${receiptFileName} ? 'sap-icon://document' : '' }"
+                    text="{path: 'receiptFileName', formatter: '.formatter.receiptText'}"
+                    state="{= ${receiptFileName} ? 'Success' : 'None' }" />
+                  <Link text="{i18n>btnView}" class="sapUiTinyMarginBegin" visible="{= !!${receiptFileName} }" press=".onViewReceipt" />
                   <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
                 </HBox>
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />

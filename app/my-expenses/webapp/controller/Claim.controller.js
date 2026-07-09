@@ -92,7 +92,7 @@ sap.ui.define([
       // create(initialData, bSkipRefresh, bAtEnd) — bAtEnd:true appends new rows
       // in order; without it V4 inserts at the front and the first line drops to row 2.
       this.byId("itemsTable").getBinding("items").create({
-        vatType: "STD", expenseDate: sToday
+        vatType: "STD", expenseDate: sToday, receiptAttached: false
       }, true, true);
     },
 
@@ -235,6 +235,42 @@ sap.ui.define([
         .catch(function (e) { that.getView().setBusy(false); that.showError(e); });
     },
 
+    // Client-side gate: once a mileage row exists it must be complete. Highlights the
+    // offending cells inline (valueState) and returns the list of problems. The server
+    // rules in srv/lib/validate.js remain the authoritative backstop.
+    _validateMileageRows: function () {
+      var oTable = this.byId("mileageTable");
+      var aItems = oTable ? oTable.getItems() : [];
+      // cell index → property (matches the mileage table column order)
+      var aReq = [
+        { idx: 0, prop: "tripDate" },
+        { idx: 1, prop: "destination" },
+        { idx: 2, prop: "reasonForTrip" },
+        { idx: 4, prop: "milesCount" }
+      ];
+      var sReq = this.getText("fieldRequired");
+      var aProblems = [];
+      aItems.forEach(function (oItem, i) {
+        var aCells = oItem.getCells();
+        var oCtx = oItem.getBindingContext();
+        aReq.forEach(function (c) {
+          var oCell = aCells[c.idx];
+          if (oCell && oCell.setValueState) { oCell.setValueState("None"); }
+          if (!oCtx) { return; }
+          var v = oCtx.getProperty(c.prop);
+          var bMissing = c.prop === "milesCount"
+            ? !(Number(v) > 0)
+            : !(v && String(v).trim());
+          if (bMissing && oCell && oCell.setValueState) {
+            oCell.setValueState("Error");
+            oCell.setValueStateText(sReq);
+            aProblems.push(i + 1);
+          }
+        });
+      });
+      return aProblems;
+    },
+
     onSubmit: function () {
       var that = this;
       var oCtx = this._claimCtx();
@@ -245,6 +281,13 @@ sap.ui.define([
       var sId = oCtx && oCtx.getProperty("ID");
       if (!sId) {
         this.showError(new Error(this.getText("msgClaimNotReady")));
+        return;
+      }
+
+      // A mileage row, once added, must have all mandatory fields (Apply-for-Approval
+      // only — draft Save stays permissive). Abort with inline highlights if not.
+      if (this._validateMileageRows().length) {
+        this.showError(new Error(this.getText("msgMileageIncomplete")));
         return;
       }
       var bDraft = oCtx.getPath().indexOf("IsActiveEntity=false") > -1;

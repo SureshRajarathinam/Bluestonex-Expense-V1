@@ -19,7 +19,7 @@
               <core:Item key="" text="{i18n>all}" />
               <core:Item key="Draft" text="Draft" />
               <core:Item key="Submitted" text="Submitted" />
-              <core:Item key="FirstApproved" text="First Approved" />
+              <core:Item key="FirstApproved" text="Awaiting 2nd Approval" />
               <core:Item key="Approved" text="Approved" />
               <core:Item key="Rejected" text="Rejected" />
             </Select>
@@ -76,21 +76,30 @@
           </noData>
           <columns>
             <Column><Text text="{i18n>colClaimNo}" /></Column>
+            <Column><Text text="{i18n>colEmployee}" /></Column>
+            <Column><Text text="{i18n>colEmpNo}" /></Column>
             <Column><Text text="{i18n>colCountry}" /></Column>
             <Column><Text text="{i18n>colPeriod}" /></Column>
             <Column><Text text="{i18n>colStatus}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>colNet}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>colTax}" /></Column>
             <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
           </columns>
           <items>
             <ColumnListItem type="Navigation" press=".onOpenClaim">
               <cells>
                 <ObjectIdentifier title="{claimNumber}" text="{= ${claimNumber} ? '' : 'Draft (unsaved)'}" />
+                <Text text="{employeeName}" />
+                <Text text="{employeeNumber}" />
                 <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
                 <Text text="{claimPeriod}" />
                 <ObjectStatus
+                  inverted="true"
                   icon="{path: 'status', formatter: '.formatter.statusIcon'}"
                   text="{path: 'status', formatter: '.formatter.statusText'}"
                   state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+                <ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
               </cells>
             </ColumnListItem>
