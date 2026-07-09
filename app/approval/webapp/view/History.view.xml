@@ -17,8 +17,9 @@
           <Select id="fStatus" width="100%">
             <core:Item key="" text="{i18n>all}" />
             <core:Item key="Submitted" text="Submitted" />
-            <core:Item key="FirstApproved" text="First Approved" />
+            <core:Item key="FirstApproved" text="Awaiting 2nd Approval" />
             <core:Item key="Approved" text="Approved" />
+            <core:Item key="Returned" text="Returned for rework" />
             <core:Item key="Rejected" text="Rejected" />
           </Select>
         </VBox>
@@ -51,7 +52,7 @@
         <Title text="{i18n>historyTitle}" class="bsxCardTitle" level="H3" />
         <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiTotal} + ': ' + ${view>/count} }" />
         <ObjectStatus inverted="true" state="Success" text="{= ${i18n>kpiApproved} + ': ' + ${view>/approved} }" />
-        <ObjectStatus inverted="true" state="Error" text="{= 'Rejected: ' + ${view>/rejected} }" />
+        <ObjectStatus inverted="true" state="Warning" text="{= ${i18n>kpiReturned} + ': ' + ${view>/rejected} }" />
         <ToolbarSpacer />
         <Button text="{i18n>btnExport}" icon="sap-icon://pdf-attachment" type="Transparent" tooltip="{i18n>btnExport}" press=".onExportPdf" />
         <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
@@ -71,25 +72,35 @@
         <columns>
           <Column><Text text="{i18n>colClaimNo}" /></Column>
           <Column><Text text="{i18n>colEmployee}" /></Column>
-          <Column><Text text="{i18n>colCountry}" /></Column>
-          <Column><Text text="{i18n>colPeriod}" /></Column>
+          <Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>colEmpNo}" /></Column>
+          <Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>colCountry}" /></Column>
           <Column><Text text="{i18n>colStatus}" /></Column>
           <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
-          <Column><Text text="{i18n>colSubmittedOn}" /></Column>
-          <Column><Text text="{i18n>colDecidedBy}" /></Column>
+          <Column hAlign="Center" minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>colAttachments}" /></Column>
+          <Column hAlign="Center" minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>colResubmits}" /></Column>
+          <Column minScreenWidth="Desktop" demandPopin="true"><Text text="{i18n>colSubmittedOn}" /></Column>
+          <Column minScreenWidth="Tablet" demandPopin="true"><Text text="{i18n>colDecidedBy}" /></Column>
         </columns>
         <items>
-          <ColumnListItem>
+          <ColumnListItem type="Navigation" press=".onOpenClaim">
             <cells>
               <ObjectIdentifier title="{claimNumber}" />
               <Text text="{employeeName}" />
+              <Text text="{employeeNumber}" />
               <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
-              <Text text="{= ${claimPeriod} + (${periodEnd} ? ' – ' + ${periodEnd} : '') }" />
               <ObjectStatus
                 icon="{path: 'status', formatter: '.formatter.statusIcon'}"
                 text="{path: 'status', formatter: '.formatter.statusText'}"
                 state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
               <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+              <ObjectStatus
+                icon="{= (${attachmentCount} > 0) ? 'sap-icon://attachment' : '' }"
+                text="{= (${attachmentCount} > 0) ? ('' + ${attachmentCount}) : '—' }"
+                state="{= (${attachmentCount} > 0) ? 'Information' : 'None' }" inverted="true" />
+              <ObjectStatus
+                icon="{= (${resubmitCount} > 0) ? 'sap-icon://synchronize' : '' }"
+                text="{= (${resubmitCount} > 0) ? ('×' + ${resubmitCount}) : '—' }"
+                state="{= (${resubmitCount} > 0) ? 'Warning' : 'None' }" inverted="true" />
               <Text text="{submittedAt}" />
               <Text text="{= ${level2ApprovedBy} || ${level1ApprovedBy} || ${rejectedBy} || '—' }" />
             </cells>

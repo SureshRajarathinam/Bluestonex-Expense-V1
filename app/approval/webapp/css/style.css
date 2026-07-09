@@ -159,6 +159,28 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVBar--sub { background: #a9c2e8; }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); }
 
+/* ---- History detail: approval chain + activity timeline ------------------ */
+/* Blue/black palette, consistent with the Dashboard. Zero new library — a
+   hand-built vertical timeline hosted in a sap.ui.core.HTML. */
+.bsxChainNode--no { background: #1d1d1f; }
+
+.bsxTlChain { margin: .25rem 0 .5rem; }
+.bsxTlChainRow { display: flex; align-items: flex-start; gap: .6rem; padding: .35rem 0; }
+.bsxTlChainBody { display: flex; flex-direction: column; }
+.bsxTlChainName { font-size: .875rem; font-weight: 600; color: var(--bsx-text); }
+
+.bsxTimeline { position: relative; margin: .25rem 0 .25rem .35rem; padding-left: 1rem; border-left: 2px solid var(--bsx-line); }
+.bsxTlItem { position: relative; padding: .3rem 0 .55rem; }
+.bsxTlDot { position: absolute; left: -1.42rem; top: .45rem; width: .7rem; height: .7rem; border-radius: 50%; box-shadow: 0 0 0 3px var(--bsx-card); }
+.bsxTlDot--ok  { background: #0a6ed1; }
+.bsxTlDot--no  { background: #1d1d1f; }
+.bsxTlDot--sub { background: #a9c2e8; }
+.bsxTlBody { display: flex; flex-direction: column; }
+.bsxTlHead { font-size: .875rem; font-weight: 600; color: var(--bsx-text); }
+.bsxTlAt   { font-weight: 400; color: var(--bsx-muted); font-size: .8125rem; margin-left: .35rem; }
+.bsxTlSub  { font-size: .8125rem; color: var(--bsx-muted); margin-top: .1rem; }
+.bsxTlEmpty { color: var(--bsx-muted); font-size: .875rem; padding: .5rem 0; }
+
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }
 .bsxHRow { display: flex; align-items: center; gap: .75rem; padding: .3rem 0; }

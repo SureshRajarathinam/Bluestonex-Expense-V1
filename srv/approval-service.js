@@ -13,7 +13,7 @@ const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'objec
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
-    const { CLAIMS, WORKFLOW } = cds.entities('EXP');
+    const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG } = cds.entities('EXP');
 
     // ─── Action: approve (country-aware: UK 2-level, India 1-level) ──────────
     this.on('approve', 'Approvals', async (req) => {
@@ -78,11 +78,14 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         (claim.status === 'FirstApproved' && me === wf?.secondApprover);
       if (!allowed) return req.error(403, 'You are not the assigned approver for this claim.');
 
-      await UPDATE(CLAIMS, ID).with({ status: 'Rejected', rejectedBy: me, rejectionReason: comment });
-      await notification.notifyRejected(claim, me, comment);
-      await audit.record({ userId: me, action: 'Rejected', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
+      // Decline = "return for rework": the claim goes back to the employee
+      // (status Returned, reworkable) rather than to a terminal Rejected. Keep
+      // rejectedBy/rejectionReason — they now record who returned it and why.
+      await UPDATE(CLAIMS, ID).with({ status: 'Returned', rejectedBy: me, rejectionReason: comment });
+      await notification.notifyReturned(claim, me, comment);
+      await audit.record({ userId: me, action: 'Returned', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
 
-      LOG.info(`Claim ${claim.claimNumber} rejected by ${me}`);
+      LOG.info(`Claim ${claim.claimNumber} returned for rework by ${me}`);
       return SELECT.one.from(CLAIMS, ID);
     });
 
@@ -122,6 +125,73 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         details: `L1=${data?.firstApprover || '-'}, L2=${data?.secondApprover || '-'}`
       });
       LOG.info(`Workflow for '${data?.country}' updated by ${req.user.id}`);
+    });
+
+    // ─── History enrichment: batch-fill attachmentCount + resubmitCount ──────
+    // One SELECT over ITEMS and one over AUDITLOG for the whole page of rows
+    // (NOT N+1). The virtual columns are null from the DB; we set them here.
+    this.after('READ', 'ClaimHistory', async (rows) => {
+      const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
+      if (!list.length) return;
+      const ids = list.map((r) => r.ID).filter(Boolean);
+      const numbers = list.map((r) => r.claimNumber).filter(Boolean);
+
+      const attCount = {};
+      if (ids.length) {
+        const items = await SELECT.from(ITEMS).columns('claim_ID')
+          .where('receiptFileName is not null and claim_ID in', ids);
+        for (const it of items) attCount[it.claim_ID] = (attCount[it.claim_ID] || 0) + 1;
+      }
+      const reCount = {};
+      if (numbers.length) {
+        const logs = await SELECT.from(AUDITLOG).columns('objectKey')
+          .where({ objectKey: { in: numbers }, action: 'Resubmitted' });
+        for (const l of logs) reCount[l.objectKey] = (reCount[l.objectKey] || 0) + 1;
+      }
+      for (const r of list) {
+        r.attachmentCount = attCount[r.ID] || 0;
+        r.resubmitCount = reCount[r.claimNumber] || 0;
+      }
+    });
+
+    // ─── Function: claimJourney (Approver/Admin) — per-claim detail/timeline ──
+    this.on('claimJourney', async (req) => {
+      const { claimNumber } = req.data || {};
+      if (!claimNumber) return req.error(400, 'A claim number is required.');
+
+      const claim = await SELECT.one.from(CLAIMS)
+        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); e('employeeNumber'); }); })
+        .where({ claimNumber });
+      if (!claim) return req.error(404, 'Expense claim not found.');
+
+      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
+      const logs = await SELECT.from(AUDITLOG).where({ objectKey: claimNumber }).orderBy('timestamp asc');
+      const items = await SELECT.from(ITEMS)
+        .columns((i) => { i('ID'); i('receiptFileName'); i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); })
+        .where('receiptFileName is not null and claim_ID =', claim.ID);
+
+      return {
+        claimNumber:    claim.claimNumber,
+        employeeName:   (claim.employee && claim.employee.fullName) || claim.employee_ID || '',
+        employeeNumber: (claim.employee && claim.employee.employeeNumber) || '',
+        createdBy:      claim.createdBy || '',
+        country:        claim.country || '',
+        currency:       claim.currency || '',
+        totalGross:     Number(claim.totalGross) || 0,
+        assignedL1:     (wf && wf.firstApprover) || '',
+        assignedL2:     (wf && wf.secondApprover) || '',
+        approvedL1By:   claim.level1ApprovedBy || '',
+        approvedL2By:   claim.level2ApprovedBy || '',
+        returnedBy:     claim.rejectedBy || '',
+        resubmitCount:  logs.filter((l) => l.action === 'Resubmitted').length,
+        attachments:    items.map((it) => ({
+          itemID:      it.ID,
+          fileName:    it.receiptFileName || '',
+          expenseType: (it.expenseType && it.expenseType.description) || it.expenseType_code || '',
+          gross:       Number(it.grossAmount) || 0
+        })),
+        events: logs.map((l) => ({ action: l.action, at: l.timestamp, by: l.userId, note: l.details || '' }))
+      };
     });
 
     // ─── Function: exportClaimsPdf (Approver/Admin) — returns PDF as base64 ────
@@ -177,6 +247,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
 
+      // "Declined" bucket = returned-for-rework (current flow) + legacy Rejected,
+      // so the figure stays truthful across old and new data.
+      const isDeclined = (r) => r.status === 'Returned' || r.status === 'Rejected';
       const dateOf = (r) => ymd(r.submittedAt) || ymd(r.claimPeriod);
       const inCountry = (r) => (!country || country === 'ALL') ? true : r.country === country;
       const inWindow = (r) => {
@@ -211,7 +284,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         const gc = geoMap.get(iso) || { code: iso, country: r.country, claims: 0, approved: 0, awaiting: 0, rejected: 0, gbp: 0, inr: 0 };
         gc.claims += 1;
         if (r.status === 'Approved') { gc.approved += 1; if (isIN(r)) gc.inr += g; else gc.gbp += g; }
-        else if (r.status === 'Rejected') gc.rejected += 1;
+        else if (isDeclined(r)) gc.rejected += 1;
         else if (r.status === 'Submitted' || r.status === 'FirstApproved') gc.awaiting += 1;
         geoMap.set(iso, gc);
 
@@ -227,7 +300,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
             if (isIN(r)) cat.inr += ig; else cat.gbp += ig;
             catMap.set(code, cat);
           }
-        } else if (r.status === 'Rejected') {
+        } else if (isDeclined(r)) {
           rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
         } else if (r.status === 'Submitted' || r.status === 'FirstApproved') {
           awaiting[isIN(r) ? 'IN' : 'UK'] += 1; awaiting.total += 1;

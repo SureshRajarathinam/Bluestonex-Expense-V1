@@ -86,8 +86,11 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const claim = await SELECT.one.from(CLAIMS, ID);
 
       if (!claim) return req.error(404, 'Expense claim not found.');
-      if (claim.status !== 'Draft')
+      // Submittable from Draft (first time) OR Returned (approver sent it back
+      // for rework). A resubmit reuses the SAME record + claimNumber → no dup.
+      if (!['Draft', 'Returned'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be submitted — current status is '${claim.status}'.`);
+      const wasReturned = claim.status === 'Returned';
       if (!claim.country)
         return req.error(422, 'Please select a country (UK or India) before submitting.');
 
@@ -108,9 +111,11 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover);
       const sym = claim.currency === 'INR' ? '₹' : '£';
-      await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
+      // Distinguish a fresh submission from a rework resubmission so the History
+      // timeline (and resubmitCount) can tell the two apart.
+      await audit.record({ userId: req.user.id, action: wasReturned ? 'Resubmitted' : 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
 
-      LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);
+      LOG.info(`Claim ${claim.claimNumber} ${wasReturned ? 'resubmitted' : 'submitted'} by ${req.user.id}`);
       return SELECT.one.from(CLAIMS, ID);
     });
 

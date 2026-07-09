@@ -27,11 +27,17 @@ service ExpenseService {
       when 'Submitted'     then 2
       when 'FirstApproved' then 2
       when 'Approved'      then 3
+      when 'Returned'      then 2   // amber — declined, back with the employee to rework
       when 'Rejected'      then 1
       else 0
     end as statusCriticality : Integer
   } actions {
-    @(Core.OperationAvailable: { $edmJson: { $Eq: [{ $Path: 'in/status' }, 'Draft'] } })
+    // Offered on a Draft OR a Returned claim (rework loop: an approver decline
+    // sends the claim back to the employee, who fixes it and resubmits).
+    @(Core.OperationAvailable: { $edmJson: { $Or: [
+      { $Eq: [{ $Path: 'in/status' }, 'Draft'] },
+      { $Eq: [{ $Path: 'in/status' }, 'Returned'] }
+    ] } })
     action submitClaim() returns MyClaims;
   };
 

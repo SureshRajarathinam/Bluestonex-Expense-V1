@@ -205,21 +205,33 @@ class NotificationService {
     });
   }
 
-  async notifyRejected(claim, rejectedBy, reason) {
+  // Fired when an approver declines a claim and sends it back for rework
+  // (status → Returned). Alerts the employee (the claim's creator) so they can
+  // fix and resubmit. `returnedBy` is the approver; `reason` is their comment.
+  async notifyReturned(claim, returnedBy, reason) {
     await this._sendEvent({
-      eventType: 'ExpenseClaim.Rejected',
+      eventType: 'ExpenseClaim.Returned',
       resource: {
         resourceName:     claim.claimNumber,
         resourceType:     'ExpenseClaim',
         resourceInstance: claim.ID,
-        tags: { rejectedBy, reason: reason || '' }
+        tags: { returnedBy, reason: reason || '' }
       },
       severity: 'WARNING',
       category: 'NOTIFICATION',
-      subject:  `Expense Claim ${claim.claimNumber} Rejected`,
-      body:     `Your expense claim ${claim.claimNumber} has been rejected by ${rejectedBy}. ` +
+      subject:  `Expense Claim ${claim.claimNumber} Returned for Rework`,
+      body:     `Your expense claim ${claim.claimNumber} has been returned by ${returnedBy}. ` +
                 `Reason: ${reason || 'No reason provided'}. ` +
-                `Please review and resubmit.`
+                `Please review, make the necessary changes and re-apply for approval.`
+    });
+
+    // Targeted email to the employee who owns the claim (createdBy = their login).
+    await mailer.sendMail({
+      to:      claim.createdBy,
+      subject: `Expense Claim ${claim.claimNumber} returned for rework`,
+      text:    `Your expense claim ${claim.claimNumber} has been returned by ${returnedBy}. ` +
+               `Reason: ${reason || 'No reason provided'}. ` +
+               `Please open the My Expenses app, fix the highlighted issues and re-apply for approval.`
     });
   }
 }

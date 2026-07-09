@@ -16,7 +16,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, itemCount: 0, mileageCount: 0, stdRate: 0, currency: "GBP" }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, currency: "GBP" }), "ui");
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
     },
 
@@ -52,9 +52,14 @@ sap.ui.define([
           dataReceived: function () {
             var oCtx = that.getView().getBindingContext();
             var sStatus = oCtx && oCtx.getProperty("status");
-            var bDraft = !sStatus || sStatus === "Draft";
-            oUi.setProperty("/canSubmit", bDraft);
-            oUi.setProperty("/canEdit", !bEditable && bDraft);
+            // Reworkable = a fresh Draft OR a Returned claim the approver sent
+            // back. Both can be edited & (re)submitted; the same record is reused.
+            var bReworkable = !sStatus || sStatus === "Draft" || sStatus === "Returned";
+            var bReturned = sStatus === "Returned";
+            oUi.setProperty("/canSubmit", bReworkable);
+            oUi.setProperty("/canEdit", !bEditable && bReworkable);
+            oUi.setProperty("/isReturned", bReturned);
+            oUi.setProperty("/returnReason", (bReturned && oCtx && oCtx.getProperty("rejectionReason")) || "");
             oUi.setProperty("/currency", (oCtx && oCtx.getProperty("currency")) || "GBP");
             that._loadTaxRate(oCtx && oCtx.getProperty("country"));
           }

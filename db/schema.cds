@@ -81,7 +81,10 @@ entity CLAIMS : managed {
       periodEnd           : Date;              // period end   (Excel: Date End)
 
       // Workflow status (country-driven):
-      //   Draft → Submitted → FirstApproved (UK only) → Approved | Rejected
+      //   Draft → Submitted → FirstApproved (UK only) → Approved
+      //                    ↘ Returned (declined — reworkable) → Submitted (Resubmitted) → …
+      //   'Rejected' is a legacy/terminal value (kept for old data & labels; not
+      //   produced by the current decline flow, which returns for rework instead).
       status              : String(30) default 'Draft';
 
       currency            : String(3) default 'GBP';
@@ -144,7 +147,7 @@ entity AUDITLOG {
   key ID          : UUID;
       timestamp   : DateTime;
       userId      : String(255);
-      action      : String(50);    // Submitted | ManagerApproved | FinanceApproved | Settled | Rejected | PolicyChanged | UserChanged
+      action      : String(50);    // Submitted | Resubmitted | FirstApproved | Approved | Returned | Rejected(legacy) | PolicyChanged | WorkflowChanged
       objectType  : String(50);    // ExpenseClaim | ExpensePolicy | Employee
       objectKey   : String(50);    // claim number / policy name / employee number
       details     : String(1000);

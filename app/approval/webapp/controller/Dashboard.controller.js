@@ -59,7 +59,8 @@ sap.ui.define([
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
-  // Grouped VERTICAL bars: Approved (green) vs Rejected (red), per country group.
+  // Grouped VERTICAL bars: Approved (blue) vs Returned (black), per country group.
+  // `rejected` field carries the decline count (returned-for-rework + legacy).
   function avrChart(groups) {
     if (!groups.length) { return ""; }
     var max = 1;
@@ -67,7 +68,7 @@ sap.ui.define([
     var legend =
       "<div class='bsxLegend'>" +
         "<span><i class='bsxDot bsxDot--ok'></i>Approved</span>" +
-        "<span><i class='bsxDot bsxDot--no'></i>Rejected</span>" +
+        "<span><i class='bsxDot bsxDot--no'></i>Returned</span>" +
       "</div>";
     var bars = groups.map(function (g) {
       return "<div class='bsxVGroup'>" +

@@ -63,13 +63,17 @@ test('approver IDENTITY: only the configured L1 can approve (others 403)', async
   assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
 });
 
-test('reject requires a reason (422) then rejects with reason', async () => {
+test('reject requires a reason (422) then returns the claim for rework (Returned)', async () => {
   const id = await submitUK();
   const noReason = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: '' }, { auth: MGR });
   assert.equal(noReason.status, 422, `got ${noReason.status}`);
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'Missing detail' }, { auth: MGR });
   assert.ok(ok.status < 400, `reject ${ok.status}`);
-  assert.equal((await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.status, 'Rejected');
+  // A decline now returns the claim to the employee (reworkable), not a terminal Rejected.
+  const claim = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data;
+  assert.equal(claim.status, 'Returned');
+  assert.equal(claim.rejectedBy, 'manager@bluestonex.com', 'records who returned it');
+  assert.equal(claim.rejectionReason, 'Missing detail', 'records the reason');
 });
 
 test('RBAC: employee-only user blocked from /approval data (403); metadata still loads', async () => {
@@ -244,6 +248,67 @@ test('India single-level approval sends no further approver email', async () => 
   assert.ok(ok.status < 400, `IN approve ${ok.status}`);
   assert.equal(mailsSince(before).length, 0,
     'India (single-level) approval must not send a second-level email');
+});
+
+test('rework loop: return → resubmit reuses the SAME claim (no dup, one history row, resubmitCount 1)', async () => {
+  const id = await submitUK();
+  const noBefore = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.claimNumber;
+  // Approver returns it for rework
+  await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'Please attach the receipt' }, { auth: MGR });
+  assert.equal((await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.status, 'Returned');
+  // Employee reworks: Edit (draftEdit) → Save (draftActivate) → Apply for Approval (submitClaim)
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.draftEdit`, { PreserveChanges: false }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const rs = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(rs.status < 400, `resubmit ${rs.status}: ${JSON.stringify(rs.data?.error)}`);
+  assert.equal(rs.data.status, 'Submitted', 'resubmitted claim is Submitted again');
+  // Same record + same number → no duplicate claim was created
+  assert.equal((await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.claimNumber, noBefore, 'claim number unchanged');
+  // Approve to completion (UK 2-level)
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: FIN });
+  assert.equal((await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.status, 'Approved');
+  // Exactly one history row for this claim number; resubmitCount reflects the one rework.
+  const hist = await GET(`/approval/ClaimHistory?$filter=claimNumber eq '${noBefore}'`, { auth: MGR });
+  assert.equal(hist.data.value.length, 1, 'one history row (no duplicate)');
+  assert.equal(hist.data.value[0].resubmitCount, 1, 'resubmitCount is 1');
+});
+
+test('claimJourney returns the ordered trail, assigned approvers and resubmit count', async () => {
+  const id = await submitUK();
+  const no = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.claimNumber;
+  await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'fix it' }, { auth: MGR });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.draftEdit`, { PreserveChanges: false }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: FIN });
+
+  const j = await GET(`/approval/claimJourney(claimNumber='${no}')`, { auth: MGR });
+  assert.equal(j.status, 200, `journey ${j.status}: ${JSON.stringify(j.data?.error)}`);
+  const d = j.data;
+  assert.equal(d.assignedL1, 'manager@bluestonex.com', 'assigned L1 from workflow');
+  assert.equal(d.assignedL2, 'Dan.Barton@bluestonex.com', 'assigned L2 from workflow');
+  assert.equal(d.approvedL1By, 'manager@bluestonex.com');
+  assert.equal(d.approvedL2By, 'Dan.Barton@bluestonex.com');
+  assert.equal(d.resubmitCount, 1);
+  assert.deepEqual(d.events.map((e) => e.action),
+    ['Submitted', 'Returned', 'Resubmitted', 'FirstApproved', 'Approved'],
+    'the timeline is ordered and distinguishes Resubmitted');
+  // employee-only cannot read the journey
+  assert.equal((await GET(`/approval/claimJourney(claimNumber='${no}')`, { auth: CLERK })).status, 403);
+});
+
+test('ClaimHistory batch-enriches attachmentCount (receipts) and resubmitCount', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true, receiptFileName: 'hotel.pdf' }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const hist = await GET(`/approval/ClaimHistory(${id})`, { auth: MGR });
+  assert.equal(hist.status, 200, `history read ${hist.status}`);
+  assert.equal(hist.data.attachmentCount, 1, 'one item has a receipt file → attachmentCount 1');
+  assert.equal(hist.data.resubmitCount, 0, 'never resubmitted → 0');
 });
 
 test('PDF export: approver gets a PDF (base64), employee-only is 403', async () => {

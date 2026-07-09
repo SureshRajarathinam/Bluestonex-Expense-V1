@@ -21,6 +21,7 @@
               <core:Item key="Submitted" text="Submitted" />
               <core:Item key="FirstApproved" text="Awaiting 2nd Approval" />
               <core:Item key="Approved" text="Approved" />
+              <core:Item key="Returned" text="Returned for rework" />
               <core:Item key="Rejected" text="Rejected" />
             </Select>
           </VBox>

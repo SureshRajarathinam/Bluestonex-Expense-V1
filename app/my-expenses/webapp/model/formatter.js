@@ -40,6 +40,7 @@ sap.ui.define([], function () {
         case "Rejected": return "sap-icon://decline";
         case "Submitted": return "sap-icon://pending";
         case "FirstApproved": return "sap-icon://time-entry-request";
+        case "Returned": return "sap-icon://undo";
         default: return "sap-icon://edit";
       }
     },
@@ -48,6 +49,7 @@ sap.ui.define([], function () {
     statusText: function (sStatus) {
       switch (sStatus) {
         case "FirstApproved": return "Awaiting 2nd Approval";
+        case "Returned": return "Returned for rework";
         default: return sStatus || "Draft";
       }
     },

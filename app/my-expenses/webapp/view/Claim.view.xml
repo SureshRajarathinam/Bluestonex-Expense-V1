@@ -15,6 +15,15 @@
     title="{= ${claimNumber} ? ${claimNumber} : 'New Expense Claim' }">
 
     <content>
+      <!-- Returned-for-rework banner: shows the approver's reason so the
+           employee knows what to fix before re-applying for approval. -->
+      <MessageStrip
+        visible="{ui>/isReturned}"
+        type="Warning"
+        showIcon="true"
+        class="sapUiSmallMargin"
+        text="{= ${i18n>msgReturnedReason} + ' ' + (${ui>/returnReason} || '—') }" />
+
       <!-- General information -->
       <Panel class="bsxCard" headerText="{i18n>sectionGeneral}" expandable="false">
         <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2">

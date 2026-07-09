@@ -22,6 +22,27 @@ type DashStats : {
   trend           : many DashTrend;
 }
 
+// ── Claim journey payload (History detail: timeline + assigned approvers) ────
+type JourneyEvent : { action : String; at : DateTime; ![by] : String; note : String; }
+type JourneyAtt   : { itemID : String; fileName : String; expenseType : String; gross : Decimal(15,2); }
+type ClaimJourney : {
+  claimNumber    : String;
+  employeeName   : String;
+  employeeNumber : String;
+  createdBy      : String;
+  country        : String;
+  currency       : String;
+  totalGross     : Decimal(15,2);
+  assignedL1     : String;   // configured level-1 approver (from WORKFLOW)
+  assignedL2     : String;   // configured level-2 approver (UK only)
+  approvedL1By   : String;
+  approvedL2By   : String;
+  returnedBy     : String;
+  resubmitCount  : Integer;
+  attachments    : many JourneyAtt;
+  events         : many JourneyEvent;
+}
+
 @path: '/approval'
 @requires: 'authenticated-user'
 service ApprovalService {
@@ -84,9 +105,14 @@ service ApprovalService {
       when 'Submitted'     then 2
       when 'FirstApproved' then 2
       when 'Approved'      then 3
+      when 'Returned'      then 2   // amber — returned to the employee for rework
       when 'Rejected'      then 1
       else 0
-    end as statusCriticality : Integer
+    end as statusCriticality : Integer,
+    // Batch-enriched in an after('READ') handler (NOT computed in SQL): count of
+    // items with an uploaded receipt, and how many times the claim was resubmitted.
+    virtual null as attachmentCount : Integer,
+    virtual null as resubmitCount   : Integer
   } where status <> 'Draft' order by submittedAt desc;
 
   // ── Server-side PDF export (Approver/Admin). Returns the PDF as base64
@@ -105,6 +131,12 @@ service ApprovalService {
   //    fromDate/toDate scope the KPIs; country ∈ 'ALL' | 'UK' | 'IN'. ──
   @requires: [ 'Approver', 'Admin' ]
   function dashboardStats(fromDate : Date, toDate : Date, country : String) returns DashStats;
+
+  // ── Claim journey (Approver/Admin) — lazy per-claim detail for the History
+  //    timeline: assigned approvers, who decided, attachments, and the full
+  //    ordered audit trail (Submitted → Returned → Resubmitted → Approved …). ──
+  @requires: [ 'Approver', 'Admin' ]
+  function claimJourney(claimNumber : String) returns ClaimJourney;
 
   // ── Policy Configuration (Admin) — draft-enabled for Fiori Elements edit ───
   @odata.draft.enabled

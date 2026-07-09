@@ -1,0 +1,57 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.ui.layout.form">
+
+  <Dialog id="histDialog" title="{i18n>histDetailTitle}" contentWidth="44rem" resizable="true" draggable="true">
+    <content>
+      <VBox class="sapUiSmallMargin">
+
+        <!-- Identity -->
+        <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" labelSpanM="5" labelSpanL="5">
+          <f:content>
+            <Label text="{i18n>colClaimNo}" />
+            <ObjectIdentifier title="{journey>/claimNumber}" />
+            <Label text="{i18n>colEmployee}" />
+            <Text text="{journey>/employeeName}" />
+            <Label text="{i18n>colEmpNo}" />
+            <Text text="{journey>/employeeNumber}" />
+            <Label text="{i18n>histCreatedBy}" />
+            <Text text="{journey>/createdBy}" />
+            <Label text="{i18n>colCountry}" />
+            <Text text="{path: 'journey>/country', formatter: '.formatter.countryText'}" />
+            <Label text="{i18n>colTotal}" />
+            <ObjectNumber number="{ parts: ['journey>/totalGross','journey>/currency'], formatter: '.formatter.money' }" emphasized="true" />
+          </f:content>
+        </f:SimpleForm>
+
+        <!-- Assigned approvers + who decided -->
+        <Title text="{i18n>histApprovers}" class="bsxCardTitle sapUiSmallMarginTop" level="H4" />
+        <core:HTML content="{journey>/chainHtml}" />
+
+        <!-- Attachments -->
+        <Title text="{= ${i18n>histAttachments} + ' (' + ${journey>/attachmentCount} + ')' }" class="bsxCardTitle sapUiSmallMarginTop" level="H4" />
+        <List
+          items="{journey>/attachments}"
+          noDataText="{i18n>histNoAttachments}"
+          showSeparators="Inner">
+          <StandardListItem
+            icon="sap-icon://attachment"
+            title="{journey>fileName}"
+            description="{journey>expenseType}"
+            info="{ parts: ['journey>gross','journey>/currency'], formatter: '.formatter.money' }"
+            type="Active"
+            press=".onOpenAttachment" />
+        </List>
+
+        <!-- Timeline -->
+        <Title text="{i18n>histTimeline}" class="bsxCardTitle sapUiSmallMarginTop" level="H4" />
+        <core:HTML content="{journey>/timelineHtml}" />
+
+      </VBox>
+    </content>
+    <beginButton>
+      <Button text="{i18n>btnClose}" type="Emphasized" press=".onCloseHistDetail" />
+    </beginButton>
+  </Dialog>
+</core:FragmentDefinition>
