@@ -103,3 +103,10 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Tables -------------------------------------------------------------- */
 .bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
 .bsxTable .sapMLIB:hover { background: #f5f8fc; }
+
+/* ---- Dashboard KPI tiles ------------------------------------------------- */
+.bsxKpi { padding: .9rem 1rem; }
+.bsxKpiNum.sapMTitle { font-size: 1.9rem; line-height: 1.1; font-weight: 700; margin: .25rem 0; }
+.bsxKpiOk.sapMTitle { color: #2f8a4c; }
+.bsxKpiNo.sapMTitle { color: #d63a3a; }
+.bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }

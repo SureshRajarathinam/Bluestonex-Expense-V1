@@ -1,0 +1,109 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Dashboard"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  xmlns:micro="sap.suite.ui.microchart"
+  height="100%"
+  busy="{dash>/busy}">
+
+  <ScrollContainer height="100%" vertical="true" horizontal="false">
+
+    <!-- ── Filters (drive every card) ─────────────────────────────────────── -->
+    <VBox class="bsxCard bsxPremiumCard">
+      <Title text="{i18n>tabDashboard}" class="bsxCardTitle bsxCardPad" level="H3" />
+      <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+        <VBox>
+          <Label text="{i18n>dashFrom}" class="bsxFieldLbl" />
+          <DatePicker value="{dash>/from}" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" change=".onDateChange" width="100%" />
+        </VBox>
+        <VBox>
+          <Label text="{i18n>dashTo}" class="bsxFieldLbl" />
+          <DatePicker value="{dash>/to}" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" change=".onDateChange" width="100%">
+            <customData><core:CustomData key="edge" value="to" /></customData>
+          </DatePicker>
+        </VBox>
+        <VBox>
+          <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
+          <SegmentedButton selectedKey="{dash>/country}" selectionChange=".onCountry">
+            <items>
+              <SegmentedButtonItem key="ALL" text="{i18n>all}" />
+              <SegmentedButtonItem key="UK" text="UK" />
+              <SegmentedButtonItem key="IN" text="India" />
+            </items>
+          </SegmentedButton>
+        </VBox>
+        <VBox visible="{dash>/showCurToggle}">
+          <Label text="{i18n>dashCurrency}" class="bsxFieldLbl" />
+          <SegmentedButton selectedKey="{dash>/cur}" selectionChange=".onCurrency">
+            <items>
+              <SegmentedButtonItem key="£" text="£" />
+              <SegmentedButtonItem key="₹" text="₹" />
+            </items>
+          </SegmentedButton>
+        </VBox>
+      </l:Grid>
+    </VBox>
+
+    <MessageStrip visible="{= !${dash>/hasData} }" text="{i18n>dashNoData}" type="Information" showIcon="true" class="bsxCardPad" />
+
+    <!-- ── KPI tiles ──────────────────────────────────────────────────────── -->
+    <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="1">
+      <VBox class="bsxCard bsxKpi">
+        <Text text="{i18n>dashApproved}" class="bsxFieldLbl" />
+        <Title text="{dash>/approvedTotal}" level="H1" class="bsxKpiNum bsxKpiOk" />
+        <Text text="{dash>/approvedSplit}" class="bsxKpiSub" />
+      </VBox>
+      <VBox class="bsxCard bsxKpi">
+        <Text text="{i18n>dashRejected}" class="bsxFieldLbl" />
+        <Title text="{dash>/rejectedTotal}" level="H1" class="bsxKpiNum bsxKpiNo" />
+        <Text text="{dash>/rejectedSplit}" class="bsxKpiSub" />
+      </VBox>
+      <VBox class="bsxCard bsxKpi" visible="{dash>/showGbp}">
+        <Text text="{i18n>dashReimbursedUK}" class="bsxFieldLbl" />
+        <Title text="{dash>/reimbursedGbp}" level="H2" class="bsxKpiNum" />
+        <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
+      </VBox>
+      <VBox class="bsxCard bsxKpi" visible="{dash>/showInr}">
+        <Text text="{i18n>dashReimbursedIN}" class="bsxFieldLbl" />
+        <Title text="{dash>/reimbursedInr}" level="H2" class="bsxKpiNum" />
+        <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
+      </VBox>
+    </l:Grid>
+
+    <!-- ── Chart cards ────────────────────────────────────────────────────── -->
+    <l:Grid defaultSpan="XL6 L6 M12 S12" hSpacing="1" vSpacing="1">
+
+      <VBox class="bsxCard bsxPremiumCard">
+        <Title text="{i18n>dashApprRej}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/avr}">
+          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
+        </micro:ComparisonMicroChart>
+      </VBox>
+
+      <VBox class="bsxCard bsxPremiumCard">
+        <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
+        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/cat}">
+          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
+        </micro:ComparisonMicroChart>
+      </VBox>
+
+      <VBox class="bsxCard bsxPremiumCard">
+        <Title text="{= ${i18n>dashSpendTeam} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
+        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/team}">
+          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
+        </micro:ComparisonMicroChart>
+      </VBox>
+
+      <VBox class="bsxCard bsxPremiumCard">
+        <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
+        <micro:ComparisonMicroChart size="Responsive" class="bsxCardPad" data="{dash>/trend}">
+          <micro:ComparisonMicroChartData title="{dash>title}" value="{dash>value}" color="{dash>color}" displayValue="{dash>displayValue}" />
+        </micro:ComparisonMicroChart>
+      </VBox>
+
+    </l:Grid>
+  </ScrollContainer>
+</mvc:View>

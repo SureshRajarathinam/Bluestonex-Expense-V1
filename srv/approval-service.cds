@@ -4,6 +4,21 @@ using EXP as db from '../db/schema';
 //  ApprovalService — merged Approvals + Policy Config + Workflow Members
 //  UK = 2-level approval, India = 1-level (driven by ApprovalWorkflow config)
 // ═══════════════════════════════════════════════════════════════════════════
+// ── Dashboard analytics payload (read-only aggregation; see dashboardStats) ──
+type DashCount : { UK : Integer; ![IN] : Integer; total : Integer; }
+type DashMoney : { gbp : Decimal(15,2); inr : Decimal(15,2); }
+type DashCat   : { code : String; description : String; gbp : Decimal(15,2); inr : Decimal(15,2); }
+type DashTeam  : { department : String; gbp : Decimal(15,2); inr : Decimal(15,2); }
+type DashTrend : { month : String; submitted : Integer; approved : Integer; }
+type DashStats : {
+  approved        : DashCount;
+  rejected        : DashCount;
+  reimbursed      : DashMoney;
+  spendByCategory : many DashCat;
+  spendByTeam     : many DashTeam;
+  trend           : many DashTrend;
+}
+
 @path: '/approval'
 @requires: 'authenticated-user'
 service ApprovalService {
@@ -82,6 +97,11 @@ service ApprovalService {
     fromDate : Date,
     toDate   : Date
   ) returns LargeBinary;
+
+  // ── Dashboard analytics (Approver/Admin) — read-only aggregation over CLAIMS.
+  //    fromDate/toDate scope the KPIs; country ∈ 'ALL' | 'UK' | 'IN'. ──
+  @requires: [ 'Approver', 'Admin' ]
+  function dashboardStats(fromDate : Date, toDate : Date, country : String) returns DashStats;
 
   // ── Policy Configuration (Admin) — draft-enabled for Fiori Elements edit ───
   @odata.draft.enabled

@@ -23,6 +23,7 @@
           <tnt:NavigationListItem key="policy" text="{i18n>tabPolicy}" icon="sap-icon://settings" />
           <tnt:NavigationListItem key="workflow" text="{i18n>tabWorkflow}" icon="sap-icon://org-chart" />
           <tnt:NavigationListItem key="history" text="{i18n>tabHistory}" icon="sap-icon://history" />
+          <tnt:NavigationListItem key="dashboard" text="{i18n>tabDashboard}" icon="sap-icon://bar-chart" />
         </tnt:NavigationList>
       </tnt:SideNavigation>
     </tnt:sideContent>
@@ -33,6 +34,7 @@
         <mvc:XMLView id="policyView" viewName="com.bluestonex.expense.approval.view.Policy" />
         <mvc:XMLView id="workflowView" viewName="com.bluestonex.expense.approval.view.Workflow" />
         <mvc:XMLView id="historyView" viewName="com.bluestonex.expense.approval.view.History" />
+        <mvc:XMLView id="dashboardView" viewName="com.bluestonex.expense.approval.view.Dashboard" />
       </NavContainer>
     </tnt:mainContents>
 

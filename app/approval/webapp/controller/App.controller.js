@@ -7,7 +7,8 @@ sap.ui.define([
     approvals: "approvalsView",
     policy: "policyView",
     workflow: "workflowView",
-    history: "historyView"
+    history: "historyView",
+    dashboard: "dashboardView"
   };
 
   return BaseController.extend("com.bluestonex.expense.approval.controller.App", {

@@ -156,6 +156,91 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       return buf; // LargeBinary → base64 in the OData JSON response
     });
 
+    // ─── Function: dashboardStats (Approver/Admin) — analytics aggregation ────
+    // Read-only. Scopes non-draft claims by [fromDate,toDate] (on submittedAt,
+    // falling back to claimPeriod) and by country ('ALL' | 'UK' | 'IN'), then
+    // aggregates. Currencies are kept SEPARATE (GBP for UK, INR for India) — never
+    // summed. Spend-by-team groups on employee.department; null/blank → 'Unassigned'.
+    this.on('dashboardStats', async (req) => {
+      const { fromDate, toDate, country } = req.data || {};
+      const ymd = (d) => (d ? String(d).slice(0, 10) : null);
+      const from = ymd(fromDate);
+      const to = ymd(toDate);
+      const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+      const isIN = (r) => r.country === 'IN';
+
+      // Non-draft claims with employee dept + items (+ expense type) for grouping.
+      let rows = await SELECT.from(CLAIMS).columns((c) => {
+        c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
+        c('submittedAt'); c('claimPeriod');
+        c.employee((e) => { e('department'); });
+        c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
+      });
+
+      const dateOf = (r) => ymd(r.submittedAt) || ymd(r.claimPeriod);
+      const inCountry = (r) => (!country || country === 'ALL') ? true : r.country === country;
+      const inWindow = (r) => {
+        const d = dateOf(r);
+        if (!d) return false;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      };
+      rows = rows.filter((r) => r.status !== 'Draft' && inCountry(r) && inWindow(r));
+
+      const approved = { UK: 0, IN: 0, total: 0 };
+      const rejected = { UK: 0, IN: 0, total: 0 };
+      const reimbursed = { gbp: 0, inr: 0 };
+      const catMap = new Map();
+      const teamMap = new Map();
+      const trendMap = new Map();
+
+      for (const r of rows) {
+        const g = Number(r.totalGross) || 0;
+        const mk = (dateOf(r) || '').slice(0, 7);
+        if (mk) {
+          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0 };
+          t.submitted += 1;
+          if (r.status === 'Approved') t.approved += 1;
+          trendMap.set(mk, t);
+        }
+
+        if (r.status === 'Approved') {
+          approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
+          if (isIN(r)) reimbursed.inr += g; else reimbursed.gbp += g;
+
+          const dept = (r.employee && r.employee.department) ? r.employee.department : 'Unassigned';
+          const team = teamMap.get(dept) || { department: dept, gbp: 0, inr: 0 };
+          if (isIN(r)) team.inr += g; else team.gbp += g;
+          teamMap.set(dept, team);
+
+          for (const it of (r.items || [])) {
+            const code = (it.expenseType && it.expenseType.code) || it.expenseType_code || 'OTHER';
+            const desc = (it.expenseType && it.expenseType.description) || code;
+            const cat = catMap.get(code) || { code, description: desc, gbp: 0, inr: 0 };
+            const ig = Number(it.grossAmount) || 0;
+            if (isIN(r)) cat.inr += ig; else cat.gbp += ig;
+            catMap.set(code, cat);
+          }
+        } else if (r.status === 'Rejected') {
+          rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
+        }
+      }
+
+      const fin = (arr) => arr
+        .map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) }))
+        .sort((a, b) => (b.gbp + b.inr) - (a.gbp + a.inr));
+
+      return {
+        approved,
+        rejected,
+        reimbursed: { gbp: round2(reimbursed.gbp), inr: round2(reimbursed.inr) },
+        spendByCategory: fin([...catMap.values()]),
+        spendByTeam: fin([...teamMap.values()]),
+        trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
+      };
+    });
+
     await super.init();
   }
 };
