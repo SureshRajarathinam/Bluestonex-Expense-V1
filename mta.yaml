@@ -119,6 +119,17 @@ modules:
             name: expense-management-launchpad-key
             config:
               content-endpoint: developer
+      # Service keys the destinations below reference (were missing → deploy would fail).
+      - name: expense-management-html5-host
+        parameters:
+          service-key:
+            name: expense-management-html5-host-key
+      - name: expense-management-xsuaa
+        parameters:
+          service-key:
+            name: expense-management-xsuaa-key
+      # Needed to resolve ~{srv-api/srv-url} (provided by the srv module).
+      - name: srv-api
     build-parameters:
       no-source: true
     parameters:
@@ -126,15 +137,18 @@ modules:
         instance:
           existing_destinations_policy: update
           destinations:
+            # Registers the HTML5 app-host with Work Zone via its service key +
+            # sap.cloud.service (matches both apps' manifest.json).
             - Name: expense-management-html5-host
               ServiceInstanceName: expense-management-html5-host
               ServiceKeyName: expense-management-html5-host-key
-              app-host-id: ~{expense-management-html5-host/app-host-id}
+              sap.cloud.service: com.bluestonex.expense
             - Name: expense-management-srv-api
               Authentication: OAuth2UserTokenExchange
               TokenServiceInstanceName: expense-management-xsuaa
               TokenServiceKeyName: expense-management-xsuaa-key
               URL: ~{srv-api/srv-url}
+              sap.cloud.service: com.bluestonex.expense
 
 # ─────────────────────────────────────────────────────────────────────────────
 # RESOURCES (BTP Service Instances)
@@ -176,7 +190,7 @@ resources:
     type: org.cloudfoundry.managed-service
     parameters:
       service: alert-notification
-      service-plan: standard
+      service-plan: free
 
   # ── SMTP Mail Service (approver emails) ───────────────────────────────────
   # User-provided service holding SMTP credentials. Optional so a deploy
@@ -193,10 +207,6 @@ resources:
     parameters:
       service: html5-apps-repo
       service-plan: app-host
-    provides:
-      - name: expense-management-html5-host
-        properties:
-          app-host-id: ${space-guid}
 
   # ── HTML5 Application Repository (Runtime) ────────────────────────────────
   - name: expense-management-html5-runtime
@@ -216,5 +226,5 @@ resources:
   - name: expense-management-launchpad
     type: org.cloudfoundry.managed-service
     parameters:
-      service: launchpad
+      service: portal
       service-plan: standard
