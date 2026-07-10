@@ -53,28 +53,6 @@ modules:
     requires:
       - name: expense-management-db
 
-  # ── AppRouter ──────────────────────────────────────────────────────────────
-  - name: expense-management-approuter
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 128M
-      disk-quota: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: expense-srv-api
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: expense-management-xsuaa
-      - name: expense-management-html5-runtime
-      - name: expense-management-destination
-    provides:
-      - name: app-api
-        properties:
-          app-url: ${default-url}
-
   # ── HTML5 App Content Deployer ─────────────────────────────────────────────
   - name: expense-management-app-deployer
     type: com.sap.application.content
@@ -121,49 +99,6 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Launchpad Content Deployer ─────────────────────────────────────────────
-  - name: expense-management-launchpad-deployer
-    type: com.sap.application.content
-    path: .
-    requires:
-      - name: expense-management-launchpad
-        parameters:
-          content-target: true
-          service-key:
-            name: expense-management-launchpad-key
-            config:
-              content-endpoint: developer
-      # Service keys the destinations below reference (were missing → deploy would fail).
-      - name: expense-management-html5-host
-        parameters:
-          service-key:
-            name: expense-management-html5-host-key
-      - name: expense-management-xsuaa
-        parameters:
-          service-key:
-            name: expense-management-xsuaa-key
-      # Needed to resolve ~{srv-api/srv-url} (provided by the srv module).
-      - name: srv-api
-    build-parameters:
-      no-source: true
-    parameters:
-      content:
-        instance:
-          existing_destinations_policy: update
-          destinations:
-            # Registers the HTML5 app-host with Work Zone via its service key +
-            # sap.cloud.service (matches both apps' manifest.json).
-            - Name: expense-management-html5-host
-              ServiceInstanceName: expense-management-html5-host
-              ServiceKeyName: expense-management-html5-host-key
-              sap.cloud.service: com.bluestonex.expense
-            - Name: expense-management-srv-api
-              Authentication: OAuth2UserTokenExchange
-              TokenServiceInstanceName: expense-management-xsuaa
-              TokenServiceKeyName: expense-management-xsuaa-key
-              URL: ~{srv-api/srv-url}
-              sap.cloud.service: com.bluestonex.expense
-
 # ─────────────────────────────────────────────────────────────────────────────
 # RESOURCES (BTP Service Instances)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -209,29 +144,14 @@ resources:
       service-name: expense-mail
 
   # ── HTML5 Application Repository (Host) ───────────────────────────────────
+  # Stores the two freestyle apps. SAP Build Work Zone's "HTML5 Apps" content
+  # channel auto-discovers app-host apps in this subaccount (grouped by their
+  # manifest sap.cloud.service = com.bluestonex.expense), so they can be added to
+  # the existing org Work Zone site. No launchpad/portal or standalone approuter
+  # is deployed here — the apps run under Work Zone's managed approuter, which
+  # resolves the 'expense-srv-api' destination (create it once, subaccount-level).
   - name: expense-management-html5-host
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-host
-
-  # ── HTML5 Application Repository (Runtime) ────────────────────────────────
-  - name: expense-management-html5-runtime
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: html5-apps-repo
-      service-plan: app-runtime
-
-  # ── Destination Service ───────────────────────────────────────────────────
-  - name: expense-management-destination
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: destination
-      service-plan: lite
-
-  # ── SAP Launchpad Service ─────────────────────────────────────────────────
-  - name: expense-management-launchpad
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: portal
-      service-plan: standard

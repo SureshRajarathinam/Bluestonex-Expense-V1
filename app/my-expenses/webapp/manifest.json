@@ -15,7 +15,23 @@
           "odataVersion": "4.0"
         }
       }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "MyExpenses-display": {
+          "semanticObject": "MyExpenses",
+          "action": "display",
+          "title": "{{appTitle}}",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
     }
+  },
+  "sap.flp": {
+    "type": "app"
   },
   "sap.ui": {
     "technology": "UI5",
