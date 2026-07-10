@@ -1,7 +1,9 @@
 node_modules/
 gen/
 dist/
+resources/
 *.mtar
+app/*.zip
 .env
 default-env.json
 

@@ -84,14 +84,18 @@ modules:
         parameters:
           content-target: true
     build-parameters:
-      build-result: app/
+      # Stage into a fresh 'resources/' folder — NOT 'app/'. 'app/' is the source
+      # dir (app/my-expenses, app/approval, .DS_Store), so zipping it produced an
+      # invalid html5-apps-repo payload (CODE 1001). resources/ holds only the two
+      # app zips, so data.zip contains exactly one zip per HTML5 app at its root.
+      build-result: resources/
       requires:
         - name: expense-management-my-expenses
           artifacts: [ my-expenses.zip ]
-          target-path: app/
+          target-path: resources/
         - name: expense-management-approval
           artifacts: [ approval.zip ]
-          target-path: app/
+          target-path: resources/
 
   # ── Freestyle App: My Expenses (Employee) ──────────────────────────────────
   - name: expense-management-my-expenses
