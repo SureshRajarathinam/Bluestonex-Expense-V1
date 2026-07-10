@@ -161,8 +161,14 @@ test('awaiting counts undecided (Submitted/FirstApproved) claims', async () => {
   assert.ok(r.data.awaiting.UK >= 1, 'awaiting UK counts it');
 });
 
-test('trend integrity: approved never exceeds submitted per month', async () => {
+test('trend integrity: approved/returned never exceed submitted per month', async () => {
   const r = await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: MGR });
   assert.ok(r.data.trend.length >= 1);
-  r.data.trend.forEach((t) => assert.ok((t.approved || 0) <= (t.submitted || 0), `month ${t.month}`));
+  r.data.trend.forEach((t) => {
+    assert.ok((t.approved || 0) <= (t.submitted || 0), `approved month ${t.month}`);
+    assert.ok((t.rejected || 0) <= (t.submitted || 0), `returned month ${t.month}`);
+  });
+  // The seed includes one UK returned/rejected claim → trend carries it as `rejected`.
+  const totalReturned = r.data.trend.reduce((s, t) => s + (t.rejected || 0), 0);
+  assert.equal(totalReturned, 1, 'trend sums one returned claim across months');
 });

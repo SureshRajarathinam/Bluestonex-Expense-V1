@@ -105,7 +105,9 @@
       <VBox class="bsxCard bsxPremiumCard bsxHalfCard bsxDragCard">
         <customData><core:CustomData key="card" value="geo" /></customData>
         <Title text="{i18n>dashGeo}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <vbm:AnalyticMap id="geoMap" regions="{dash>/geo}" width="100%" height="300px" class="bsxCardPad">
+        <!-- initialZoom/initialPosition = fully zoomed out (whole-world view) on load. -->
+        <vbm:AnalyticMap id="geoMap" regions="{dash>/geo}" width="100%" height="300px" class="bsxCardPad"
+          initialZoom="1" initialPosition="10;25;0">
           <vbm:regions>
             <vbm:Region code="{dash>code}" color="{dash>color}" tooltip="{dash>tooltip}" click=".onRegionClick" />
           </vbm:regions>

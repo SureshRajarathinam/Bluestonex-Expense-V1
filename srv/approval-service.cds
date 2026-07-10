@@ -11,7 +11,7 @@ type DashCat   : { code : String; description : String; gbp : Decimal(15,2); inr
 type DashGeo   : { code : String; country : String; claims : Integer;
                    approved : Integer; awaiting : Integer; rejected : Integer;
                    gbp : Decimal(15,2); inr : Decimal(15,2); }
-type DashTrend : { month : String; submitted : Integer; approved : Integer; }
+type DashTrend : { month : String; submitted : Integer; approved : Integer; rejected : Integer; }
 type DashStats : {
   awaiting        : DashCount;
   approved        : DashCount;

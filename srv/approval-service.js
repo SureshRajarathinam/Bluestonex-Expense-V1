@@ -284,9 +284,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         const g = Number(r.totalGross) || 0;
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
-          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0 };
+          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0 };
           t.submitted += 1;
           if (r.status === 'Approved') t.approved += 1;
+          else if (isDeclined(r)) t.rejected += 1;
           trendMap.set(mk, t);
         }
 

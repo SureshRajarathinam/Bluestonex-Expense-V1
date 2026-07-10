@@ -118,21 +118,24 @@ sap.ui.define([
     return "<div class='bsxHBars'>" + body + legend + "</div>";
   }
 
-  // Grouped VERTICAL columns per month: Submitted (light-blue) vs Approved (green).
+  // Grouped VERTICAL columns per month: Submitted (light-blue) · Approved (green)
+  // · Returned (red). `rejected` carries the decline count (returned + legacy).
   function trendChart(rows) {
     if (!rows.length) { return ""; }
     var max = 1;
-    rows.forEach(function (r) { max = Math.max(max, r.submitted, r.approved); });
+    rows.forEach(function (r) { max = Math.max(max, r.submitted, r.approved, r.rejected); });
     var legend =
       "<div class='bsxLegend'>" +
         "<span><i class='bsxDot bsxDot--sub'></i>Submitted</span>" +
         "<span><i class='bsxDot bsxDot--ok'></i>Approved</span>" +
+        "<span><i class='bsxDot bsxDot--no'></i>Returned</span>" +
       "</div>";
     var bars = rows.map(function (r) {
       return "<div class='bsxVGroup'>" +
         "<div class='bsxVBars'>" +
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--sub' style='height:" + pct(r.submitted, max) + "%'></div></div>" +
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--ok' style='height:" + pct(r.approved, max) + "%'></div></div>" +
+          "<div class='bsxVCol'><div class='bsxVBar bsxVBar--no' style='height:" + pct(r.rejected, max) + "%'></div></div>" +
         "</div>" +
         "<div class='bsxVLabel'>" + esc(r.label) + "</div>" +
       "</div>";
@@ -273,7 +276,7 @@ sap.ui.define([
       var tr = (j.trend || []).map(function (t) {
         var parts = (t.month || "").split("-");
         var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
-        return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0 };
+        return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
       });
       m.setProperty("/trendHtml", trendChart(tr));
 
@@ -329,17 +332,17 @@ sap.ui.define([
           placement: "Auto", showHeader: true, contentWidth: "16rem",
           title: "{dashPop>/name}",
           content: [ new VBox({ items: [
-            new MText({ text: "{dashPop>/spendText}" }).addStyleClass("bsxPopSpend sapUiTinyMargin"),
-            new MText({ text: "{dashPop>/claimsText}" }).addStyleClass("bsxKpiSub sapUiTinyMarginBegin sapUiTinyMarginBottom")
+            // Single bold-blue headline "amount · N claims" (matches the card design).
+            new MText({ text: "{dashPop>/headline}" }).addStyleClass("bsxPopSpend sapUiTinyMargin")
           ] }) ]
         });
         this._geoPop.setModel(this._geoPopModel, "dashPop");
         this.getView().addDependent(this._geoPop);
       }
+      var claimsLbl = this.getText ? this.getText("dashGeoClaims") : "claims";
       this._geoPopModel.setData({
         name: d.name || d.code,
-        spendText: d.spendText || "",
-        claimsText: (d.claims || 0) + " " + (this.getText ? this.getText("dashGeoClaims") : "claims")
+        headline: (d.spendText || "") + " · " + (d.claims || 0) + " " + claimsLbl
       });
       this._geoPop.openBy(this.byId("geoMap"));
     },
