@@ -59,18 +59,14 @@
           <Button icon="sap-icon://nav-back" type="Transparent" tooltip="{i18n>btnBack}" press=".onBack" />
           <Title text="{ui>/title}" class="bsxCardTitle" level="H3" />
         </OverflowToolbar>
-        <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+        <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
           <VBox>
             <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
-            <DateRangeSelection id="fPeriod" width="100%" />
+            <DateRangeSelection id="fPeriod" width="100%" change=".onGo" />
           </VBox>
           <VBox>
-            <Label text="{i18n>searchClaim}" class="bsxFieldLbl" />
-            <Input id="fClaimNo" width="100%" placeholder="{i18n>searchClaim}" submit=".onGo" />
-          </VBox>
-          <VBox justifyContent="End">
-            <Label text=" " />
-            <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+            <Label text="{i18n>freeSearch}" class="bsxFieldLbl" />
+            <SearchField id="fSearch" width="100%" placeholder="{i18n>freeSearchPh}" search=".onGo" />
           </VBox>
         </l:Grid>
       </VBox>

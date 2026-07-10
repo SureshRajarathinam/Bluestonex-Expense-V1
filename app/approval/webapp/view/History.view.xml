@@ -14,7 +14,7 @@
       <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
         <VBox>
           <Label text="{i18n>colStatus}" class="bsxFieldLbl" />
-          <Select id="fStatus" width="100%">
+          <Select id="fStatus" width="100%" change=".onSearch">
             <core:Item key="" text="{i18n>all}" />
             <core:Item key="Submitted" text="Submitted" />
             <core:Item key="FirstApproved" text="Awaiting 2nd Approval" />
@@ -25,7 +25,7 @@
         </VBox>
         <VBox>
           <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
-          <Select id="fCountry" width="100%">
+          <Select id="fCountry" width="100%" change=".onSearch">
             <core:Item key="" text="{i18n>all}" />
             <core:Item key="UK" text="United Kingdom" />
             <core:Item key="IN" text="India" />
@@ -33,15 +33,11 @@
         </VBox>
         <VBox>
           <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
-          <DateRangeSelection id="fPeriod" width="100%" />
+          <DateRangeSelection id="fPeriod" width="100%" change=".onSearch" />
         </VBox>
         <VBox>
-          <Label text="{i18n>searchClaim}" class="bsxFieldLbl" />
-          <Input id="fClaimNo" width="100%" placeholder="{i18n>searchClaim}" submit=".onGo" />
-        </VBox>
-        <VBox justifyContent="End">
-          <Label text=" " />
-          <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+          <Label text="{i18n>freeSearch}" class="bsxFieldLbl" />
+          <SearchField id="fSearch" width="100%" placeholder="{i18n>freeSearchPh}" search=".onSearch" />
         </VBox>
       </l:Grid>
     </VBox>
@@ -89,6 +85,7 @@
               <Text text="{employeeNumber}" />
               <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
               <ObjectStatus
+                inverted="true"
                 icon="{path: 'status', formatter: '.formatter.statusIcon'}"
                 text="{path: 'status', formatter: '.formatter.statusText'}"
                 state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />

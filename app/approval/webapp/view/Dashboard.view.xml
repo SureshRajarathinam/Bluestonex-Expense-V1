@@ -38,7 +38,6 @@
         </Select>
         <Button text="{i18n>dashResetLayout}" icon="sap-icon://reset" type="Transparent" tooltip="{i18n>dashResetLayout}" press=".onResetLayout" />
       </OverflowToolbar>
-      <Text text="{= ${dash>/rangeText} + '  ·  ' + ${i18n>dashDragHint} }" class="bsxKpiSub bsxCardPad" />
     </VBox>
 
     <MessageStrip visible="{= !${dash>/hasData} || !!${dash>/error} }"

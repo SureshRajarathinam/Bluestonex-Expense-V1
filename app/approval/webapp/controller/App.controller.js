@@ -24,9 +24,11 @@ sap.ui.define([
       if (!sViewId) { return; }
       var oView = this.byId(sViewId);
       this.byId("sectionNav").to(oView.getId());
-      // Refresh the section's data so it reflects the latest state on each switch.
+      // On each switch, reset the section to its landing state (tabs with a
+      // drill-in/edit flow expose onTabEnter); otherwise just refresh its data.
       var oCtrl = oView.getController && oView.getController();
-      if (oCtrl && typeof oCtrl.onRefresh === "function") { oCtrl.onRefresh(); }
+      if (oCtrl && typeof oCtrl.onTabEnter === "function") { oCtrl.onTabEnter(); }
+      else if (oCtrl && typeof oCtrl.onRefresh === "function") { oCtrl.onRefresh(); }
     }
   });
 });

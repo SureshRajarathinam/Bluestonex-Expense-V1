@@ -47,7 +47,7 @@ sap.ui.define([
         isUK: sCountry === "UK", isIN: sCountry === "IN",
         title: this.getText(sCountry === "UK" ? "apvTitleUK" : "apvTitleIN")
       });
-      this.byId("fClaimNo").setValue("");
+      this.byId("fSearch").setValue("");
       this.onGo();
     },
 
@@ -73,17 +73,29 @@ sap.ui.define([
       return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
     },
 
-    /** Apply the Look-up filters (Period, Claim No) scoped to the chosen country. */
+    /** Free multi-field search (claim no · employee · emp ID · status) + Period,
+     *  scoped to the chosen country. Fires on Enter / search-icon and on Period
+     *  change — no Go button. */
     onGo: function () {
       var aFilters = [];
       var sCountry = this.getView().getModel("ui").getProperty("/country");
-      var sNo = (this.byId("fClaimNo").getValue() || "").trim();
+      var sQ = (this.byId("fSearch").getValue() || "").trim();
       var oPeriod = this.byId("fPeriod");
       var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
 
       if (sCountry) { aFilters.push(new Filter("country", FilterOperator.EQ, sCountry)); }
-      if (sNo) { aFilters.push(new Filter("claimNumber", FilterOperator.Contains, sNo)); }
       if (dFrom && dTo) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(dFrom), this._ymd(dTo))); }
+      if (sQ) {
+        aFilters.push(new Filter({
+          filters: [
+            new Filter("claimNumber", FilterOperator.Contains, sQ),
+            new Filter("employeeName", FilterOperator.Contains, sQ),
+            new Filter("employeeNumber", FilterOperator.Contains, sQ),
+            new Filter("status", FilterOperator.Contains, sQ)
+          ],
+          and: false
+        }));
+      }
 
       this.byId("approvalsTable").getBinding("items").filter(aFilters);
     },
@@ -92,11 +104,15 @@ sap.ui.define([
       this.exportPdf("approvals", {
         status: "",
         country: this.getView().getModel("ui").getProperty("/country"),
-        claimNo: (this.byId("fClaimNo").getValue() || "").trim(),
+        claimNo: (this.byId("fSearch").getValue() || "").trim(),
         from: this._ymd(this.byId("fPeriod").getDateValue()),
         to: this._ymd(this.byId("fPeriod").getSecondDateValue())
       });
     },
+
+    // Reset to the country-choice landing state whenever the tab is (re)entered,
+    // so a previously drilled-in country doesn't persist across tab switches.
+    onTabEnter: function () { this.onBack(); },
 
     onReview: function (oEvent) {
       var oCtx = oEvent.getSource().getBindingContext();

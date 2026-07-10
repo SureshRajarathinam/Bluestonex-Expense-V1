@@ -17,6 +17,10 @@ sap.ui.define([
       }), "ui");
     },
 
+    // Return to the country-choice landing state on tab (re)entry, so a
+    // previously opened/edited policy doesn't persist across tab switches.
+    onTabEnter: function () { this.onBack(); },
+
     onChooseUK: function () { this._open("UK"); },
     onChooseIN: function () { this._open("IN"); },
 

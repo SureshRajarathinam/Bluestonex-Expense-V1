@@ -116,19 +116,33 @@ sap.ui.define([
       return {
         status: this.byId("fStatus").getSelectedKey(),
         country: this.byId("fCountry").getSelectedKey(),
-        claimNo: (this.byId("fClaimNo").getValue() || "").trim(),
+        claimNo: (this.byId("fSearch").getValue() || "").trim(),
         from: this._ymd(this.byId("fPeriod").getDateValue()),
         to: this._ymd(this.byId("fPeriod").getSecondDateValue())
       };
     },
 
-    onGo: function () {
+    // Free multi-field search: the box matches across claim number, employee name,
+    // employee ID and status; the Status/Country/Period selects narrow it (AND).
+    // Fires on Enter / search-icon (SearchField) and on any dropdown/date change —
+    // there is no Go button.
+    onSearch: function () {
       var s = this._filterState();
       var aFilters = [];
       if (s.status) { aFilters.push(new Filter("status", FilterOperator.EQ, s.status)); }
       if (s.country) { aFilters.push(new Filter("country", FilterOperator.EQ, s.country)); }
-      if (s.claimNo) { aFilters.push(new Filter("claimNumber", FilterOperator.Contains, s.claimNo)); }
       if (s.from && s.to) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, s.from, s.to)); }
+      if (s.claimNo) {
+        aFilters.push(new Filter({
+          filters: [
+            new Filter("claimNumber", FilterOperator.Contains, s.claimNo),
+            new Filter("employeeName", FilterOperator.Contains, s.claimNo),
+            new Filter("employeeNumber", FilterOperator.Contains, s.claimNo),
+            new Filter("status", FilterOperator.Contains, s.claimNo)
+          ],
+          and: false
+        }));
+      }
       this.byId("historyTable").getBinding("items").filter(aFilters);
     },
 

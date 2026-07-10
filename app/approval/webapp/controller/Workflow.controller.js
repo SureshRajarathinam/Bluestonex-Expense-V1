@@ -25,6 +25,11 @@ sap.ui.define([
 
     onRefresh: function () { this._load(); },
 
+    // Return to the country-choice landing state on tab (re)entry (also reloads,
+    // which rebuilds rows with editing:false), so a drilled-in / mid-edit card
+    // doesn't persist across tab switches.
+    onTabEnter: function () { this.onBack(); this._load(); },
+
     onChooseUK: function () { this._open("UK"); },
     onChooseIN: function () { this._open("IN"); },
 

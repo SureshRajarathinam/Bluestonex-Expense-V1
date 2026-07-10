@@ -15,6 +15,14 @@
   --bsx-text:   #32363a;
   --bsx-muted:  #6a6d70;
   --bsx-radius: 8px;
+  /* Analytics palette (SAP Analytics Cloud sample): semantic status + blue series.
+     green = positive/approved · red = negative/rejected · amber = warning/returned. */
+  --bsx-green:  #36a41d;
+  --bsx-red:    #e0301e;
+  --bsx-amber:  #f0ab00;
+  --bsx-blue-l: #93c7f0;   /* light series blue  */
+  --bsx-blue-m: #5b9bd5;   /* medium series blue */
+  --bsx-blue-d: #1b6ec2;   /* dark series blue   */
 }
 
 html, body, .sapUiBody, .bsxBody,
@@ -107,11 +115,11 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Dashboard KPI tiles ------------------------------------------------- */
 .bsxKpi { padding: .9rem 1rem; }
 .bsxKpiNum.sapMTitle { font-size: 1.9rem; line-height: 1.1; font-weight: 700; margin: .25rem 0; }
-/* Rich-blue / rich-black theme (no green / amber / red) */
-.bsxKpiOk.sapMTitle { color: #0a6ed1; }
-.bsxKpiNo.sapMTitle { color: #1d1d1f; }
-.bsxKpiWait.sapMTitle { color: #1d1d1f; }
-.bsxPopSpend.sapMText { color: #0a6ed1; font-weight: 700; font-size: 1.1rem; }
+/* Semantic KPI colours (SAC palette): approved=green, awaiting=blue, returned=amber */
+.bsxKpiOk.sapMTitle { color: var(--bsx-green); }
+.bsxKpiNo.sapMTitle { color: var(--bsx-amber); }
+.bsxKpiWait.sapMTitle { color: var(--bsx-blue); }
+.bsxPopSpend.sapMText { color: var(--bsx-blue); font-weight: 700; font-size: 1.1rem; }
 .bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }
 
 /* ---- Dashboard: stable flex rows (collapse hidden tiles, auto-fit) ------- */
@@ -140,9 +148,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxLegend { display: flex; gap: 1.25rem; margin: .25rem 0 .75rem; color: var(--bsx-muted); font-size: .8125rem; }
 .bsxLegend span { display: inline-flex; align-items: center; }
 .bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
-.bsxDot--ok  { background: #0a6ed1; }
-.bsxDot--no  { background: #1d1d1f; }
-.bsxDot--sub { background: #a9c2e8; }
+.bsxDot--ok  { background: var(--bsx-green); }
+.bsxDot--no  { background: var(--bsx-amber); }
+.bsxDot--sub { background: var(--bsx-blue-l); }
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
@@ -154,15 +162,15 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVChart--trend .bsxVCol { width: 1.1rem; }
 .bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
 .bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
-.bsxVBar--ok  { background: #0a6ed1; }
-.bsxVBar--no  { background: #1d1d1f; }
-.bsxVBar--sub { background: #a9c2e8; }
+.bsxVBar--ok  { background: var(--bsx-green); }
+.bsxVBar--no  { background: var(--bsx-amber); }
+.bsxVBar--sub { background: var(--bsx-blue-l); }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); }
 
 /* ---- History detail: approval chain + activity timeline ------------------ */
 /* Blue/black palette, consistent with the Dashboard. Zero new library — a
    hand-built vertical timeline hosted in a sap.ui.core.HTML. */
-.bsxChainNode--no { background: #1d1d1f; }
+.bsxChainNode--no { background: var(--bsx-amber); }
 
 .bsxTlChain { margin: .25rem 0 .5rem; }
 .bsxTlChainRow { display: flex; align-items: flex-start; gap: .6rem; padding: .35rem 0; }
@@ -172,9 +180,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxTimeline { position: relative; margin: .25rem 0 .25rem .35rem; padding-left: 1rem; border-left: 2px solid var(--bsx-line); }
 .bsxTlItem { position: relative; padding: .3rem 0 .55rem; }
 .bsxTlDot { position: absolute; left: -1.42rem; top: .45rem; width: .7rem; height: .7rem; border-radius: 50%; box-shadow: 0 0 0 3px var(--bsx-card); }
-.bsxTlDot--ok  { background: #0a6ed1; }
-.bsxTlDot--no  { background: #1d1d1f; }
-.bsxTlDot--sub { background: #a9c2e8; }
+.bsxTlDot--ok  { background: var(--bsx-green); }
+.bsxTlDot--no  { background: var(--bsx-amber); }
+.bsxTlDot--sub { background: var(--bsx-blue-l); }
 .bsxTlBody { display: flex; flex-direction: column; }
 .bsxTlHead { font-size: .875rem; font-weight: 600; color: var(--bsx-text); }
 .bsxTlAt   { font-weight: 400; color: var(--bsx-muted); font-size: .8125rem; margin-left: .35rem; }
