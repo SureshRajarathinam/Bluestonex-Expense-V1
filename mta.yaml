@@ -124,10 +124,14 @@ modules:
       no-source: true
     parameters:
       content:
-        instance:
+        # SUBACCOUNT scope (not instance): the BTP Cockpit "HTML5 Applications"
+        # view and Work Zone Content Manager only discover app-hosts via
+        # SUBACCOUNT-level destinations. An instance-level destination on the
+        # destination service is invisible to them, so the apps never surface.
+        subaccount:
           existing_destinations_policy: update
           destinations:
-            # App-host registration → flips both apps to discoverable/public in Work Zone
+            # App-host registration → makes both apps discoverable in Cockpit + Work Zone
             - Name: expense-management-html5-repo-host
               ServiceInstanceName: expense-management-html5-host
               ServiceKeyName: expense-management-html5-host-key
