@@ -10,7 +10,14 @@ sap.ui.define([
 
   var SVC = "/approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  var LKEY = "bsx.dash.layout.v1"; // localStorage key for the user's custom card order
+  var LKEY = "bsx.dash.layout.v2"; // localStorage key; bumped (card set changed: reim tiles removed, Top Expense Items added)
+
+  // Categorical palette for the Top Expense Items donut (matches the reference: a
+  // pastel wheel, one colour per expense category, cycled if there are more types).
+  var DONUT_COLORS = [
+    "#9ed9c0", "#4caf93", "#b9c9f0", "#5b8def", "#f5bcd6", "#ec5a8d",
+    "#f6cf9a", "#ef9b3b", "#bfe6e6", "#3fa5a5", "#f0e3a2", "#c9b6e8"
+  ];
 
   function ymd(d) {
     if (!d) { return ""; }
@@ -121,6 +128,33 @@ sap.ui.define([
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart bsxVChart--trend'>" + bars + "</div></div>";
   }
 
+  // Top Expense Items donut: a conic-gradient ring (one slice per category) with
+  // the grand total Amount in the centre + a colour-keyed legend. Native currency
+  // for the active scope (no cross-currency sum). Zero new library — pure HTML/CSS.
+  function donutChart(rows, cur, amountLabel) {
+    var data = rows.filter(function (r) { return r.value > 0; });
+    if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
+    var total = data.reduce(function (s, r) { return s + r.value; }, 0);
+    var acc = 0, stops = [], legend = "";
+    data.forEach(function (r, i) {
+      var col = DONUT_COLORS[i % DONUT_COLORS.length];
+      var start = (acc / total) * 100, end = ((acc + r.value) / total) * 100;
+      stops.push(col + " " + start.toFixed(3) + "% " + end.toFixed(3) + "%");
+      acc += r.value;
+      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
+    });
+    return "<div class='bsxDonut'>" +
+      "<div class='bsxDonutRingWrap'>" +
+        "<div class='bsxDonutRing' style='background:conic-gradient(" + stops.join(",") + ")'></div>" +
+        "<div class='bsxDonutHole'>" +
+          "<div class='bsxDonutNum'>" + money(cur, total) + "</div>" +
+          "<div class='bsxDonutLbl'>" + esc(amountLabel || "Amount") + "</div>" +
+        "</div>" +
+      "</div>" +
+      "<div class='bsxDonutLegend'>" + legend + "</div>" +
+    "</div>";
+  }
+
   // Rounded UK/India split pills for a KPI tile (respects the country filter).
   function pills(country, uk, inn) {
     var out = "";
@@ -141,8 +175,7 @@ sap.ui.define([
         busy: false, hasData: true, error: "", showCurToggle: true, curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
-        showGbp: true, showInr: true, reimbursedGbp: money("£", 0), reimbursedInr: money("₹", 0),
-        avrHtml: "", catHtml: "", trendHtml: "",
+        avrHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
         geo: [], geoLegendHtml: GEO_LEGEND_HTML, geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
@@ -186,12 +219,6 @@ sap.ui.define([
       m.setProperty("/approvedPills", pills(country, ap.UK || 0, ap.IN || 0));
       m.setProperty("/rejectedPills", pills(country, rj.UK || 0, rj.IN || 0));
 
-      var reim = j.reimbursed || { gbp: 0, inr: 0 };
-      m.setProperty("/showGbp", country !== "IN");
-      m.setProperty("/showInr", country !== "UK");
-      m.setProperty("/reimbursedGbp", money("£", reim.gbp));
-      m.setProperty("/reimbursedInr", money("₹", reim.inr));
-
       // Approved vs Rejected — grouped vertical bars per country in scope.
       var groups = [];
       if (country !== "IN") { groups.push({ label: "UK", approved: ap.UK || 0, rejected: rj.UK || 0 }); }
@@ -203,6 +230,11 @@ sap.ui.define([
         return { title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur, "bsxHFill--blue"));
+
+      // Top Expense Items donut — all expense items by category, in the active
+      // currency; the centre shows the total Amount (sum of the slices).
+      var exp = (j.expenseItems || []).map(function (c) { return { title: c.description || c.code, value: pick(c) }; });
+      m.setProperty("/donutHtml", donutChart(exp, cur, this.getText ? this.getText("dashAmount") : "Amount"));
 
       // Spend by country — shade each region by approved count (currency-agnostic;
       // native-currency spend rides in the tooltip). Country filter already scoped it.

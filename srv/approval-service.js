@@ -200,7 +200,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const scope = d.scope === 'history' ? 'history' : 'approvals';
 
       let rows = await SELECT.from(CLAIMS)
-        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); }); })
+        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); e('employeeNumber'); }); })
         .orderBy('submittedAt desc');
 
       rows = rows.filter((r) => scope === 'history'
@@ -216,6 +216,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const data = rows.map((r) => ({
         ...r,
         employeeName: (r.employee && r.employee.fullName) || r.employee_ID || '',
+        employeeNumber: (r.employee && r.employee.employeeNumber) || '',
         decidedBy: r.level2ApprovedBy || r.level1ApprovedBy || r.rejectedBy || ''
       }));
 
@@ -264,10 +265,20 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const awaiting = { UK: 0, IN: 0, total: 0 };
       const approved = { UK: 0, IN: 0, total: 0 };
       const rejected = { UK: 0, IN: 0, total: 0 };
-      const reimbursed = { gbp: 0, inr: 0 };
-      const catMap = new Map();
+      const catMap = new Map();   // APPROVED spend by category (spend-by-category bars)
+      const expMap = new Map();   // ALL expense-item spend by category (Top Expense Items donut)
       const geoMap = new Map();
       const trendMap = new Map();
+
+      // Accumulate one expense-item's gross into a category map (currency-separated).
+      const addCat = (map, r, it) => {
+        const code = (it.expenseType && it.expenseType.code) || it.expenseType_code || 'OTHER';
+        const desc = (it.expenseType && it.expenseType.description) || code;
+        const cat = map.get(code) || { code, description: desc, gbp: 0, inr: 0 };
+        const ig = Number(it.grossAmount) || 0;
+        if (isIN(r)) cat.inr += ig; else cat.gbp += ig;
+        map.set(code, cat);
+      };
 
       for (const r of rows) {
         const g = Number(r.totalGross) || 0;
@@ -288,18 +299,13 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         else if (r.status === 'Submitted' || r.status === 'FirstApproved') gc.awaiting += 1;
         geoMap.set(iso, gc);
 
+        // Top Expense Items donut = every expense item in scope, all statuses.
+        for (const it of (r.items || [])) addCat(expMap, r, it);
+
         if (r.status === 'Approved') {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
-          if (isIN(r)) reimbursed.inr += g; else reimbursed.gbp += g;
-
-          for (const it of (r.items || [])) {
-            const code = (it.expenseType && it.expenseType.code) || it.expenseType_code || 'OTHER';
-            const desc = (it.expenseType && it.expenseType.description) || code;
-            const cat = catMap.get(code) || { code, description: desc, gbp: 0, inr: 0 };
-            const ig = Number(it.grossAmount) || 0;
-            if (isIN(r)) cat.inr += ig; else cat.gbp += ig;
-            catMap.set(code, cat);
-          }
+          // Spend-by-category bars remain approved-only.
+          for (const it of (r.items || [])) addCat(catMap, r, it);
         } else if (isDeclined(r)) {
           rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
         } else if (r.status === 'Submitted' || r.status === 'FirstApproved') {
@@ -315,8 +321,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         awaiting,
         approved,
         rejected,
-        reimbursed: { gbp: round2(reimbursed.gbp), inr: round2(reimbursed.inr) },
         spendByCategory: fin([...catMap.values()]),
+        expenseItems: fin([...expMap.values()]),
         spendByCountry: [...geoMap.values()].map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) })),
         trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
       };

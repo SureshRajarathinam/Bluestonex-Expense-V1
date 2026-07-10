@@ -67,13 +67,18 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
   // All seeded claims here are decided (approved/rejected) → nothing awaiting yet.
   assert.equal(d.awaiting.total, 0, 'nothing awaiting yet');
 
-  // Currency-separated reimbursed (approved): UK £300, India ₹118 — never combined.
-  assert.equal(Number(d.reimbursed.gbp), 300);
-  assert.equal(Number(d.reimbursed.inr), 118);
+  // 'reimbursed' was removed from the payload (Reimbursed cards dropped).
+  assert.equal(d.reimbursed, undefined, 'reimbursed removed from payload');
 
-  // Spend by category — HOTEL present with UK spend in gbp.
+  // Spend by category (APPROVED only) — HOTEL present with UK spend in gbp.
   const hotel = d.spendByCategory.find((c) => c.code === 'HOTEL');
   assert.ok(hotel && Number(hotel.gbp) === 300, 'HOTEL category gbp');
+
+  // Top Expense Items (ALL statuses) — includes the returned £60 claim: UK £360, India ₹118.
+  const eiHotel = d.expenseItems.find((c) => c.code === 'HOTEL');
+  assert.ok(eiHotel, 'expenseItems has HOTEL');
+  assert.equal(Number(eiHotel.gbp), 360, 'all-status UK hotel spend (120+180+60)');
+  assert.equal(Number(eiHotel.inr), 118, 'all-status IN hotel spend');
 
   // Spend-by-team was removed (USERS_MASTER has no department) — must not be in the payload.
   assert.equal(d.spendByTeam, undefined, 'spendByTeam removed from payload');
@@ -96,8 +101,8 @@ test('country filter scopes every figure (IN only)', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.data.approved.UK, 0, 'no UK when filtered to India');
   assert.ok(r.data.approved.IN >= 1);
-  assert.equal(Number(r.data.reimbursed.gbp), 0, 'no £ when filtered to India');
-  assert.ok(Number(r.data.reimbursed.inr) >= 118);
+  assert.ok(r.data.expenseItems.every((c) => Number(c.gbp) === 0), 'no £ when filtered to India');
+  assert.ok(r.data.expenseItems.some((c) => Number(c.inr) >= 118));
 });
 
 test('date range excludes out-of-window claims', async () => {
@@ -116,9 +121,9 @@ test('country filter scopes every figure (UK only)', async () => {
   const r = await GET(stats('2020-01-01', '2030-12-31', 'UK'), { auth: MGR });
   assert.equal(r.status, 200);
   assert.equal(r.data.approved.IN, 0, 'no India when filtered to UK');
-  assert.equal(Number(r.data.reimbursed.inr), 0, 'no ₹ when filtered to UK');
+  assert.ok(r.data.expenseItems.every((c) => Number(c.inr) === 0), 'no ₹ when filtered to UK');
   assert.ok(r.data.approved.UK >= 2);
-  assert.ok(Number(r.data.reimbursed.gbp) >= 300);
+  assert.ok(r.data.expenseItems.some((c) => Number(c.gbp) >= 360));
 });
 
 test('spendByCountry follows the country filter', async () => {

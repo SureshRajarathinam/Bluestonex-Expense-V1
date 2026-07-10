@@ -71,18 +71,6 @@
         <Title text="{dash>/rejectedTotal}" level="H1" class="bsxKpiNum bsxKpiNo" />
         <core:HTML content="{dash>/rejectedPills}" />
       </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard" visible="{dash>/showGbp}">
-        <customData><core:CustomData key="card" value="reimUK" /></customData>
-        <Text text="{i18n>dashReimbursedUK}" class="bsxFieldLbl" />
-        <Title text="{dash>/reimbursedGbp}" level="H2" class="bsxKpiNum" />
-        <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
-      </VBox>
-      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard" visible="{dash>/showInr}">
-        <customData><core:CustomData key="card" value="reimIN" /></customData>
-        <Text text="{i18n>dashReimbursedIN}" class="bsxFieldLbl" />
-        <Title text="{dash>/reimbursedInr}" level="H2" class="bsxKpiNum" />
-        <Text text="{i18n>dashApprovedClaims}" class="bsxKpiSub" />
-      </VBox>
     </FlexBox>
 
     <!-- ── Layer 2 · Spend by category (team card removed; slot reserved) ───── -->
@@ -109,11 +97,12 @@
         <Title text="{i18n>dashApprRej}" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/avrHtml}" />
       </VBox>
+
+      <!-- Top Expense Items — category donut with the total Amount in the centre. -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
-        <customData><core:CustomData key="card" value="trend" /></customData>
-        <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/trendHtml}" />
-        <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
+        <customData><core:CustomData key="card" value="totalExp" /></customData>
+        <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/donutHtml}" />
       </VBox>
 
       <!-- Spend by country (geographic choropleth). Primary renderer = AnalyticMap.
@@ -129,6 +118,14 @@
           </vbm:regions>
         </vbm:AnalyticMap>
         <core:HTML content="{dash>/geoLegendHtml}" />
+      </VBox>
+
+      <!-- Trend — kept LAST in the row per the requested layout. -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="trend" /></customData>
+        <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/trendHtml}" />
+        <Text text="{i18n>dashTrendHint}" class="bsxKpiSub bsxCardPad" />
       </VBox>
     </FlexBox>
 
