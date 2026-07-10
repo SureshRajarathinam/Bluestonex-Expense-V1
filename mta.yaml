@@ -99,6 +99,49 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
+  # ── Destination Content Deployer ───────────────────────────────────────────
+  # Registers the app-host with SAP Build Work Zone so the two apps become
+  # DISCOVERABLE (public) in Content Manager, and creates the backend destination
+  # the Work Zone managed approuter uses to reach the CAP service (the apps'
+  # xs-app.json routes /expense,/approval → 'expense-srv-api'). This replaces the
+  # registration the old launchpad-deployer did — WITHOUT any portal/launchpad.
+  - name: expense-management-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: expense-management-xsuaa
+        parameters:
+          service-key:
+            name: expense-management-xsuaa-key
+      - name: expense-management-html5-host
+        parameters:
+          service-key:
+            name: expense-management-html5-host-key
+      - name: srv-api
+      - name: expense-management-destination
+        parameters:
+          content-target: true
+    build-parameters:
+      no-source: true
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            # App-host registration → flips both apps to discoverable/public in Work Zone
+            - Name: expense-management-html5-repo-host
+              ServiceInstanceName: expense-management-html5-host
+              ServiceKeyName: expense-management-html5-host-key
+              sap.cloud.service: com.bluestonex.expense
+            # Backend for the managed approuter (matches app xs-app.json destination name)
+            - Name: expense-srv-api
+              Authentication: OAuth2UserTokenExchange
+              TokenServiceInstanceName: expense-management-xsuaa
+              TokenServiceKeyName: expense-management-xsuaa-key
+              URL: ~{srv-api/srv-url}
+              HTML5.DynamicDestination: true
+              HTML5.Timeout: 60000
+              sap.cloud.service: com.bluestonex.expense
+
 # ─────────────────────────────────────────────────────────────────────────────
 # RESOURCES (BTP Service Instances)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -144,14 +187,21 @@ resources:
       service-name: expense-mail
 
   # ── HTML5 Application Repository (Host) ───────────────────────────────────
-  # Stores the two freestyle apps. SAP Build Work Zone's "HTML5 Apps" content
-  # channel auto-discovers app-host apps in this subaccount (grouped by their
-  # manifest sap.cloud.service = com.bluestonex.expense), so they can be added to
-  # the existing org Work Zone site. No launchpad/portal or standalone approuter
-  # is deployed here — the apps run under Work Zone's managed approuter, which
-  # resolves the 'expense-srv-api' destination (create it once, subaccount-level).
+  # Stores the two freestyle apps. They become discoverable (public) in Work
+  # Zone's "HTML5 Apps" channel via the app-host registration destination created
+  # by expense-management-destination-content. No launchpad/portal or standalone
+  # approuter — the apps run under Work Zone's managed approuter.
   - name: expense-management-html5-host
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-host
+
+  # ── Destination Service ───────────────────────────────────────────────────
+  # Holds the design-time destinations created by expense-management-destination-
+  # content: the app-host registration (Work Zone discovery) + the CAP backend.
+  - name: expense-management-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
