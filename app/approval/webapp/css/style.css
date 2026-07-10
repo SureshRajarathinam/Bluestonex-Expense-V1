@@ -215,3 +215,8 @@ html, body, .sapUiBody, .bsxBody,
 .bsxHFill--violet { background: #6b6ce0; }
 .bsxHFill--muted  { background: #b9c0e8; }
 .bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }
+
+/* Heat legend for Spend-by-category (colour scales with amount) */
+.bsxHeatLegend { display: flex; align-items: center; gap: .5rem; padding: .25rem 1rem .25rem; font-size: .75rem; color: var(--bsx-muted); }
+.bsxHeatBar { flex: 0 0 90px; height: .6rem; border-radius: 1rem;
+  background: linear-gradient(90deg, hsl(120,68%,45%), hsl(60,68%,45%), hsl(0,68%,45%)); }

@@ -91,19 +91,31 @@ sap.ui.define([
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart'>" + bars + "</div></div>";
   }
 
-  // Horizontal tracked bars: label · fill-on-track · value.
-  function hBars(rows, cur, mod) {
+  // Amount-driven heat colour: green (lowest) → amber → red (highest), by the
+  // bar's value relative to the largest in the set. hue 120°=green … 0°=red.
+  function heatColor(value, max) {
+    var ratio = Math.max(0, Math.min(1, (Number(value) || 0) / (max || 1)));
+    return "hsl(" + Math.round(120 * (1 - ratio)) + ", 68%, 45%)";
+  }
+
+  // Horizontal tracked bars: label · fill-on-track · value. The fill colour is
+  // set dynamically from the amount (heat scale), so bigger spend stands out.
+  function hBars(rows, cur) {
     if (!rows.length) { return ""; }
     var max = 1;
     rows.forEach(function (r) { max = Math.max(max, r.value); });
     var body = rows.map(function (r) {
       return "<div class='bsxHRow'>" +
         "<span class='bsxHLabel'>" + esc(r.title) + "</span>" +
-        "<span class='bsxHTrack'><span class='bsxHFill " + (r.mod || mod || "") + "' style='width:" + pct(r.value, max) + "%'></span></span>" +
+        "<span class='bsxHTrack'><span class='bsxHFill' style='width:" + pct(r.value, max) + "%;background:" + heatColor(r.value, max) + "'></span></span>" +
         "<span class='bsxHVal'>" + money(cur, r.value) + "</span>" +
       "</div>";
     }).join("");
-    return "<div class='bsxHBars'>" + body + "</div>";
+    // Compact gradient legend so the colour→amount encoding is explicit.
+    var legend = "<div class='bsxHeatLegend'>" +
+      "<span>Lower spend</span><span class='bsxHeatBar'></span><span>Higher spend</span>" +
+    "</div>";
+    return "<div class='bsxHBars'>" + body + legend + "</div>";
   }
 
   // Grouped VERTICAL columns per month: Submitted (light-blue) vs Approved (green).
@@ -232,7 +244,7 @@ sap.ui.define([
       var cat = (j.spendByCategory || []).map(function (c) {
         return { title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });
-      m.setProperty("/catHtml", hBars(cat, cur, "bsxHFill--blue"));
+      m.setProperty("/catHtml", hBars(cat, cur));
 
       // Top Expense Items donut — all expense items by category, in the active
       // currency; the centre shows the total Amount (sum of the slices).
