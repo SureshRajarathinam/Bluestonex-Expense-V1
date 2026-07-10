@@ -29,8 +29,12 @@ on `department`.
 - `db/external/users-master.cds` — external entity `ext.UsersMaster`
   (`@cds.persistence.exists`, `@cds.persistence.name: 'USERS_MASTER'`). Inert on
   SQLite (never queried in dev/test).
-- `db/src/USERS_MASTER.hdbsynonym` — synonym → the external table.
-- `db/src/USERS_MASTER.hdbgrants` — cross-container SELECT grant.
+- `db/external/USERS_MASTER.hdbsynonym` — synonym → the external table. **Staged here
+  (NOT in `db/src/`)** so the HDI deployer does not process it while USERS_MASTER is
+  inactive — otherwise deploy fails with "service bsx-org-apps-db not found". Move it
+  into `db/src/` only when activating (step 3 below).
+- `db/external/USERS_MASTER.hdbgrants` — cross-container SELECT grant. Same staging rule
+  as the synonym: keep out of `db/src/` until the `bsx-org-apps-db` container is bound.
 - `srv/lib/employee-source.js` — the single cut-over point. `findByEmail(email)`
   returns normalised identity; reads `ext.UsersMaster` when
   `EMPLOYEE_SOURCE=USERS_MASTER`, else `EXP_EMPLOYEES`.
@@ -39,9 +43,10 @@ on `department`.
 ## Activation steps (when the grant + deploy are approved)
 1. **Confirm the grantor.** The technical user of `hdi_bsx-org-apps-db` (or a DBA)
    must own `USERS_MASTER` or hold `SELECT ... WITH GRANT OPTION`.
-2. **Fill the placeholders.** In `db/src/USERS_MASTER.hdb{synonym,grants}`, set the
-   real provider schema (or switch to a granted **role** instead of the schema GUID,
-   which is more portable across environments).
+2. **Move the HDI files into the deploy path + fill the placeholders.** Move
+   `db/external/USERS_MASTER.hdb{synonym,grants}` into `db/src/` so the HDI deployer
+   picks them up, then set the real provider schema (or switch to a granted **role**
+   instead of the schema GUID, which is more portable across environments).
 3. **Wire the resource.** In `mta.yaml`, uncomment `bsx-org-apps-db`, set its real
    `service-name`, and add it to the `requires:` of both `expense-management-srv`
    and `expense-management-db-deployer`.
