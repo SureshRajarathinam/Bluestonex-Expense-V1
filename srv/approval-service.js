@@ -241,10 +241,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const isIN = (r) => r.country === 'IN';
       const isoOf = (r) => (r.country === 'IN' ? 'IN' : 'GB'); // UK → GB (ISO 3166 alpha-2)
 
-      // Non-draft claims with employee dept + items (+ expense type) for grouping.
+      // Non-draft claims with claimant name + items (+ expense type) for grouping.
       let rows = await SELECT.from(CLAIMS).columns((c) => {
         c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
-        c('submittedAt'); c('claimPeriod');
+        c('submittedAt'); c('claimPeriod'); c('createdBy');
+        c.employee((e) => { e('fullName'); });
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
 
@@ -265,9 +266,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const awaiting = { UK: 0, IN: 0, total: 0 };
       const approved = { UK: 0, IN: 0, total: 0 };
       const rejected = { UK: 0, IN: 0, total: 0 };
-      const catMap = new Map();   // APPROVED spend by category (bars + Top Expense Items donut)
+      const catMap = new Map();   // APPROVED spend by category (bars + Total reimbursed spend donut)
       const geoMap = new Map();
       const trendMap = new Map();
+      const claimantMap = new Map();  // claimant → total claimed amount (Top 5 claimants)
 
       // Accumulate one expense-item's gross into a category map (currency-separated).
       const addCat = (map, r, it) => {
@@ -281,6 +283,14 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       for (const r of rows) {
         const g = Number(r.totalGross) || 0;
+
+        // Top 5 claimants — total claimed amount per person (every in-scope claim),
+        // currency-separated so the card follows the country/currency filter.
+        const nm = (r.employee && r.employee.fullName) || r.createdBy || '—';
+        const cm = claimantMap.get(nm) || { name: nm, gbp: 0, inr: 0 };
+        if (isIN(r)) cm.inr += g; else cm.gbp += g;
+        claimantMap.set(nm, cm);
+
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
           const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0 };
@@ -319,6 +329,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         approved,
         rejected,
         spendByCategory: fin([...catMap.values()]),
+        topClaimants: fin([...claimantMap.values()]).slice(0, 5),
         spendByCountry: [...geoMap.values()].map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) })),
         trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
       };

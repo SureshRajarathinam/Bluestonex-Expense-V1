@@ -10,7 +10,7 @@ sap.ui.define([
 
   var SVC = "/approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  var LKEY = "bsx.dash.layout.v2"; // localStorage key; bumped (card set changed: reim tiles removed, Top Expense Items added)
+  var LKEY = "bsx.dash.layout.v3"; // localStorage key; bumped (card set changed: avr → Top 5 claimants)
 
   // Rich, high-contrast categorical palette for the Top Expense Items donut —
   // one vivid colour per expense category (blue · red · yellow · green · purple …),
@@ -75,29 +75,27 @@ sap.ui.define([
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
-  // Grouped VERTICAL bars: Approved (blue) vs Returned (black), per country group.
-  // `rejected` field carries the decline count (returned-for-rework + legacy).
-  function avrChart(groups) {
-    if (!groups.length) { return ""; }
+  // Rich-blue shade by rank: darkest for the top claimant, lightening down the
+  // list (hue ~ Fiori blue; lightness ramps 38% → 72%).
+  function blueShade(rank, total) {
+    var ratio = total > 1 ? rank / (total - 1) : 0;
+    return "hsl(208, 82%, " + Math.round(38 + ratio * 34) + "%)";
+  }
+
+  // Top 5 claimants: horizontal bars — name (left) · blue-shaded bar · amount
+  // (right). Bar length is proportional to the amount; colour shade by rank.
+  function claimantsChart(rows, cur) {
+    if (!rows.length) { return "<div class='bsxTlEmpty bsxCardPad'>No claimants for the selected filters.</div>"; }
     var max = 1;
-    groups.forEach(function (g) { max = Math.max(max, g.approved, g.rejected); });
-    var legend =
-      "<div class='bsxLegend'>" +
-        "<span><i class='bsxDot bsxDot--ok'></i>Approved</span>" +
-        "<span><i class='bsxDot bsxDot--no'></i>Returned</span>" +
-      "</div>";
-    var bars = groups.map(function (g) {
-      return "<div class='bsxVGroup'>" +
-        "<div class='bsxVBars'>" +
-          "<div class='bsxVCol'><span class='bsxVVal'>" + g.approved + "</span>" +
-            "<div class='bsxVBar bsxVBar--ok' style='height:" + pct(g.approved, max) + "%'></div></div>" +
-          "<div class='bsxVCol'><span class='bsxVVal'>" + g.rejected + "</span>" +
-            "<div class='bsxVBar bsxVBar--no' style='height:" + pct(g.rejected, max) + "%'></div></div>" +
-        "</div>" +
-        "<div class='bsxVLabel'>" + esc(g.label) + "</div>" +
+    rows.forEach(function (r) { max = Math.max(max, r.value); });
+    var body = rows.map(function (r, i) {
+      return "<div class='bsxHRow'>" +
+        "<span class='bsxHLabel'>" + esc(r.name) + "</span>" +
+        "<span class='bsxHTrack'><span class='bsxHFill' style='width:" + pct(r.value, max) + "%;background:" + blueShade(i, rows.length) + "'></span></span>" +
+        "<span class='bsxHVal'>" + money(cur, r.value) + "</span>" +
       "</div>";
     }).join("");
-    return "<div class='bsxChart'>" + legend + "<div class='bsxVChart'>" + bars + "</div></div>";
+    return "<div class='bsxHBars'>" + body + "</div>";
   }
 
   // Amount-driven heat colour: green (lowest) → amber → red (highest), by the
@@ -165,7 +163,10 @@ sap.ui.define([
       var start = (acc / total) * 100, end = ((acc + r.value) / total) * 100;
       stops.push(col + " " + start.toFixed(3) + "% " + end.toFixed(3) + "%");
       acc += r.value;
-      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
+      // Show each category's share of the total, mirroring the reference pie chart.
+      var share = total ? (r.value / total) * 100 : 0;
+      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" +
+        esc(r.title) + " <b class='bsxDonutPct'>" + share.toFixed(1) + "%</b></span>";
     });
     return "<div class='bsxDonut'>" +
       "<div class='bsxDonutRingWrap'>" +
@@ -199,7 +200,7 @@ sap.ui.define([
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
-        avrHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
+        claimantsHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
         geo: [], geoLegendHtml: "", geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
@@ -247,13 +248,14 @@ sap.ui.define([
       m.setProperty("/approvedPills", pills(country, ap.UK || 0, ap.IN || 0));
       m.setProperty("/rejectedPills", pills(country, rj.UK || 0, rj.IN || 0));
 
-      // Approved vs Rejected — grouped vertical bars per country in scope.
-      var groups = [];
-      if (country !== "IN") { groups.push({ label: "UK", approved: ap.UK || 0, rejected: rj.UK || 0 }); }
-      if (country !== "UK") { groups.push({ label: "India", approved: ap.IN || 0, rejected: rj.IN || 0 }); }
-      m.setProperty("/avrHtml", avrChart(groups));
-
       var pick = function (row) { return cur === "₹" ? (Number(row.inr) || 0) : (Number(row.gbp) || 0); };
+
+      // Top 5 claimants — total claimed amount per person, in the active currency.
+      var claimants = (j.topClaimants || [])
+        .map(function (c) { return { name: c.name, value: pick(c) }; })
+        .filter(function (r) { return r.value > 0; });
+      m.setProperty("/claimantsHtml", claimantsChart(claimants, cur));
+
       var cat = (j.spendByCategory || []).map(function (c) {
         return { title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });

@@ -85,13 +85,14 @@
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
       </dragDropConfig>
+      <!-- Top 5 claimants — name (left) + blue-shaded amount bar (right). -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
-        <customData><core:CustomData key="card" value="avr" /></customData>
-        <Title text="{i18n>dashApprRej}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/avrHtml}" />
+        <customData><core:CustomData key="card" value="claimants" /></customData>
+        <Title text="{i18n>dashTopClaimants}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/claimantsHtml}" />
       </VBox>
 
-      <!-- Top Expense Items — category donut with the total Amount in the centre. -->
+      <!-- Total reimbursed spend — approved category donut with total Amount + % shares. -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
         <customData><core:CustomData key="card" value="totalExp" /></customData>
         <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />

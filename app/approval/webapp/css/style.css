@@ -213,6 +213,7 @@ html, body, .sapUiBody, .bsxBody,
 .bsxDonutLegend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; justify-content: center; margin-top: .85rem; }
 .bsxDonutLeg { display: inline-flex; align-items: center; font-size: .8125rem; color: var(--bsx-text); }
 .bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .4rem; flex-shrink: 0; }
+.bsxDonutPct { margin-left: .3rem; font-weight: 700; color: var(--bsx-muted); }
 
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }
