@@ -183,8 +183,8 @@ sap.ui.define([
       var today = new Date();
       var from = new Date(); from.setMonth(from.getMonth() - 5); from.setDate(1);
       this._m = new JSONModel({
-        fromDate: from, toDate: today, preset: "", country: "ALL", cur: "£",
-        busy: false, hasData: true, error: "", showCurToggle: true, curLabel: "£", rangeText: "",
+        fromDate: from, toDate: today, preset: "", country: "UK", cur: "£",
+        busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
         avrHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
@@ -219,9 +219,10 @@ sap.ui.define([
     _apply: function () {
       var m = this._m, j = this._payload || {};
       var country = m.getProperty("/country");
-      var cur = country === "UK" ? "£" : country === "IN" ? "₹" : m.getProperty("/cur");
+      // Country drives the currency: UK → £, India → ₹ (single-currency dashboard).
+      var cur = country === "IN" ? "₹" : "£";
+      m.setProperty("/cur", cur);
       m.setProperty("/curLabel", cur);
-      m.setProperty("/showCurToggle", country === "ALL");
       m.setProperty("/rangeText", this._rangeText());
 
       var aw = j.awaiting || { UK: 0, IN: 0, total: 0 };
@@ -315,10 +316,6 @@ sap.ui.define([
     onCountry: function (oEvent) {
       this._m.setProperty("/country", oEvent.getSource().getSelectedKey());
       this._load();
-    },
-    onCurrency: function (oEvent) {
-      this._m.setProperty("/cur", oEvent.getSource().getSelectedKey());
-      this._apply(); // payload already carries both currencies — no refetch
     },
 
     // Geo region click → popover with country · native-currency spend · claims.

@@ -27,14 +27,8 @@
         <DateRangeSelection id="dashRange" dateValue="{dash>/fromDate}" secondDateValue="{dash>/toDate}" displayFormat="dd MMM yyyy" change=".onRange" width="18rem" />
         <Label text="{i18n>filterCountry}" class="bsxFieldLbl sapUiTinyMarginBegin" />
         <Select selectedKey="{dash>/country}" change=".onCountry" width="8rem" autoAdjustWidth="false">
-          <core:Item key="ALL" text="{i18n>all}" />
           <core:Item key="UK" text="UK" />
           <core:Item key="IN" text="India" />
-        </Select>
-        <Label text="{i18n>dashCurrency}" class="bsxFieldLbl sapUiTinyMarginBegin" visible="{dash>/showCurToggle}" />
-        <Select selectedKey="{dash>/cur}" change=".onCurrency" width="5rem" visible="{dash>/showCurToggle}">
-          <core:Item key="£" text="£" />
-          <core:Item key="₹" text="₹" />
         </Select>
         <Button text="{i18n>dashResetLayout}" icon="sap-icon://reset" type="Transparent" tooltip="{i18n>dashResetLayout}" press=".onResetLayout" />
       </OverflowToolbar>
