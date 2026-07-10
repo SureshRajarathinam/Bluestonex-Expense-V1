@@ -191,7 +191,10 @@ sap.ui.define([
       var url = SVC + "/dashboardStats(fromDate=" + ymd(m.getProperty("/fromDate")) +
         ",toDate=" + ymd(m.getProperty("/toDate")) + ",country='" + m.getProperty("/country") + "')";
       m.setProperty("/busy", true); m.setProperty("/error", "");
-      fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      // cache:'no-store' — always pull the live aggregation; never let the browser
+      // replay a stale cached dashboardStats response (every card, incl. the
+      // Top Expense Items donut, reflects the current claims on each load/filter).
+      fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin", cache: "no-store" })
         .then(function (r) { if (!r.ok) { throw new Error("HTTP " + r.status); } return r.json(); })
         .then(function (j) { that._payload = j; that._loaded = true; that._apply(); m.setProperty("/busy", false); })
         .catch(function () {
