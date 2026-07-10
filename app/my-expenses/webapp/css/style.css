@@ -28,6 +28,9 @@ html, body, .sapUiBody, .bsxBody,
 }
 .bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
 .bsxBrand .bsxBrandX { color: var(--bsx-blue); }
+/* Logged-in employee greeting (right side of the header) */
+.bsxGreeting { font-weight: 600; color: var(--bsx-text); padding: 0 .5rem 0 0; }
+.bsxGreetIcon { color: var(--bsx-blue); padding-right: .25rem; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }

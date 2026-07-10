@@ -36,6 +36,26 @@ async function submitClaim(country, gross = 120) {
   return id;
 }
 
+test('whoami returns the logged-in employee first + last name', async () => {
+  const r = await GET('/expense/whoami()', { auth: EMP });
+  assert.equal(r.status, 200, `whoami ${r.status}`);
+  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'full name from EXP_EMPLOYEES');
+  assert.equal(r.data.firstName, 'Sabarinathan', 'first name');
+  assert.equal(r.data.lastName, 'Chandrasekar', 'last name');
+  assert.equal(r.data.email, EMP.username, 'email echoes $user');
+});
+
+test('whoami falls back to the email local-part for a user with no employee row', async () => {
+  const r = await GET('/expense/whoami()', { auth: { username: 'nobody.here@bluestonex.com', password: 'x' } });
+  // Unknown creds → 401; a known-but-unseeded authenticated user → titled local-part.
+  if (r.status === 200) {
+    assert.equal(r.data.firstName, 'Nobody', 'fallback first name from email');
+    assert.equal(r.data.lastName, 'Here', 'fallback last name from email');
+  } else {
+    assert.equal(r.status, 401);
+  }
+});
+
 test('A. tax math: UK VAT 20% vs India GST 18%', () => {
   const uk = calc.splitVAT(120, 'STD', calc.taxRateFor('UK', { vatRate: 0.20 }));
   assert.ok(near(uk.netAmount, 100) && near(uk.vatAmount, 20), `UK ${JSON.stringify(uk)}`);

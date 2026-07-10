@@ -6,6 +6,11 @@ const { splitVAT, mileageTotal, claimTotals, taxRateFor } = require('./lib/calc'
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
+const employeeSource = require('./lib/employee-source');
+
+// Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
+const nameFromEmail = (email) => String(email || '').split('@')[0]
+  .replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim();
 
 const LOG = cds.log('expense-service');
 
@@ -13,6 +18,23 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
     const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW } = cds.entities('EXP');
+
+    // ─── whoami: resolve the logged-in user's display name for the greeting ────
+    // Uses the shared employee source (EXP_EMPLOYEES in dev/test, USERS_MASTER in
+    // prod when EMPLOYEE_SOURCE=USERS_MASTER); falls back to the email local-part.
+    this.on('whoami', async (req) => {
+      const email = req.user?.id || '';
+      let fullName = '';
+      try {
+        const id = await employeeSource.findByEmail(email);
+        fullName = (id && id.fullName) || '';
+      } catch (e) { LOG.warn('whoami lookup failed', e.message); }
+      if (!fullName) fullName = nameFromEmail(email);
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      const firstName = parts.shift() || '';
+      const lastName = parts.join(' ');
+      return { email, fullName: fullName.trim(), firstName, lastName };
+    });
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
     // Employees never type their own ID — it comes from $user (the login).

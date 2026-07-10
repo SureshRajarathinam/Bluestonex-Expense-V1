@@ -2,6 +2,7 @@
   controllerName="com.bluestonex.expense.myexpenses.controller.App"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns:tnt="sap.tnt"
+  xmlns:core="sap.ui.core"
   xmlns="sap.m"
   displayBlock="true"
   height="100%">
@@ -13,6 +14,8 @@
         <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
         <Text text="BluestoneX" class="bsxBrand" />
         <ToolbarSpacer />
+        <Text text="{app>/greeting}" visible="{= !!${app>/greeting} }" class="bsxGreeting" />
+        <core:Icon src="sap-icon://person-placeholder" class="bsxGreetIcon" visible="{= !!${app>/greeting} }" />
       </tnt:ToolHeader>
     </tnt:header>
 

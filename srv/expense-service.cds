@@ -8,6 +8,12 @@ using EXP as db from '../db/schema';
 @requires: 'authenticated-user'
 service ExpenseService {
 
+  // Identity of the logged-in user (resolved from $user via the employee source),
+  // so the app can greet the employee by name on open. firstName/lastName are the
+  // fullName split on the first space.
+  type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
+  function whoami() returns WhoAmI;
+
   @odata.draft.enabled
   // Ownership = the user who created the claim (managed `createdBy` = $user on
   // insert). Using createdBy — not the employee association — means any
