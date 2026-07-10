@@ -269,7 +269,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const catMap = new Map();   // APPROVED spend by category (bars + Total reimbursed spend donut)
       const geoMap = new Map();
       const trendMap = new Map();
-      const claimantMap = new Map();  // claimant → total claimed amount (Top 5 claimants)
+      const claimantMap = new Map();  // claimant → APPROVED (reimbursed) amount (Top 5 claimants)
 
       // Accumulate one expense-item's gross into a category map (currency-separated).
       const addCat = (map, r, it) => {
@@ -283,13 +283,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       for (const r of rows) {
         const g = Number(r.totalGross) || 0;
-
-        // Top 5 claimants — total claimed amount per person (every in-scope claim),
-        // currency-separated so the card follows the country/currency filter.
-        const nm = (r.employee && r.employee.fullName) || r.createdBy || '—';
-        const cm = claimantMap.get(nm) || { name: nm, gbp: 0, inr: 0 };
-        if (isIN(r)) cm.inr += g; else cm.gbp += g;
-        claimantMap.set(nm, cm);
 
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
@@ -313,6 +306,12 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
           // Approved-only category spend feeds BOTH the bars and the Top Expense Items donut.
           for (const it of (r.items || [])) addCat(catMap, r, it);
+          // Top 5 claimants — APPROVED (reimbursed) amount per person only, so a
+          // claimant surfaces on the card once their claim is approved.
+          const nm = (r.employee && r.employee.fullName) || r.createdBy || '—';
+          const cm = claimantMap.get(nm) || { name: nm, gbp: 0, inr: 0 };
+          if (isIN(r)) cm.inr += g; else cm.gbp += g;
+          claimantMap.set(nm, cm);
         } else if (isDeclined(r)) {
           rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
         } else if (r.status === 'Submitted' || r.status === 'FirstApproved') {

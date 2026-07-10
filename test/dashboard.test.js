@@ -94,13 +94,13 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
 
   assert.ok(Array.isArray(d.trend) && d.trend.length >= 1, 'trend has months');
 
-  // Top 5 claimants — total claimed per person, currency-separated, sorted desc.
+  // Top 5 claimants — APPROVED (reimbursed) amount per person, sorted desc.
   assert.ok(Array.isArray(d.topClaimants) && d.topClaimants.length >= 2 && d.topClaimants.length <= 5,
     'topClaimants present (2..5)');
   const tcGbp = d.topClaimants.reduce((s, c) => s + Number(c.gbp), 0);
   const tcInr = d.topClaimants.reduce((s, c) => s + Number(c.inr), 0);
-  assert.equal(tcGbp, 360, 'claimants total gbp (120+180+60, all statuses)');
-  assert.equal(tcInr, 118, 'claimants total inr');
+  assert.equal(tcGbp, 300, 'claimants approved gbp (120+180, excludes returned £60)');
+  assert.equal(tcInr, 118, 'claimants approved inr');
   for (let i = 1; i < d.topClaimants.length; i++) {
     const prev = Number(d.topClaimants[i - 1].gbp) + Number(d.topClaimants[i - 1].inr);
     const cur = Number(d.topClaimants[i].gbp) + Number(d.topClaimants[i].inr);

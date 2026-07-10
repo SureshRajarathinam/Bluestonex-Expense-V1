@@ -205,7 +205,7 @@ sap.ui.define([
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
-        claimantsHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
+        claimantsHtml: "", catHtml: "", donutHtml: "", trendHtml: "", trendFootHtml: "",
         geo: [], geoLegendHtml: "", geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
@@ -295,6 +295,15 @@ sap.ui.define([
         return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
       });
       m.setProperty("/trendHtml", trendChart(tr));
+
+      // Trend footer — count summary over the selected range (mirrors the geo footer).
+      var tSub = tr.reduce(function (s, t) { return s + t.submitted; }, 0);
+      var tApp = tr.reduce(function (s, t) { return s + t.approved; }, 0);
+      var tRet = tr.reduce(function (s, t) { return s + t.rejected; }, 0);
+      m.setProperty("/trendFootHtml",
+        "<div class='bsxCardFoot bsxGeoFoot'><span>" +
+          "<b>" + tSub + "</b> submitted · <b>" + tApp + "</b> approved · <b>" + tRet + "</b> returned" +
+        "</span></div>");
 
       var has = ((ap.total || 0) + (rj.total || 0) + (aw.total || 0) + cat.length) > 0;
       m.setProperty("/hasData", has);

@@ -121,7 +121,7 @@
         <customData><core:CustomData key="card" value="trend" /></customData>
         <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
         <core:HTML content="{dash>/trendHtml}" />
-        <Text text="{i18n>dashTrendHint}" class="bsxCardFoot" />
+        <core:HTML content="{dash>/trendFootHtml}" />
       </VBox>
     </FlexBox>
 

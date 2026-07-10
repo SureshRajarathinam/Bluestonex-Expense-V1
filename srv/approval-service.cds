@@ -18,7 +18,7 @@ type DashStats : {
   approved        : DashCount;
   rejected        : DashCount;
   spendByCategory : many DashCat;   // approved spend by category (bars + Total reimbursed spend donut)
-  topClaimants    : many DashClaimant;  // top 5 claimants by total claimed amount
+  topClaimants    : many DashClaimant;  // top 5 claimants by approved (reimbursed) amount
   spendByCountry  : many DashGeo;
   trend           : many DashTrend;
 }
