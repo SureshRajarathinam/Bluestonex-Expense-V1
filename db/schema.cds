@@ -16,12 +16,6 @@ entity VAT_TYPES {
       rate        : Decimal(5, 4);
 }
 
-// Business roles assignable to employees (governance; auth is enforced via XSUAA)
-entity ROLES {
-  key code        : String(20);
-      description : String(100);
-}
-
 // Countries the solution supports — drives tax (VAT/GST) and approval routing
 entity COUNTRIES {
   key code        : String(2);   // UK | IN
