@@ -66,6 +66,15 @@ html, body, .sapUiBody, .bsxBody,
 }
 .bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
 .bsxCardPad { padding: 0.5rem 1rem; }
+/* Card footer strip — sits at the card bottom with a divider, shared by the geo
+   summary and the trend hint so both cards use the same low-footer pattern. */
+.bsxCardFoot {
+  display: block; margin-top: auto;
+  border-top: 1px solid var(--bsx-line);
+  padding: 0.6rem 1rem; color: var(--bsx-muted); font-size: 0.8125rem;
+}
+.bsxGeoFoot { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
+.bsxGeoFoot b { color: var(--bsx-text); }
 .bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
 
 /* ---- Destructive icon button (row delete) -------------------------------- */

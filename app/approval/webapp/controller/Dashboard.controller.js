@@ -12,11 +12,12 @@ sap.ui.define([
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v2"; // localStorage key; bumped (card set changed: reim tiles removed, Top Expense Items added)
 
-  // Categorical palette for the Top Expense Items donut (matches the reference: a
-  // pastel wheel, one colour per expense category, cycled if there are more types).
+  // Rich, high-contrast categorical palette for the Top Expense Items donut —
+  // one vivid colour per expense category (blue · red · yellow · green · purple …),
+  // cycled if there are more types than colours.
   var DONUT_COLORS = [
-    "#9ed9c0", "#4caf93", "#b9c9f0", "#5b8def", "#f5bcd6", "#ec5a8d",
-    "#f6cf9a", "#ef9b3b", "#bfe6e6", "#3fa5a5", "#f0e3a2", "#c9b6e8"
+    "#0a6ed1", "#e0301e", "#f0ab00", "#36a41d", "#7858a6", "#14b3c9",
+    "#f27020", "#d9308c", "#1a3a8f", "#8cb021", "#00a19c", "#9c4dcc"
   ];
 
   function ymd(d) {
@@ -35,15 +36,23 @@ sap.ui.define([
   }
   function pct(v, max) { return Math.max(0, Math.round((v / (max || 1)) * 100)); }
 
-  // Geographic card: ISO alpha-2 → display name, tier colours, static legend.
+  // Geographic card: ISO alpha-2 → display name, tier colours.
   var GEO_NAMES = { GB: "United Kingdom", IN: "India" };
-  var GEO_LEGEND_HTML =
-    "<div class='bsxLegend bsxCardPad'>" +
-      "<span><i class='bsxDot' style='background:#1b3fae'></i>High</span>" +
-      "<span><i class='bsxDot' style='background:#4a90e2'></i>Medium</span>" +
-      "<span><i class='bsxDot' style='background:#a9c8f0'></i>Low</span>" +
-      "<span><i class='bsxDot' style='background:#e4e8ec'></i>No activity</span>" +
-    "</div>";
+  // Card footer: a concise, relevant summary of the in-scope country (spend · claims
+  // · approved · returned) — replaces the old High/Medium/Low shading legend, which
+  // was meaningless for a single-country view.
+  function geoFooter(rows) {
+    if (!rows.length) { return ""; }
+    var items = rows.map(function (r) {
+      var sym = r.code === "IN" ? "₹" : "£";
+      var amt = r.code === "IN" ? r.inr : r.gbp;
+      return "<span><b>" + esc(GEO_NAMES[r.code] || r.country || r.code) + "</b> · " +
+        money(sym, amt) + " approved spend · " +
+        (r.claims || 0) + " claims · " + (r.approved || 0) + " approved · " +
+        (r.rejected || 0) + " returned</span>";
+    }).join("");
+    return "<div class='bsxCardFoot bsxGeoFoot'>" + items + "</div>";
+  }
   // Shade tier from approved count (relative to the max in the current result set).
   function geoTier(n, max) {
     var r = (n || 0) / (max || 1);
@@ -191,7 +200,7 @@ sap.ui.define([
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
         avrHtml: "", catHtml: "", donutHtml: "", trendHtml: "",
-        geo: [], geoLegendHtml: GEO_LEGEND_HTML, geoSvgHtml: ""
+        geo: [], geoLegendHtml: "", geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
       this._loaded = false;
@@ -250,10 +259,9 @@ sap.ui.define([
       }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur));
 
-      // Top Expense Items donut — all expense items by category, in the active
-      // currency; the centre shows the total Amount (sum of the slices).
-      var exp = (j.expenseItems || []).map(function (c) { return { title: c.description || c.code, value: pick(c) }; });
-      m.setProperty("/donutHtml", donutChart(exp, cur, this.getText ? this.getText("dashAmount") : "Amount"));
+      // Top Expense Items donut — APPROVED spend by category (same data as the bars,
+      // approved claims only), in the active currency; centre shows the total Amount.
+      m.setProperty("/donutHtml", donutChart(cat, cur, this.getText ? this.getText("dashAmount") : "Amount"));
 
       // Spend by country — shade each region by approved count (currency-agnostic;
       // native-currency spend rides in the tooltip). Country filter already scoped it.
@@ -272,6 +280,7 @@ sap.ui.define([
         };
       }));
       m.setProperty("/geoSvgHtml", geoChart(geoRows, gmax)); // fallback body (see view comment)
+      m.setProperty("/geoLegendHtml", geoFooter(geoRows));   // relevant per-country footer summary
 
       var tr = (j.trend || []).map(function (t) {
         var parts = (t.month || "").split("-");

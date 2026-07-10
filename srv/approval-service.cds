@@ -16,8 +16,7 @@ type DashStats : {
   awaiting        : DashCount;
   approved        : DashCount;
   rejected        : DashCount;
-  spendByCategory : many DashCat;   // approved spend by category (bars)
-  expenseItems    : many DashCat;   // ALL expense items by category (Top Expense Items donut)
+  spendByCategory : many DashCat;   // approved spend by category (bars + Top Expense Items donut)
   spendByCountry  : many DashGeo;
   trend           : many DashTrend;
 }

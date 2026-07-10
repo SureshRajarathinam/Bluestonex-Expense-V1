@@ -265,8 +265,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const awaiting = { UK: 0, IN: 0, total: 0 };
       const approved = { UK: 0, IN: 0, total: 0 };
       const rejected = { UK: 0, IN: 0, total: 0 };
-      const catMap = new Map();   // APPROVED spend by category (spend-by-category bars)
-      const expMap = new Map();   // ALL expense-item spend by category (Top Expense Items donut)
+      const catMap = new Map();   // APPROVED spend by category (bars + Top Expense Items donut)
       const geoMap = new Map();
       const trendMap = new Map();
 
@@ -300,12 +299,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         else if (r.status === 'Submitted' || r.status === 'FirstApproved') gc.awaiting += 1;
         geoMap.set(iso, gc);
 
-        // Top Expense Items donut = every expense item in scope, all statuses.
-        for (const it of (r.items || [])) addCat(expMap, r, it);
-
         if (r.status === 'Approved') {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
-          // Spend-by-category bars remain approved-only.
+          // Approved-only category spend feeds BOTH the bars and the Top Expense Items donut.
           for (const it of (r.items || [])) addCat(catMap, r, it);
         } else if (isDeclined(r)) {
           rejected[isIN(r) ? 'IN' : 'UK'] += 1; rejected.total += 1;
@@ -323,7 +319,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         approved,
         rejected,
         spendByCategory: fin([...catMap.values()]),
-        expenseItems: fin([...expMap.values()]),
         spendByCountry: [...geoMap.values()].map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) })),
         trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
       };
