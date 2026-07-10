@@ -12,12 +12,12 @@ sap.ui.define([
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v3"; // localStorage key; bumped (card set changed: avr → Top 5 claimants)
 
-  // Rich, high-contrast categorical palette for the Top Expense Items donut —
-  // one vivid colour per expense category (blue · red · yellow · green · purple …),
-  // cycled if there are more types than colours.
+  // Rich categorical palette taken from the Outbound-Processing dashboard reference:
+  // rich blue · emerald · coral · navy · purple, then more distinct rich hues,
+  // cycled if there are more expense categories than colours.
   var DONUT_COLORS = [
-    "#0a6ed1", "#e0301e", "#f0ab00", "#36a41d", "#7858a6", "#14b3c9",
-    "#f27020", "#d9308c", "#1a3a8f", "#8cb021", "#00a19c", "#9c4dcc"
+    "#4c8bf5", "#2e9e6b", "#e0574f", "#2f3345", "#7c5cff", "#f0ab00",
+    "#17a2b8", "#e0508c", "#2f6fd6", "#8bc34a", "#00b8a9", "#9c6ade"
   ];
 
   function ymd(d) {
@@ -56,7 +56,8 @@ sap.ui.define([
   // Shade tier from approved count (relative to the max in the current result set).
   function geoTier(n, max) {
     var r = (n || 0) / (max || 1);
-    return r > 0.66 ? "rgba(27,63,174,1)" : r > 0.33 ? "rgba(74,144,226,1)" : "rgba(169,200,240,1)";
+    // Rich blue family from the reference (dark #2f6fd6 · mid #4c8bf5 · light #a9c7f7).
+    return r > 0.66 ? "rgba(47,111,214,1)" : r > 0.33 ? "rgba(76,139,245,1)" : "rgba(169,199,247,1)";
   }
   // Inline fallback (only used if AnalyticMap renders blank): a compact per-country
   // summary shaded by the same tier, currency-native — driven by the SAME /geo data.
@@ -75,11 +76,11 @@ sap.ui.define([
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
-  // Rich-blue shade by rank: darkest for the top claimant, lightening down the
-  // list (hue ~ Fiori blue; lightness ramps 38% → 72%).
+  // Rich-blue shade by rank (hue ~ the reference "Created" blue #4c8bf5): darkest
+  // for the top claimant, lightening down the list (lightness ramps 44% → 74%).
   function blueShade(rank, total) {
     var ratio = total > 1 ? rank / (total - 1) : 0;
-    return "hsl(208, 82%, " + Math.round(38 + ratio * 34) + "%)";
+    return "hsl(219, 88%, " + Math.round(44 + ratio * 30) + "%)";
   }
 
   // Top 5 claimants: horizontal bars — name (left) · blue-shaded bar · amount
@@ -157,20 +158,24 @@ sap.ui.define([
     var data = rows.filter(function (r) { return r.value > 0; });
     if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
     var total = data.reduce(function (s, r) { return s + r.value; }, 0);
-    var acc = 0, stops = [], legend = "";
+    // SVG stroked-circle donut: one arc per category. Each arc carries a native
+    // <title>, so hovering a slice pops up "Category — amount (percent)" — the
+    // percentage lives in the popup, not in the legend below.
+    var R = 78, C = 2 * Math.PI * R, acc = 0, arcs = "", legend = "";
     data.forEach(function (r, i) {
       var col = DONUT_COLORS[i % DONUT_COLORS.length];
-      var start = (acc / total) * 100, end = ((acc + r.value) / total) * 100;
-      stops.push(col + " " + start.toFixed(3) + "% " + end.toFixed(3) + "%");
-      acc += r.value;
-      // Show each category's share of the total, mirroring the reference pie chart.
+      var dash = (r.value / total) * C;
       var share = total ? (r.value / total) * 100 : 0;
-      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" +
-        esc(r.title) + " <b class='bsxDonutPct'>" + share.toFixed(1) + "%</b></span>";
+      var tip = esc(r.title) + " — " + money(cur, r.value) + " (" + share.toFixed(1) + "%)";
+      arcs += "<circle class='bsxDonutArc' cx='100' cy='100' r='" + R + "' fill='none' stroke='" + col +
+        "' stroke-width='26' stroke-dasharray='" + dash.toFixed(3) + " " + (C - dash).toFixed(3) +
+        "' stroke-dashoffset='" + (-acc).toFixed(3) + "'><title>" + tip + "</title></circle>";
+      acc += dash;
+      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
     });
     return "<div class='bsxDonut'>" +
       "<div class='bsxDonutRingWrap'>" +
-        "<div class='bsxDonutRing' style='background:conic-gradient(" + stops.join(",") + ")'></div>" +
+        "<svg class='bsxDonutSvg' viewBox='0 0 200 200'><g transform='rotate(-90 100 100)'>" + arcs + "</g></svg>" +
         "<div class='bsxDonutHole'>" +
           "<div class='bsxDonutNum'>" + money(cur, total) + "</div>" +
           "<div class='bsxDonutLbl'>" + esc(amountLabel || "Amount") + "</div>" +

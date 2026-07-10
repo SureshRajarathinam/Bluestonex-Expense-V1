@@ -15,14 +15,17 @@
   --bsx-text:   #32363a;
   --bsx-muted:  #6a6d70;
   --bsx-radius: 8px;
-  /* Analytics palette (SAP Analytics Cloud sample): semantic status + blue series.
-     green = positive/approved · red = negative/rejected · amber = warning/returned. */
-  --bsx-green:  #36a41d;
-  --bsx-red:    #e0301e;
+  /* Analytics palette (rich, from the Outbound-Processing dashboard reference):
+     emerald = positive/approved · coral = negative/rejected · amber = warning/returned
+     · rich blue = neutral/created · navy + purple round out the categorical set. */
+  --bsx-green:  #2e9e6b;   /* emerald "Released"  */
+  --bsx-red:    #e0574f;   /* coral   "Suspended" */
   --bsx-amber:  #f0ab00;
-  --bsx-blue-l: #93c7f0;   /* light series blue  */
-  --bsx-blue-m: #5b9bd5;   /* medium series blue */
-  --bsx-blue-d: #1b6ec2;   /* dark series blue   */
+  --bsx-navy:   #2f3345;   /* charcoal-navy "Short" */
+  --bsx-purple: #7c5cff;   /* accent purple         */
+  --bsx-blue-l: #a9c7f7;   /* light series blue  */
+  --bsx-blue-m: #4c8bf5;   /* rich "Created" blue */
+  --bsx-blue-d: #2f6fd6;   /* dark series blue   */
 }
 
 html, body, .sapUiBody, .bsxBody,
@@ -69,7 +72,7 @@ html, body, .sapUiBody, .bsxBody,
 /* Card footer strip — sits at the card bottom with a divider, shared by the geo
    summary and the trend hint so both cards use the same low-footer pattern. */
 .bsxCardFoot {
-  display: block; margin-top: auto;
+  display: block;
   border-top: 1px solid var(--bsx-line);
   padding: 0.6rem 1rem; color: var(--bsx-muted); font-size: 0.8125rem;
 }
@@ -124,9 +127,9 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Dashboard KPI tiles ------------------------------------------------- */
 .bsxKpi { padding: .9rem 1rem; }
 .bsxKpiNum.sapMTitle { font-size: 1.9rem; line-height: 1.1; font-weight: 700; margin: .25rem 0; }
-/* Semantic KPI colours (SAC palette): approved=green, awaiting=blue, returned=amber */
+/* Semantic KPI colours (reference palette): approved=emerald, awaiting=blue, returned=coral-red */
 .bsxKpiOk.sapMTitle { color: var(--bsx-green); }
-.bsxKpiNo.sapMTitle { color: var(--bsx-amber); }
+.bsxKpiNo.sapMTitle { color: var(--bsx-red); }
 .bsxKpiWait.sapMTitle { color: var(--bsx-blue); }
 .bsxPopSpend.sapMText { color: var(--bsx-blue); font-weight: 700; font-size: 1.1rem; }
 .bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }
@@ -158,7 +161,7 @@ html, body, .sapUiBody, .bsxBody,
 .bsxLegend span { display: inline-flex; align-items: center; }
 .bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
 .bsxDot--ok  { background: var(--bsx-green); }
-.bsxDot--no  { background: var(--bsx-amber); }
+.bsxDot--no  { background: var(--bsx-red); }
 .bsxDot--sub { background: var(--bsx-blue-l); }
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
@@ -172,7 +175,7 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
 .bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
 .bsxVBar--ok  { background: var(--bsx-green); }
-.bsxVBar--no  { background: var(--bsx-amber); }
+.bsxVBar--no  { background: var(--bsx-red); }
 .bsxVBar--sub { background: var(--bsx-blue-l); }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); }
 
@@ -201,7 +204,9 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Top Expense Items donut (conic-gradient ring + centre Amount) -------- */
 .bsxDonut { display: flex; flex-direction: column; align-items: center; padding: .5rem 1rem 1rem; }
 .bsxDonutRingWrap { position: relative; width: 220px; height: 220px; margin: .5rem auto; }
-.bsxDonutRing { width: 100%; height: 100%; border-radius: 50%; }
+.bsxDonutSvg { width: 100%; height: 100%; display: block; }
+.bsxDonutArc { cursor: pointer; transition: opacity .15s ease; }
+.bsxDonutArc:hover { opacity: .82; }
 .bsxDonutHole {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 62%; height: 62%; background: var(--bsx-card); border-radius: 50%;
@@ -213,7 +218,6 @@ html, body, .sapUiBody, .bsxBody,
 .bsxDonutLegend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; justify-content: center; margin-top: .85rem; }
 .bsxDonutLeg { display: inline-flex; align-items: center; font-size: .8125rem; color: var(--bsx-text); }
 .bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .4rem; flex-shrink: 0; }
-.bsxDonutPct { margin-left: .3rem; font-weight: 700; color: var(--bsx-muted); }
 
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }
