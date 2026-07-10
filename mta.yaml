@@ -4,6 +4,17 @@ description: BluestoneX Expense Reimbursement System
 version: 1.0.0
 
 # ─────────────────────────────────────────────────────────────────────────────
+# BUILD (runs before any module) — generates gen/srv + gen/db from the CAP model
+# so the srv/db-deployer module paths resolve on a fresh clone (e.g. BAS).
+# ─────────────────────────────────────────────────────────────────────────────
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MODULES
 # ─────────────────────────────────────────────────────────────────────────────
 modules:
