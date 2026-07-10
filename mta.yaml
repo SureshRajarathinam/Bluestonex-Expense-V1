@@ -32,7 +32,6 @@ modules:
     requires:
       - name: expense-management-db
       - name: expense-management-xsuaa
-      - name: expense-management-ans
       # SMTP service for approver emails. Optional: if 'expense-mail' isn't
       # created, deploy still succeeds and the mailer safely no-ops.
       # Create it once with:
@@ -195,13 +194,6 @@ resources:
       config:
         xsappname: expense-management-${org}-${space}
         tenant-mode: dedicated
-
-  # ── Alert Notification Service (Email Notifications) ──────────────────────
-  - name: expense-management-ans
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: alert-notification
-      service-plan: free
 
   # ── SMTP Mail Service (approver emails) ───────────────────────────────────
   # User-provided service holding SMTP credentials. Optional so a deploy
