@@ -10,8 +10,8 @@ Supports **UK and India** employees with country-aware tax and approval routing.
 ```bash
 npm install        # install deps
 cds watch          # run locally (in-memory SQLite + seed data), serves both services
-npm test           # node --test — 38/38 must stay green after any change
-mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
+npm test           # node --test — 113 must stay green after any change
+mbt build && cf deploy mta_archives/*.mtar   # BTP deploy (CF bsx-tdd/TDD) — see Deployment section
 ```
 
 ## Apps & services (2 services, 2 freestyle apps)
@@ -22,7 +22,15 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
   - **Approvals** (entitySet `Approvals`, role **Approver**) — review dialog + approve/reject
   - **Policy Configuration** (entitySet `Policies`, role **Admin**, draft) — VAT/GST/limits
   - **Approval Workflow Members** (entitySet `WorkflowMembers`, role **Admin**, draft) — approvers per country
-- Both apps are **freestyle SAPUI5**: `sap.tnt.ToolPage` shell (header + side nav), BluestoneX theme in `webapp/css/style.css`, OData V4 `ODataModel`. Bootstrap = standard `ComponentContainer` (NOT FLP ushell sandbox).
+- Both apps are **freestyle SAPUI5**: `sap.tnt.ToolPage` shell (header + side nav), BluestoneX theme in `webapp/css/style.css`, OData V4 `ODataModel`. Bootstrap = standard `ComponentContainer` (NOT FLP ushell sandbox). In Work Zone they run under the **managed approuter** (mounted under a generated prefix), so all backend paths are **relative** (no leading slash) — see Deployment.
+
+## Deployment (BTP Cloud Foundry + SAP Build Work Zone)
+Deployed to CF **bsx-tdd / TDD** (eu10, HANA Cloud). Build+deploy: `mbt build && cf deploy mta_archives/*.mtar`. Full runbook + gotchas in **[README.md](README.md)** and the auto-memory `deployment-btp`.
+- **MTA** (`mta.yaml`): top-level `before-all` runs `cds build --production` (so `gen/` exists on a fresh clone/BAS). Modules: `srv`, `db-deployer` (hdb), `app-deployer` (`com.sap.application.content` → html5-host, staged via a clean **`resources/`** folder — never `app/`), `destination-content` (subaccount destinations), 2 `html5` apps. Resources: `db` (hana/hdi-shared), `xsuaa`, `mail` (optional `expense-mail`), `html5-host` (app-host), `destination`. **No standalone approuter, no launchpad/portal, no ANS** (alert-notification free plan is capped at 1 instance/subaccount).
+- **Work Zone model:** apps are added to the **existing org Work Zone** (not their own site). Per-app manifest requirements: `"sap.cloud": { "service": "com.bluestonex.expense", "public": true }` (flat `sap.cloud.service` or missing `public` → deploys **`private`**, unconsumable by Work Zone's managed approuter which runs in another space); `crossNavigation.inbounds` + tile `icon` (+ `sap.ui.icons.icon`); **do NOT add `sap.flp.type`** (`"app"` is invalid → channel replication fails). Each app bundles `xs-app.json` routing `/expense`·`/approval` → destination **`expense-srv-api`**.
+- **Backend paths must be RELATIVE** (`expense/` not `/expense/`) in `dataSources.uri`, the whoami fetch, `SVC`, receipt/CSRF, export — the managed approuter mounts the app under a prefix and only applies xs-app.json routes relative to it. Keep the leading slash ONLY on the xs-app.json route `target`.
+- **Subaccount destinations** (created by `destination-content` at `content.subaccount` scope, or manually): `expense-srv-api` (OAuth2UserTokenExchange → srv URL, `HTML5.DynamicDestination=true`) + `expense-management-html5-repo-host` (app-host registration, `sap.cloud.service`) — the latter is what makes the app-host discoverable in Cockpit → HTML5 Applications and Work Zone.
+- **Post-deploy:** Channel Manager → HTML5 Apps → **Fetch updated content** (re-replicate; check its **Report** if an app is missing) → Content Manager → add apps to a Group/Page → Role → assign XSUAA role-collections (`Expense_Employee` / `Expense_Approver` / `Expense_Admin`). USERS_MASTER integration is **staged** in `db/external/` (not `db/src/` — its hdbgrants/hdbsynonym would fail HDI against the unbound org container); see `db/external/README.md`.
 
 ## Country-aware behaviour
 - Claim has a **`country`** (UK | IN), chosen on Create (mandatory).
@@ -45,10 +53,10 @@ mbt build && cf deploy mta_archives/*.mtar   # BTP deploy
 - Freestyle bootstrap: `index.html` declares the UI5 `ComponentContainer` div + custom `css` via manifest `sap.ui5.resources.css`. No FLP sandbox.
 - **Draft lifecycle (V4 freestyle):** create via list-binding `create({...})` → edit items via the table binding's `create()` → `ExpenseService.draftActivate` to save → `submitClaim`. `submitClaim` validates the **active** entity, so submit = activate-then-submit; on a 422 the draft is already active, so rebind to `IsActiveEntity=true` and let the user Edit→fix→resubmit. Don't chain two bound actions on an operation-returned context ("nested deferred operation") — re-resolve a fresh canonical context between them.
 - **V4 + formatter on a boolean/non-string control prop** (e.g. `visible`, `editable`) needs `targetType: 'any'` in the binding, else V4 coerces the raw `Edm.String` and logs `"X is not a valid boolean"`. Prefer driving such flags from a plain JSON `ui` model.
-- Receipt upload = manual media `PUT /expense/MyClaimItems(ID=..,IsActiveEntity=..)/receipt` with an `x-csrf-token` (fetch `HEAD` first).
+- Receipt upload = manual media `PUT expense/MyClaimItems(ID=..,IsActiveEntity=..)/receipt` with an `x-csrf-token` (fetch `HEAD` first). Path is **relative** (no leading slash) for the Work Zone managed approuter.
 - Bound-action key (backend): `req.params[0]` is `{ID}` for draft entities, a raw scalar for non-draft — normalise via `idOf()`.
 - VAT/totals computed in `before('SAVE')` (draft requirement), NOT per-item handlers. UI sends only `country`, `claimPeriod`, item/mileage inputs — all money math is server-side.
-- After any change: `npm test` (38/38) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
+- After any change: `npm test` (113) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)
 **The username is the FULL EMAIL** (`…@bluestonex.com`), not the shorthand — logging in with just `sab` authenticates as a **role-less** user and every `/expense` call 403s. Format below is `username` / `password`:

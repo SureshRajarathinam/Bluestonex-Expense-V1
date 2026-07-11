@@ -3,7 +3,7 @@
 A modern, end-to-end **Expense Reimbursement System** built on **SAP Cloud Application Programming Model (CAP)** with **SAP Fiori** front-ends, designed to run on **SAP BTP**.
 
 > **Stack:** SAP CAP (Node.js) · OData V4 · **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell) · SQLite (dev) / SAP HANA Cloud (prod) · XSUAA · BTP Alert Notification Service · SMTP mailer (nodemailer) for approver emails
-> **Status:** **UK & India** support · **2 freestyle SAPUI5 apps** (My Expenses, Approval) · 2 OData services · **38/38 automated tests passing** (`npm test`)
+> **Status:** **UK & India** support · **2 freestyle SAPUI5 apps** (My Expenses, Approval) · 2 OData services · **113 automated tests passing** (`npm test`)
 
 ---
 
@@ -25,11 +25,13 @@ This project replaces that with a digital, policy-enforced, fully auditable work
 
 A simplified **two-area** landscape supporting **UK and India** employees, backed by **two** CAP OData V4 services:
 
-- **My Expenses** (`/expense`) — employees pick **UK or India** on Create, enter **multiple items inline** on one page with **per-item attachments** and a **live Net/Tax preview** next to each Gross, and *Apply* (submit). Tax is **VAT (UK)** or **GST (India)** from config.
-- **Approval area** (`/approval`) — one freestyle SAPUI5 app with a **3-tab IconTabBar** on one service:
+- **My Expenses** (`/expense`) — employees pick **UK or India** on Create, enter **multiple items inline** on one page with **per-item attachments** and a **live Net/Tax preview** next to each Gross, and *Apply* (submit). Tax is **VAT (UK)** or **GST (India)** from config. The header greets the signed-in employee by name (`whoami`).
+- **Approval area** (`/approval`) — one freestyle SAPUI5 app with a **`sap.tnt.ToolPage` side navigation** exposing **five sections** on one service:
+  - **Dashboard** (Approver/Admin) — analytics: KPI tiles, spend-by-category bars, "Total reimbursed spend" donut, Top-5 claimants, submitted/approved/returned trend, spend-by-country map, filtered by date range + UK/India.
   - **Approvals** (Approver) — approve/reject pending claims.
   - **Policy Configuration** (Admin) — VAT/GST rates, mileage rate, limits, receipt threshold.
   - **Approval Workflow Members** (Admin) — the approvers per country.
+  - **History** (Approver/Admin) — every non-draft claim with journey detail + server-side PDF export.
 
 Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India = single-level** (L1). Each approval hop **emails the configured approver** (submit → L1; UK L1-approve → L2). Policy is enforced centrally (10 business rules), receipts are mandatory above a configurable threshold, and every state change is written to an audit log.
 
@@ -41,15 +43,16 @@ Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India 
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        SAP BTP Launchpad (FLP)                         │
 │                                                                        │
-│   My Expenses (freestyle)          Approval (freestyle, 3-tab)         │
-│   Employee                         Approvals · Policy · Workflow       │
-│                                    Approver + Admin                    │
+│   My Expenses (freestyle)          Approval (freestyle, ToolPage)      │
+│   Employee                         Dashboard · Approvals · Policy ·    │
+│                                    Workflow · History (Approver+Admin) │
 └─────┬───────────────────────────────────────┬─────────────────────────┘
       │ /expense                    │ /approval
 ┌─────▼─────────────────┐  ┌────────▼───────────────────────────────────┐
 │   ExpenseService      │  │           ApprovalService                   │
 │   draft · submit      │  │  Approvals (approve/reject, country routing) │
-│   country-aware tax   │  │  Policies · WorkflowMembers · AuditLogs      │
+│   country-aware tax   │  │  Policies · WorkflowMembers · ClaimHistory · │
+│   whoami greeting     │  │  dashboardStats · claimJourney · AuditLogs   │
 └───────────┬───────────┘  └───────────────────┬─────────────────────────┘
             └─── shared libs: calc · validate · load-claim · audit · mailer ───┘
               notification → BTP Alert Notification Service + SMTP mailer (approvers)
@@ -66,9 +69,9 @@ Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India 
 | App | Path | Type | Role | Purpose |
 |---|---|---|---|---|
 | **My Expenses** | `/my-expenses` → `/expense` | Freestyle SAPUI5 (list + single-page detail, draft) | Employee | Pick country on Create, add **inline** items + mileage + attachments on one screen, **Apply for Approval** |
-| **Approval** | `/approval` → `/approval` | Freestyle SAPUI5 (3-tab IconTabBar) | Approver + Admin | Tabs: **Approvals** (approve/reject), **Policy Configuration** (VAT/GST/limits), **Approval Workflow Members** (L1/L2 approvers per country) |
+| **Approval** | `/approval` → `/approval` | Freestyle SAPUI5 (`sap.tnt.ToolPage` side nav, 5 sections) | Approver + Admin | Sections: **Dashboard** (analytics), **Approvals** (approve/reject), **Policy Configuration** (VAT/GST/limits), **Approval Workflow Members** (L1/L2 approvers per country), **History** (all non-draft claims + PDF export) |
 
-> The former four Fiori Elements apps are consolidated into **two freestyle SAPUI5 apps**. The Approval app merges Approvals, Policy Configuration and Workflow Members into one app with three tabs over the single `/approval` service.
+> The former four Fiori Elements apps are consolidated into **two freestyle SAPUI5 apps**. The Approval app merges Dashboard, Approvals, Policy Configuration, Workflow Members and History into one app whose `sap.tnt.ToolPage` side navigation switches between five embedded views over the single `/approval` service.
 
 ---
 
@@ -102,7 +105,7 @@ Approval routing is **country-driven**: **UK = two-level** (L1 → L2), **India 
 | `ExpensePolicy` | mileageRate (£0.25), hotelDailyLimit (£200), mealDailyLimit (£40), **receiptThreshold (£25)**, **vatRate (20%)**, **gstRate (18%)**. |
 | `ApprovalWorkflow` | Per country: `firstApprover`, `secondApprover` (UK has both; India only first). |
 | `AuditLog` | Append-only trail: timestamp, user, action, object type/key, details. |
-| Code lists | `Countries` (UK/IN), `ExpenseTypes`, `VATTypes`, `Roles` (Employee/Approver/Admin). |
+| Code lists | `Countries` (UK/IN), `ExpenseTypes`, `VATTypes`. (No `Roles` table — roles are governed entirely by BTP XSUAA role collections.) |
 
 **Computation:** the per-item tax split (VAT for UK, GST for India), mileage totals, and claim roll-ups are computed in a **`before('SAVE')`** handler using `srv/lib/calc.js` — `taxRateFor(country, policy)` picks the rate. (Tax columns keep the names `vatType/vatAmount/totalVAT` but hold the country tax; UI labels say "Tax".)
 
@@ -153,15 +156,17 @@ Defined in **`xs-security.json`** (XSUAA) — scopes, role templates, and role c
 
 ---
 
-## 10. The Approval app (3 tabs on `/approval`)
+## 10. The Approval app (5 sections on `/approval`)
 
-One freestyle SAPUI5 app with a 3-tab `IconTabBar`:
+One freestyle SAPUI5 app with a `sap.tnt.ToolPage` shell whose **side navigation** switches an inner `NavContainer` between five embedded views (each section resets to a clean state on re-entry):
 
-| Tab | What it does |
+| Section | What it does |
 |---|---|
+| **Dashboard** | Read-only analytics over `CLAIMS` (`dashboardStats`): KPI tiles (awaiting/approved/returned), spend-by-category bars, "Total reimbursed spend" donut, Top-5 claimants, submitted/approved/returned trend, and a spend-by-country map — filtered by date range and UK/India. |
 | **Approvals** | List of claims pending the user's decision → **Review** dialog (items, mileage, receipt links) → **Approve / Reject** (Reject requires a reason). UK needs L1 then L2; India needs L1 only. |
 | **Policy Configuration** | **Edit** the policy → change VAT/GST rate, mileage rate, limits, receipt threshold → **Save** (draft flow). Feeds the rules + tax engine. |
 | **Approval Workflow Members** | Per country, edit the **first-level** and **second-level** (UK only) approver emails. |
+| **History** | Every non-draft claim (org-wide) with a free-text search + status/country/period filters, a per-claim **journey** timeline (`claimJourney`), and **server-side PDF export**. |
 
 ---
 
@@ -171,7 +176,7 @@ One freestyle SAPUI5 app with a 3-tab `IconTabBar`:
 .
 ├── db/
 │   ├── schema.cds                  # Entities, code lists, ApprovalWorkflow, labels, media
-│   └── data/*.csv                  # Seed (employees, policy, countries, workflow, types, roles)
+│   └── data/*.csv                  # Seed (employees, policy, countries, workflow, types)
 ├── srv/
 │   ├── expense-service.{cds,js}    # Employee service (/expense) — draft, country tax, submit
 │   ├── approval-service.{cds,js}   # Merged service  (/approval) — approve/reject, policy, workflow, audit
@@ -188,13 +193,18 @@ One freestyle SAPUI5 app with a 3-tab `IconTabBar`:
 │   │   ├── webapp/                 #   index.html, Component.js, manifest.json,
 │   │   │                           #   view/, controller/, model/formatter.js, css/, i18n/
 │   │   ├── package.json, ui5.yaml  #   CF build (ui5-task-zipper → my-expenses.zip)
-│   └── approval/                   # Freestyle SAPUI5 (Approver+Admin) — 3-tab IconTabBar
-│       ├── webapp/                 #   App + Approvals/Policy/Workflow views & controllers
+│   └── approval/                   # Freestyle SAPUI5 (Approver+Admin) — 5-section ToolPage side nav
+│       ├── webapp/                 #   App + Dashboard/Approvals/Policy/Workflow/History views & controllers
 │       └── package.json, ui5.yaml  #   CF build (ui5-task-zipper → approval.zip)
-├── test/
-│   ├── lifecycle.test.js           # UK 2-level + India 1-level flows, country tax
+├── test/                           # node:test — 113 passing across 8 suites
+│   ├── lifecycle.test.js           # UK 2-level + India 1-level flows, country tax, whoami
 │   ├── validate.test.js            # 10 business-rule unit tests
-│   └── approval.test.js            # Approver identity, RBAC, policy edit + audit, workflow
+│   ├── approval.test.js            # Approver identity, RBAC, policy edit + audit, workflow
+│   ├── dashboard.test.js           # dashboardStats analytics aggregation
+│   ├── concurrency.test.js         # draft locks / status-guarded actions (409)
+│   ├── edge-cases.test.js          # boundary + error-path coverage
+│   ├── odata-contract.test.js      # service metadata / projection shape
+│   └── security.test.js            # scope + @restrict enforcement
 ├── approuter/                      # App Router (xs-app.json) for BTP routing
 ├── xs-security.json                # XSUAA scopes / roles / collections
 ├── mta.yaml                        # Multi-Target Application descriptor (BTP deploy)
@@ -237,35 +247,60 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 ## 13. Testing
 
 ```bash
-npm test           # node --test  → 38/38 passing
+npm test           # node --test  → 113 passing
 ```
 
 | Suite | Covers |
 |---|---|
-| `lifecycle.test.js` | Country-aware tax (VAT vs GST), **UK 2-level** + **India 1-level** flows, country-mandatory guard, receipt-missing block (422), empty-claim block (422), mileage-only success |
+| `lifecycle.test.js` | Country-aware tax (VAT vs GST), **UK 2-level** + **India 1-level** flows, country-mandatory guard, receipt-missing block (422), empty-claim block (422), mileage-only success, **`whoami` name greeting** (+ email local-part fallback) |
 | `validate.test.js` | Each of the 10 business rules in isolation (success + violation) |
 | `approval.test.js` | Approver-identity routing (403 for wrong/non-configured/wrong-level approver), reject-needs-reason, RBAC (403), policy draft-edit + audit, workflow members, double-approve (409), rejected leaves queue (404), history + PDF export, **level-1-approval notification + per-approver email** (submit→L1, UK L1-approve→L2, India single approver, no second email), server net/VAT split |
+| `dashboard.test.js` | `dashboardStats` aggregation — approved-only spend, category/claimant/country/trend rollups, date-range + country filtering |
+| `concurrency.test.js` | Draft locks (2nd concurrent draftEdit → 409) and status-guarded approve/reject (409) |
+| `edge-cases.test.js` | Boundary values and error-path coverage |
+| `odata-contract.test.js` | Service metadata / projection shape stability |
+| `security.test.js` | XSUAA scope + entity/action `@restrict` enforcement |
 
 All flows are tested for **success and error** paths (422 on missing receipt / future date / over-limit / no country, 403 on wrong role or wrong approver). Email is asserted by spying the notification/mailer singletons — no real SMTP is hit.
 
 ---
 
-## 14. Deployment to SAP BTP (Cloud Foundry)
+## 14. Deployment to SAP BTP (Cloud Foundry) + SAP Build Work Zone
+
+Deployed to CF **`bsx-tdd` / `TDD`** (eu10, HANA Cloud).
 
 ```bash
 npm install -g mbt
-mbt build                       # produces mta_archives/*.mtar
-cf deploy mta_archives/*.mtar   # deploys srv + HANA + XSUAA + ANS + HTML5 repo + approuter + launchpad
+mbt build                       # runs `cds build --production` (before-all) → mta_archives/*.mtar
+cf deploy mta_archives/*.mtar   # srv + HANA HDI + XSUAA + HTML5 host + 2 apps + subaccount destinations
 ```
 
-Post-deploy:
-1. **XSUAA** — assign the role collections (`Expense_Employee/Approver/Admin`) to users. (A 403 in production usually means the role collection isn't assigned.)
-2. **Approver emails (SMTP)** — create the optional user-provided SMTP service so approval alerts are delivered to the configured approver:
-   `cf cups expense-mail -p '{"host":"...","port":587,"user":"...","pass":"...","from":"noreply@bluestonex.com","secure":false}'` then redeploy. It's an **optional** binding — deploy succeeds without it and the mailer no-ops. Locally, run `MAIL_DEV=true cds watch` to preview emails via an Ethereal test inbox (a preview URL is logged).
-3. **Alert Notification Service** — optionally, in BTP Cockpit create Conditions (by `eventType`, e.g. `ExpenseClaim.Submitted`) + Email Actions + Subscriptions for broadcast/ops-style alerts. The backend fires ANS events alongside the targeted mailer.
-4. **Launchpad** — register the HTML5 content provider; group the **Approvals / Policy Configuration / Approval Workflow Members** tiles together (e.g. under *Expense Approval*).
+### What the MTA deploys (`mta.yaml`)
+- **Modules:** `srv` (CAP), `db-deployer` (HDI tables + CSV seed), `app-deployer` (`com.sap.application.content` → uploads the two app zips to the HTML5 repo; staged via a clean **`resources/`** folder), `destination-content` (creates the subaccount destinations below), and the two `html5` apps.
+- **Resources:** `db` (hana `hdi-shared`), `xsuaa` (`application`), `mail` (optional user-provided `expense-mail`), `html5-host` (html5-apps-repo `app-host`), `destination` (`lite`).
+- **Deliberately NOT included:** standalone approuter, launchpad/portal, Alert Notification. The apps run under **Work Zone's managed approuter**; ANS was dropped (its `free` plan allows only one instance per subaccount). Production XSUAA JWT validation uses **`@sap/xssec`** (already in `package.json`).
 
-`mta.yaml` already declares all modules/resources (CAP service, HANA HDI, XSUAA, ANS, HTML5 host/runtime, destination, approuter, launchpad).
+### Work Zone integration (apps into the existing org site)
+These are standalone freestyle apps added to the **existing** org Work Zone — the MTA does **not** create its own launchpad site. For that to work, each app `manifest.json` must have:
+- `"sap.cloud": { "service": "com.bluestonex.expense", "public": true }` — `public:true` is mandatory; without it the app deploys as **`private`** (`cf html5-list`) and Work Zone's managed approuter (a different space) can't consume it.
+- `crossNavigation.inbounds` with a semantic intent + a tile `icon` (also `sap.ui.icons.icon`). **Never** set `sap.flp.type` — the value `"app"` is invalid and blocks content replication.
+- A bundled **`xs-app.json`** routing `/expense`·`/approval` → destination `expense-srv-api`, and **relative** backend paths everywhere in the app (`expense/`, not `/expense/`) because the managed approuter mounts each app under a generated prefix and applies xs-app.json routes relative to it.
+
+### Subaccount destinations (created by `destination-content`, or manually)
+- **`expense-srv-api`** — `HTTP` → srv URL, `OAuth2UserTokenExchange` (principal propagation via xsuaa), `HTML5.DynamicDestination=true`. How the managed approuter reaches the CAP backend.
+- **`expense-management-html5-repo-host`** — app-host registration (`sap.cloud.service`); makes the app-host discoverable in **Cockpit → HTML5 Applications** and Work Zone.
+
+### Post-deploy
+1. **Role collections** — assign `Expense_Employee / Approver / Admin` to users (a 403 in prod usually means the collection isn't assigned).
+2. **Publish to Work Zone** — **Channel Manager → HTML5 Apps → Fetch updated content** (re-replicates the app-host; check its **Report** if an app is missing — it lists per-app replication errors) → **Content Manager → Content Explorer → HTML5 Apps → Add** the two apps → put them on a **Group/Page** and expose via a **Role** (`Expense_Employee` → My Expenses, `Expense_Approver` → Approval).
+3. **Approver emails (SMTP)** — optional `expense-mail`: `cf cups expense-mail -p '{"host":"...","port":587,"user":"...","pass":"...","from":"noreply@bluestonex.com","secure":false}'` then `cf bind-service expense-management-srv expense-mail && cf restart expense-management-srv`. Deploy succeeds without it (mailer no-ops). Locally: `MAIL_DEV=true cds watch`.
+4. **USERS_MASTER** (employee-master reuse) is **staged** in `db/external/` (moved out of `db/src/` so HDI doesn't attempt the cross-container grant against the unbound org container). See `db/external/README.md` to activate.
+
+### Deploy gotchas (all resolved — recorded for future deploys)
+- `before-all: cds build --production` in `mta.yaml` is required, else `gen/srv` + `gen/db` don't exist on a fresh clone / BAS.
+- `app-deployer` must stage into `resources/`, not `app/` (zipping the source dir yields an invalid html5 payload — CODE 1001).
+- A failed managed-service create can leave a **phantom instance** that later deploys can't detach (404). Fix: delete/purge it, create a user-provided-service of the same name so the deploy can detach it, then delete it.
+- The Cockpit "HTML5 Applications" **direct launch is a static preview** — its `/expense` calls 404 (it doesn't run `xs-app.json`). Verify the backend with `<srv-url>/expense/$metadata` → **401** = healthy.
 
 ---
 
@@ -274,7 +309,8 @@ Post-deploy:
 - **@sap/cds** 8 · **Node.js** 18+ · **OData V4**
 - **Freestyle SAPUI5** 1.120+ (XML views + JS controllers, `sap.tnt.ToolPage` shell) · **Horizon** theme + BluestoneX custom CSS
 - **SQLite** (`@cap-js/sqlite`) for dev · **SAP HANA Cloud** for production
-- **XSUAA** for auth · **BTP Alert Notification Service** (events) + **SMTP mailer** (`nodemailer`, targeted approver emails)
+- **XSUAA** for auth · **SMTP mailer** (`nodemailer`, targeted approver emails); ANS event emission is retained in `notification.js` but **not deployed** (alert-notification `free` plan is 1 instance/subaccount)
+- **SAP Build Work Zone, standard edition** — apps surfaced as tiles in the existing org site (managed approuter)
 
 ---
 
@@ -287,7 +323,8 @@ Post-deploy:
 - **Freestyle rewrite** — both front-ends rebuilt as **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell, standard `ComponentContainer`); the four Fiori Elements apps became **two freestyle apps** (My Expenses + a 3-tab Approval app); per-country policies; History tab + server-side PDF export.
 - **Live Net/Tax preview** — my-expenses items show a client-derived Net + Tax preview next to Gross (read-only `Policies` projection; `before('SAVE')` remains authoritative).
 - **Approver email alerts** — `srv/lib/mailer.js` sends targeted emails to the configured approver (submit→L1, UK L1-approve→L2) via SMTP/`nodemailer`, with a zero-setup `MAIL_DEV` mode and an optional `expense-mail` binding; India L1 approver set to `yuvaraj.kumar@bluestonex.com`.
+- **BTP deploy + Work Zone go-live** — deployed to CF `bsx-tdd/TDD` on **HANA Cloud**; both apps integrated into the existing org **SAP Build Work Zone** via the html5-apps-repo (`sap.cloud.public`, `crossNavigation` + tile icons, **relative** backend paths for the managed approuter, `expense-srv-api` + app-host-registration subaccount destinations). MTA slimmed to drop the standalone approuter, launchpad/portal, and ANS; added the `before-all` CAP build and `resources/` content staging. See **§14**.
 
 ---
 
-*Living documentation. Backend logic and all flows are covered by `npm test` (38/38). Fiori UI rendering should be verified in a browser against `cds watch`.*
+*Living documentation. Backend logic and all flows are covered by `npm test` (113). Fiori UI rendering should be verified in a browser against `cds watch`.*
