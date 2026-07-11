@@ -57,7 +57,7 @@ sap.ui.define([
       var s = oState || {};
       var lit = function (v) { return (v == null || v === "") ? "null" : "'" + String(v).replace(/'/g, "''") + "'"; };
       var dt = function (v) { return v ? v : "null"; };
-      var sUrl = "/approval/exportClaimsPdf(" +
+      var sUrl = "approval/exportClaimsPdf(" +
         "scope='" + sScope + "'," +
         "status=" + lit(s.status) + "," +
         "country=" + lit(s.country) + "," +

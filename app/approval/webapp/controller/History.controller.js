@@ -8,7 +8,7 @@ sap.ui.define([
 ], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator) {
   "use strict";
 
-  var SVC = "/approval";
+  var SVC = "approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   function esc(s) {

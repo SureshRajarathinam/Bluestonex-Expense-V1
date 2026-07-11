@@ -9,7 +9,7 @@
     "description": "{{appDescription}}",
     "dataSources": {
       "mainService": {
-        "uri": "/approval/",
+        "uri": "approval/",
         "type": "OData",
         "settings": {
           "odataVersion": "4.0"

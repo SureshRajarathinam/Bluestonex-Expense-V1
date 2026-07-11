@@ -15,7 +15,7 @@ sap.ui.define([
     // the ExpenseService whoami function). Silent no-op if it can't resolve.
     _loadGreeting: function () {
       var oView = this.getView();
-      fetch("/expense/whoami()", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      fetch("expense/whoami()", { headers: { Accept: "application/json" }, credentials: "same-origin" })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (j) {
           if (!j) { return; }

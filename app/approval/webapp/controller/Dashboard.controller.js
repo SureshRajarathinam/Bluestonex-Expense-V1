@@ -8,7 +8,7 @@ sap.ui.define([
 ], function (BaseController, formatter, JSONModel, ResponsivePopover, VBox, MText) {
   "use strict";
 
-  var SVC = "/approval";
+  var SVC = "approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v3"; // localStorage key; bumped (card set changed: avr → Top 5 claimants)
 

@@ -9,7 +9,7 @@ sap.ui.define([
 ], function (BaseController, formatter, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
   "use strict";
 
-  var SVC = "/expense";
+  var SVC = "expense";
 
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.Claim", {
 

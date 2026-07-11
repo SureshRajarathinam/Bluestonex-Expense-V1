@@ -50,7 +50,7 @@ sap.ui.define([], function () {
 
     /** Download URL for an item's receipt (active, non-draft projection). */
     receiptHref: function (sItemId) {
-      return sItemId ? "/approval/ApprovalItems(" + sItemId + ")/receipt" : "";
+      return sItemId ? "approval/ApprovalItems(" + sItemId + ")/receipt" : "";
     },
 
     /** True only for the UK workflow row (enables the 2nd-level approver field). */
