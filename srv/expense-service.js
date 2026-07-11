@@ -33,14 +33,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
       const firstName = parts.shift() || '';
       const lastName = parts.join(' ');
-      // DIAGNOSTIC: expose the roles CAP resolves from the (exchanged) token, so
-      // the app's whoami call reveals whether the Employee scope reaches the backend.
-      return {
-        email, fullName: fullName.trim(), firstName, lastName,
-        isEmployee: req.user.is('Employee'),
-        isApprover: req.user.is('Approver'),
-        isAdmin: req.user.is('Admin')
-      };
+      return { email, fullName: fullName.trim(), firstName, lastName };
     });
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
