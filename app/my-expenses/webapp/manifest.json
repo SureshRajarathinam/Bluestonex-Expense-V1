@@ -22,6 +22,7 @@
           "semanticObject": "MyExpenses",
           "action": "display",
           "title": "{{appTitle}}",
+          "icon": "sap-icon://expense-report",
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
@@ -32,7 +33,10 @@
   },
   "sap.ui": {
     "technology": "UI5",
-    "deviceTypes": { "desktop": true, "tablet": true, "phone": true }
+    "deviceTypes": { "desktop": true, "tablet": true, "phone": true },
+    "icons": {
+      "icon": "sap-icon://expense-report"
+    }
   },
   "sap.fiori": {
     "registrationIds": ["F-BSX-EXPENSE-MY"],
