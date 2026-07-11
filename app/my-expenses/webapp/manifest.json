@@ -30,9 +30,6 @@
       }
     }
   },
-  "sap.flp": {
-    "type": "app"
-  },
   "sap.ui": {
     "technology": "UI5",
     "deviceTypes": { "desktop": true, "tablet": true, "phone": true }
