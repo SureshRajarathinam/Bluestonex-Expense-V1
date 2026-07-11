@@ -59,11 +59,17 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     if (vatTypes.size && !blank(it.vatType) && !vatTypes.has(it.vatType))
       errors.push(`${n}: invalid tax type '${it.vatType}'.`);
 
-    // Rule 4 — receipt mandatory at/above threshold (or when the type requires it)
+    // Rule 4 — receipt mandatory when the type requires it, or at/above threshold
     const type = types[it.expenseType_code] || {};
-    const needsReceipt = type.requiresReceipt || (gross > 0 && gross >= threshold);
-    if (needsReceipt && !it.receiptAttached)
-      errors.push(`${n}: a receipt is required (£${round2(gross || 0)} ≥ £${threshold} threshold or policy requires one).`);
+    const byType = !!type.requiresReceipt;
+    const byThreshold = gross > 0 && gross >= threshold;
+    if ((byType || byThreshold) && !it.receiptAttached) {
+      // State the reason that actually applies (don't print an unmet threshold).
+      const reason = byType
+        ? 'this expense type always requires a receipt'
+        : `£${round2(gross || 0)} is at or above the £${threshold} receipt threshold`;
+      errors.push(`${n}: a receipt is required — ${reason}. Please attach one.`);
+    }
 
     // Rule 7 — duplicate detection (warning)
     if (it.expenseDate && it.expenseType_code && gross > 0) {

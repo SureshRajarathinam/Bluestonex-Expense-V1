@@ -44,22 +44,40 @@ sap.ui.define([
 
     /** Standardised error popup that surfaces backend 4xx messages. */
     showError: function (oError) {
-      var sMsg = this.getText("errGeneric");
-      try {
-        if (oError && oError.error && oError.error.message) {
-          sMsg = oError.error.message;
-        } else if (oError && oError.message) {
-          // OData V4 wraps the server payload in error.message as JSON sometimes
-          var m = oError.message.match(/\{[\s\S]*\}/);
-          if (m) {
-            var parsed = JSON.parse(m[0]);
-            sMsg = (parsed.error && parsed.error.message) || oError.message;
-          } else {
-            sMsg = oError.message;
-          }
+      MessageBox.error(this._backendMessage(oError) || this.getText("errGeneric"));
+    },
+
+    /**
+     * Extract the human-readable backend message from a failed request.
+     *
+     * A failed OData V4 *bound action inside a $batch* (Save / Apply for Approval)
+     * rejects with the opaque wrapper "HTTP request was not processed because
+     * $batch failed" — the real 4xx text (e.g. "a receipt is required…") is
+     * delivered separately to the UI5 Message Manager. So: use a specific message
+     * carried on the error object when there is one, otherwise fall back to the
+     * newest Error-severity message in the model. Plain-fetch failures (receipt
+     * PUT) throw their own Error and are returned as-is (no batch wrapper), which
+     * avoids surfacing a stale model message.
+     */
+    _backendMessage: function (oError) {
+      // 1) An explicit message on the error object (parsed OData error / manual fetch)
+      if (oError && oError.error && oError.error.message) { return oError.error.message; }
+      if (oError && oError.message) {
+        var m = oError.message.match(/\{[\s\S]*\}/);
+        if (m) {
+          try { var p = JSON.parse(m[0]); if (p.error && p.error.message) { return p.error.message; } } catch (e) { /* ignore */ }
         }
-      } catch (e) { /* keep generic */ }
-      MessageBox.error(sMsg);
+        // Any non-batch-wrapper message is itself meaningful — surface it directly.
+        if (!/\$batch failed/i.test(oError.message)) { return oError.message; }
+      }
+      // 2) $batch wrapper: the actionable text is in the Message Manager.
+      try {
+        var aData = (sap.ui.getCore().getMessageManager().getMessageModel().getData() || []).filter(function (msg) {
+          return msg && msg.getType && msg.getType() === "Error" && msg.getMessage && msg.getMessage();
+        });
+        if (aData.length) { return aData[aData.length - 1].getMessage(); }
+      } catch (e) { /* fall through to generic */ }
+      return "";
     },
 
     toast: function (sKey) {
