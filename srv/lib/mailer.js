@@ -78,9 +78,25 @@ class Mailer {
         host:   cfg.host,
         port:   cfg.port || 587,
         secure: !!cfg.secure,
-        auth:   cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined
+        auth:   cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined,
+        // Fail FAST on an unreachable/misconfigured SMTP. Without these, nodemailer's
+        // defaults let a dead host hang the awaited caller (submit/approve) long enough
+        // for the approuter to 504. Values overridable via MAIL_TIMEOUT_MS.
+        connectionTimeout: Number(process.env.MAIL_TIMEOUT_MS) || 6000,
+        greetingTimeout:   Number(process.env.MAIL_TIMEOUT_MS) || 6000,
+        socketTimeout:     Number(process.env.MAIL_TIMEOUT_MS) || 8000
       });
-      const info = await transport.sendMail({ from: cfg.from || cfg.user, to, subject, text, html });
+      // Backstop race in case DNS/connect stalls before nodemailer's own timers engage.
+      const hardMs = (Number(process.env.MAIL_TIMEOUT_MS) || 8000) + 2000;
+      let timer;
+      const guard = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`mail timeout after ${hardMs}ms`)), hardMs); });
+      let info;
+      try {
+        info = await Promise.race([transport.sendMail({ from: cfg.from || cfg.user, to, subject, text, html }), guard]);
+      } finally {
+        clearTimeout(timer);
+        if (transport && transport.close) { try { transport.close(); } catch { /* ignore */ } }
+      }
       if (cfg._preview) {
         LOG.info(`mail (dev) "${subject}" → ${to} — preview: ${nodemailer.getTestMessageUrl(info)}`);
       } else {

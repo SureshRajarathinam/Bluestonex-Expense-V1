@@ -135,7 +135,11 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       const employee = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
-      await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover);
+      // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
+      // slow/unreachable SMTP would otherwise block the awaited submit long enough for
+      // the approuter to 504. notifyClaimSubmitted is best-effort and self-logs.
+      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover)
+        .catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
       const sym = claim.currency === 'INR' ? '₹' : '£';
       // Distinguish a fresh submission from a rework resubmission so the History
       // timeline (and resubmitCount) can tell the two apart.

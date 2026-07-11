@@ -46,8 +46,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
             status: 'FirstApproved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
           });
           await audit.record({ userId: me, action: 'FirstApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 1 approved; awaiting level 2 (${wf.secondApprover || 'n/a'})` });
-          // Alert the configured second-level approver that it now awaits them.
-          await notification.notifyLevel1Approved(claim, wf.secondApprover);
+          // Alert the configured second-level approver (fire-and-forget — email must
+          // not sit in the request's critical path; a dead SMTP would 504 the approve).
+          notification.notifyLevel1Approved(claim, wf.secondApprover)
+            .catch((e) => LOG.warn('notifyLevel1Approved failed:', e.message));
         } else {
           await UPDATE(CLAIMS, ID).with({
             status: 'Approved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
@@ -94,7 +96,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // (status Returned, reworkable) rather than to a terminal Rejected. Keep
       // rejectedBy/rejectionReason — they now record who returned it and why.
       await UPDATE(CLAIMS, ID).with({ status: 'Returned', rejectedBy: me, rejectionReason: comment });
-      await notification.notifyReturned(claim, me, comment);
+      // Fire-and-forget email to the employee (see submit/approve — never block on SMTP).
+      notification.notifyReturned(claim, me, comment)
+        .catch((e) => LOG.warn('notifyReturned failed:', e.message));
       await audit.record({ userId: me, action: 'Returned', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
 
       LOG.info(`Claim ${claim.claimNumber} returned for rework by ${me}`);
