@@ -131,3 +131,90 @@ Authorization: Basic {{emp}}
 ### 21. PDF export as approver — EXPECT 200, base64 body starting %PDF- ; as employee-only EXPECT 403
 GET {{host}}/approval/exportClaimsPdf(scope='history',status=null,country=null,claimNo=null,fromDate=null,toDate=null)
 Authorization: Basic {{mgr}}
+
+### ─────────────────────────────────────────────────────────────────────────────
+### GAP COVERAGE — draft-lock self-heal, SoD, malformed paging, media, analytics
+### ─────────────────────────────────────────────────────────────────────────────
+
+### 22. Create a draft claim (UK) — EXPECT 201  (capture id for the self-heal flow)
+# @name gapDraft
+POST {{host}}/expense/MyClaims
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "country": "UK", "claimPeriod": "2026-02-28" }
+
+### 22b. Add a valid item (TOLLS £10, no receipt needed) — EXPECT 201
+POST {{host}}/expense/MyClaims(ID={{gapDraft.response.body.ID}},IsActiveEntity=false)/items
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "expenseDate": "2026-02-16", "expenseType_code": "TOLLS", "reasonForTrip": "Toll", "vatType": "STD", "grossAmount": 10 }
+
+### 22c. Activate (save) — EXPECT 201
+POST {{host}}/expense/MyClaims(ID={{gapDraft.response.body.ID}},IsActiveEntity=false)/ExpenseService.draftActivate
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{}
+
+### 22d. Edit → strands a sibling draft + CAP lock — EXPECT 201
+POST {{host}}/expense/MyClaims(ID={{gapDraft.response.body.ID}},IsActiveEntity=true)/ExpenseService.draftEdit
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{ "PreserveChanges": true }
+
+### 22e. SELF-HEAL: activate the stranded draft (releases the lock) — EXPECT 200
+POST {{host}}/expense/MyClaims(ID={{gapDraft.response.body.ID}},IsActiveEntity=false)/ExpenseService.draftActivate
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{}
+
+### 22f. Submit the active claim — EXPECT 200, status "Submitted"  (on HANA the pre-heal submit would 409)
+POST {{host}}/expense/MyClaims(ID={{gapDraft.response.body.ID}},IsActiveEntity=true)/ExpenseService.submitClaim
+Authorization: Basic {{emp}}
+Content-Type: application/json
+
+{}
+
+### 23. SEPARATION OF DUTIES — the configured UK L1 approver (manager) submits a claim, then
+### tries to approve it. Create+submit as MANAGER, then approve as MANAGER — EXPECT 403 "own".
+# @name sodClaim
+POST {{host}}/expense/MyClaims
+Authorization: Basic {{mgr}}
+Content-Type: application/json
+
+{ "country": "UK", "claimPeriod": "2026-02-28" }
+
+### 23b. add item + activate + submit as MANAGER (run each; abbreviated here) then:
+POST {{host}}/approval/Approvals({{sodClaim.response.body.ID}})/ApprovalService.approve
+Authorization: Basic {{mgr}}
+Content-Type: application/json
+
+{ "comment": "self-approve attempt — EXPECT 403" }
+
+### 24. Malformed $top — EXPECT 400
+GET {{host}}/expense/ExpenseTypes?$top=-1
+Authorization: Basic {{emp}}
+
+### 25. Malformed $skip — EXPECT 400
+GET {{host}}/expense/ExpenseTypes?$skip=abc
+Authorization: Basic {{emp}}
+
+### 26. claimJourney with empty arg — EXPECT 400
+GET {{host}}/approval/claimJourney(claimNumber='')
+Authorization: Basic {{mgr}}
+
+### 27. claimJourney unknown claim — EXPECT 404
+GET {{host}}/approval/claimJourney(claimNumber='NOPE-9999')
+Authorization: Basic {{mgr}}
+
+### 28. exportClaimsPdf with a filter that matches nothing — EXPECT 200 (empty but valid PDF)
+GET {{host}}/approval/exportClaimsPdf(scope='approvals',status=null,country=null,claimNo='NOPE-9999',fromDate=null,toDate=null)
+Authorization: Basic {{mgr}}
+
+### 29. dashboardStats — EXPECT 200, counts {UK,IN,total}; as employee-only EXPECT 403
+GET {{host}}/approval/dashboardStats(fromDate=null,toDate=null,country=null)
+Authorization: Basic {{mgr}}

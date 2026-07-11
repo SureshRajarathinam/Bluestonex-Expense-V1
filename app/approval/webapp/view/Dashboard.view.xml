@@ -26,9 +26,9 @@
         </SegmentedButton>
         <DateRangeSelection id="dashRange" dateValue="{dash>/fromDate}" secondDateValue="{dash>/toDate}" displayFormat="dd MMM yyyy" change=".onRange" width="18rem" />
         <Label text="{i18n>filterCountry}" class="bsxFieldLbl sapUiTinyMarginBegin" />
-        <Select selectedKey="{dash>/country}" change=".onCountry" width="8rem" autoAdjustWidth="false">
-          <core:Item key="UK" text="UK" />
-          <core:Item key="IN" text="India" />
+        <Select selectedKey="{dash>/country}" change=".onCountry" width="8rem" autoAdjustWidth="false"
+          items="{ path: '/Countries', templateShareable: false }">
+          <core:Item key="{code}" text="{description}" />
         </Select>
         <Button text="{i18n>dashResetLayout}" icon="sap-icon://reset" type="Transparent" tooltip="{i18n>dashResetLayout}" press=".onResetLayout" />
       </OverflowToolbar>

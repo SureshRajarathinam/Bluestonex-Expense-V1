@@ -113,11 +113,14 @@ test('invalid $filter (unknown property) → 400', async () => {
   const r = await GET('/expense/Countries?$filter=nosuchprop eq 1', { auth: EMP });
   assert.equal(r.status, 400, `bad filter should be 400, got ${r.status}`);
 });
-// D11 (Low): CAP does not reject a spec-invalid $top (`-1` returns 200, silently
-// ignored) instead of 400 per OData V4. Documented as a contract-laxity gap.
-test('invalid $top values (-1, non-numeric) should be rejected with 400', { todo: 'CAP ignores invalid $top and returns 200 (D11)' }, async () => {
+// D11 (fixed): CAP silently ignored spec-invalid $top/$skip; the guardPaging
+// handler (srv/lib/paging.js, wired via before('READ')) now rejects them with 400.
+test('invalid $top / $skip values (-1, non-numeric) are rejected with 400', async () => {
   assert.equal((await GET('/expense/ExpenseTypes?$top=-1', { auth: EMP })).status, 400);
   assert.equal((await GET('/expense/ExpenseTypes?$top=abc', { auth: EMP })).status, 400);
+  assert.equal((await GET('/expense/ExpenseTypes?$skip=-5', { auth: EMP })).status, 400);
+  // valid values still succeed
+  assert.equal((await GET('/expense/ExpenseTypes?$top=2&$skip=0', { auth: EMP })).status, 200);
 });
 
 // ═══ Response codes: 404 + read-only write rejection ══════════════════════════

@@ -16,7 +16,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, currency: "GBP" }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, currency: "GBP" }), "ui");
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
     },
 
@@ -77,18 +77,22 @@ sap.ui.define([
     // user types the gross. The server before('SAVE') remains authoritative.
     _loadTaxRate: function (sCountry) {
       var oUi = this.getView().getModel("ui");
-      if (!sCountry) { oUi.setProperty("/stdRate", 0); return; }
+      if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); return; }
       var oList = this.getModel().bindList("/Policies", null, null, [
         new Filter("country", FilterOperator.EQ, sCountry)
       ]);
       oList.requestContexts(0, 1).then(function (aCtx) {
-        var rate = 0;
+        var rate = 0, mileageRate = 0;
         if (aCtx.length) {
           var p = aCtx[0].getObject();
           rate = Number(sCountry === "IN" ? p.gstRate : p.vatRate) || 0;
+          // Live per-country mileage rate — the new-row default comes from here,
+          // not a hardcoded literal (mirrors the server-authoritative policy).
+          mileageRate = Number(p.mileageRate) || 0;
         }
         oUi.setProperty("/stdRate", rate);
-      }).catch(function () { oUi.setProperty("/stdRate", 0); });
+        oUi.setProperty("/mileageRate", mileageRate);
+      }).catch(function () { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); });
     },
 
     // ---- Inline rows --------------------------------------------------------
@@ -107,10 +111,14 @@ sap.ui.define([
 
     onAddMileage: function () {
       var sToday = new Date().toISOString().slice(0, 10);
+      // Default the rate from the country's live Policies.mileageRate (loaded into
+      // the ui model by _loadTaxRate); fall back to the DB default only if unset.
+      var nRate = Number(this.getView().getModel("ui").getProperty("/mileageRate"));
+      var sRate = (nRate > 0 ? nRate : 0.25).toString();
       // NOTE: the sap.m.Table aggregation is "items" (bound to {mileageClaims}).
       // bAtEnd:true appends in order (see onAddItem).
       this.byId("mileageTable").getBinding("items").create({
-        engineType: "Petrol", ratePerMile: "0.25", tripDate: sToday
+        engineType: "Petrol", ratePerMile: sRate, tripDate: sToday
       }, true, true);
     },
 
@@ -276,6 +284,64 @@ sap.ui.define([
       return aProblems;
     },
 
+    // Client gate for header + expense-item mandatory fields (mirrors
+    // _validateMileageRows). Highlights offending item cells inline (valueState) and
+    // returns a list of human-readable problems. The server rules in
+    // srv/lib/validate.js remain the authoritative backstop.
+    _validateClaimFields: function () {
+      var aProblems = [];
+      var oCtx = this._claimCtx();
+      if (!oCtx || !oCtx.getProperty("claimPeriod")) {
+        aProblems.push(this.getText("msgClaimPeriodRequired"));
+      }
+      var aItems = this.byId("itemsTable") ? this.byId("itemsTable").getItems() : [];
+      var nMileage = this.byId("mileageTable") ? this.byId("mileageTable").getItems().length : 0;
+      if (!aItems.length && !nMileage) {
+        aProblems.push(this.getText("msgNeedOneLine"));
+      }
+      // cell index → property (matches the expense-item table column order)
+      var aReq = [
+        { idx: 0, prop: "expenseDate" },
+        { idx: 1, prop: "expenseType_code" },
+        { idx: 3, prop: "reasonForTrip" },
+        { idx: 5, prop: "grossAmount", numeric: true }
+      ];
+      var sReq = this.getText("fieldRequired");
+      var aBadRows = [];
+      aItems.forEach(function (oItem, i) {
+        var aCells = oItem.getCells();
+        var oItemCtx = oItem.getBindingContext();
+        var bRowBad = false;
+        aReq.forEach(function (c) {
+          var oCell = aCells[c.idx];
+          if (oCell && oCell.setValueState) { oCell.setValueState("None"); }
+          if (!oItemCtx) { return; }
+          var v = oItemCtx.getProperty(c.prop);
+          var bMissing = c.numeric ? !(Number(v) > 0) : !(v && String(v).trim());
+          if (bMissing) {
+            if (oCell && oCell.setValueState) { oCell.setValueState("Error"); oCell.setValueStateText(sReq); }
+            bRowBad = true;
+          }
+        });
+        if (bRowBad) { aBadRows.push(i + 1); }
+      });
+      if (aBadRows.length) { aProblems.push(this.getText("msgItemFieldsMissing", [aBadRows.join(", ")])); }
+      return aProblems;
+    },
+
+    // Consolidated "please fix these fields" popup.
+    _showFieldProblems: function (aProblems) {
+      MessageBox.error(this.getText("msgFieldsIncomplete") + "\n\n• " + aProblems.join("\n• "));
+    },
+
+    // A failed bound action in a $batch surfaces the real 4xx text via the Message
+    // Manager (see BaseController._backendMessage). A leftover sibling draft holding
+    // the CAP draft lock produces "409 Entity locked" — detect it to self-heal.
+    _isEntityLocked: function (oErr) {
+      var s = (this._backendMessage(oErr) || (oErr && oErr.message) || "");
+      return /lock/i.test(s) || (oErr && (oErr.status === 409 || oErr.statusCode === 409));
+    },
+
     onSubmit: function () {
       var that = this;
       var oCtx = this._claimCtx();
@@ -289,37 +355,49 @@ sap.ui.define([
         return;
       }
 
-      // A mileage row, once added, must have all mandatory fields (Apply-for-Approval
-      // only — draft Save stays permissive). Abort with inline highlights if not.
-      if (this._validateMileageRows().length) {
-        this.showError(new Error(this.getText("msgMileageIncomplete")));
-        return;
-      }
+      // Client-side mandatory checks (header + item + mileage) BEFORE any server
+      // round-trip, so a missing field gives an immediate, specific popup.
+      var aProblems = this._validateClaimFields();
+      if (this._validateMileageRows().length) { aProblems.push(this.getText("msgMileageIncomplete")); }
+      if (aProblems.length) { this._showFieldProblems(aProblems); return; }
+
       var bDraft = oCtx.getPath().indexOf("IsActiveEntity=false") > -1;
       this.getView().setBusy(true);
 
-      // Validation runs inside submitClaim on the ACTIVE record, so activate the
-      // draft first (if we are on one), then submit against the active entity.
-      var pActivate = bDraft
-        ? this.callAction(oCtx, "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true })
-        : Promise.resolve();
+      var submitActive = function () {
+        var oActive = that.getModel().bindContext("/MyClaims(ID=" + sId + ",IsActiveEntity=true)").getBoundContext();
+        return that.callAction(oActive, "ExpenseService.submitClaim");
+      };
+      // Activating a sibling draft folds its edits into the active row and RELEASES
+      // the CAP draft lock — this is how we recover from "409 Entity locked".
+      var activateDraft = function () {
+        var oDraft = that.getModel().bindContext("/MyClaims(ID=" + sId + ",IsActiveEntity=false)").getBoundContext();
+        return that.callAction(oDraft, "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true });
+      };
 
-      pActivate
-        .then(function () {
-          var oActive = that.getModel().bindContext("/MyClaims(ID=" + sId + ",IsActiveEntity=true)").getBoundContext();
-          return that.callAction(oActive, "ExpenseService.submitClaim").then(function () {
-            that.getView().setBusy(false);
-            MessageToast.show(that.getText("msgSubmitted"));
-            that.navTo("list");
-          }, function (oErr) {
-            // Submit rejected (e.g. validation 422): the draft is now an active Draft.
-            // Rebind so the page reflects the saved active record (Edit to fix & retry).
-            that.getView().setBusy(false);
-            that._bindClaim("ID=" + sId + ",IsActiveEntity=true");
-            throw oErr;
-          });
+      // If we're on the draft, activate it first (unchanged). Then submit the active.
+      // If submit hits a 409 lock, a stale sibling draft holds it → activate that
+      // draft (user chose "activate then submit") and retry once.
+      var pStart = bDraft ? activateDraft() : Promise.resolve();
+      pStart
+        .then(submitActive)
+        .catch(function (oErr) {
+          if (that._isEntityLocked(oErr)) { return activateDraft().then(submitActive); }
+          throw oErr;
         })
-        .catch(function (e) { that.getView().setBusy(false); that.showError(e); });
+        .then(function () {
+          that.getView().setBusy(false);
+          MessageToast.show(that.getText("msgSubmitted"));
+          that.navTo("list");
+        })
+        .catch(function (e) {
+          that.getView().setBusy(false);
+          // Show the real backend message FIRST (while it is still in the Message
+          // Manager), THEN rebind — the old order rebound before throwing, which
+          // stripped the 422/409 message before showError could read it.
+          that.showError(e);
+          that._bindClaim("ID=" + sId + ",IsActiveEntity=true");
+        });
     },
 
     onDiscard: function () {

@@ -4,6 +4,7 @@ const cds = require('@sap/cds');
 const notification = require('./notification');
 const audit = require('./lib/audit');
 const { renderClaimsPdf } = require('./lib/pdf');
+const { guardPaging } = require('./lib/paging');
 
 const LOG = cds.log('approval-service');
 
@@ -14,6 +15,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
     const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG } = cds.entities('EXP');
+
+    // Reject malformed $top/$skip (400) instead of silently ignoring them.
+    this.before('READ', guardPaging);
 
     // ─── Action: approve (country-aware: UK 2-level, India 1-level) ──────────
     this.on('approve', 'Approvals', async (req) => {
@@ -27,6 +31,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       const me = req.user.id;
       const now = new Date().toISOString();
+
+      // Separation of duties: Approvers/Admins also carry the Employee scope and can
+      // submit their own claims — they must never approve those. (403, not silent.)
+      if (me === claim.createdBy)
+        return req.error(403, 'You cannot approve your own expense claim.');
 
       if (claim.status === 'Submitted') {
         if (me !== wf.firstApprover)
@@ -73,6 +82,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       const me = req.user.id;
+      // Separation of duties: cannot reject/return your own claim (see approve).
+      if (me === claim.createdBy)
+        return req.error(403, 'You cannot reject your own expense claim.');
       const allowed =
         (claim.status === 'Submitted' && me === wf?.firstApprover) ||
         (claim.status === 'FirstApproved' && me === wf?.secondApprover);

@@ -56,7 +56,11 @@ Deployed to CF **bsx-tdd / TDD** (eu10, HANA Cloud). Build+deploy: `mbt build &&
 - Receipt upload = manual media `PUT expense/MyClaimItems(ID=..,IsActiveEntity=..)/receipt` with an `x-csrf-token` (fetch `HEAD` first). Path is **relative** (no leading slash) for the Work Zone managed approuter.
 - Bound-action key (backend): `req.params[0]` is `{ID}` for draft entities, a raw scalar for non-draft — normalise via `idOf()`.
 - VAT/totals computed in `before('SAVE')` (draft requirement), NOT per-item handlers. UI sends only `country`, `claimPeriod`, item/mileage inputs — all money math is server-side.
-- After any change: `npm test` (113) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing).
+- **Draft-lock 409 on submit (self-heal):** `draftEdit` takes a CAP `InProcessByUser` lock; `onBack` leaves the draft, so `submitClaim`'s `UPDATE(CLAIMS,ID)` on the active row can 409 **"Entity locked"** on HANA (SQLite is looser — won't reproduce locally). `Claim.controller.js onSubmit` self-heals: on a 409 (`_isEntityLocked`) it `draftActivate`s the stale sibling draft (releases the lock) then retries submit. Client mandatory validation (`_validateClaimFields`) runs first — the view's `required="true"` marks are **cosmetic asterisks only**. Show errors BEFORE re-binding, else the just-arrived 4xx message is stripped from the Message Manager.
+- **Separation of duties:** Approver/Admin also carry the Employee scope, so `approve`/`reject` reject `req.user.id === claim.createdBy` with 403 (`approval-service.js`). Don't remove.
+- **Paging guard:** malformed `$top`/`$skip` → 400 via `srv/lib/paging.js` `guardPaging` (`before('READ')` in both services; CAP otherwise ignores them silently).
+- **Live data:** new mileage-row rate defaults from `Policies.mileageRate` (via `_loadTaxRate` → `ui` model); country Create picker + Dashboard filter bind to `/Countries`.
+- After any change: `npm test` (**151** pass, 1 skip CSRF, 1 todo ETag) and `npx cds compile srv db -s all --to edmx-v4 -o /tmp/x` (warning-free; `reject()` base-class note is pre-existing). QA deliverable: `test/QA-REPORT.md`; runnable requests `test/expense.http`.
 
 ## Mock logins (dev — all have Employee+Approver+Admin except clerk/priya)
 **The username is the FULL EMAIL** (`…@bluestonex.com`), not the shorthand — logging in with just `sab` authenticates as a **role-less** user and every `/expense` call 403s. Format below is `username` / `password`:

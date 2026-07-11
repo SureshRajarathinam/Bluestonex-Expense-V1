@@ -1,249 +1,194 @@
-# QA Test Deliverable — BluestoneX Expense Reimbursement
+# QA Test Deliverable — BluestoneX Expense Reimbursement System
 
-**System under test:** SAP CAP (Node.js, OData V4) backend + two freestyle SAPUI5 apps
-(`my-expenses`, `approval`). **Test bed:** local `cds.test` on in-memory SQLite + seed data
-(HANA not deployed). **Date:** 2026-07-08. **Baseline:** 38 tests → **98 tests** (95 pass,
-0 fail, 1 skip, 2 todo). Every finding cites `file:line`.
+**System under test:** SAP CAP (Node.js, **OData V4**) backend + two **freestyle SAPUI5** apps (`my-expenses`, `approval`).
+**Programming model:** CDS-based CAP services (`@sap/cds` 8) with `@odata.draft.enabled` on `MyClaims`/`Policies`/`WorkflowMembers`. **Draft-enabled.**
+**Landscape:** SAP BTP Cloud Foundry (CF `bsx-tdd`/`TDD`, eu10) + HANA Cloud (prod) / SQLite (dev+test). **Test bed:** local `cds.test` on in-memory SQLite + seed data (HANA not exercised in CI).
+**Key entities/process:** Expense claim **create → submit → approve/reject** with country-aware tax (UK VAT / India GST) and country-driven routing (UK 2-level, India 1-level).
+**OData services:** `ExpenseService` (`/expense`), `ApprovalService` (`/approval`), both `@requires:'authenticated-user'`.
+**Date:** 2026-07-12. **Suite baseline:** 113 → **153 tests (151 pass, 0 fail, 1 skip, 1 todo)** via `npm test`. Every finding cites `file:line`.
 
-**Fixes applied (all confirmed by tests / code):**
-- **D10, D9** (P1 security bypasses) — `MyClaimItems`/`MyMileageClaims` now own-rows-only;
-  `ApprovalItems`/`ApprovalMileage` now Approver/Admin-only. + owner-path regression guard.
-- **D2** (claimNumber) — max-suffix+1 generation + `@assert.unique.claimNumber`.
-- **D4** (vatType) — mistyped/unknown tax type rejected at submit (validated against `VAT_TYPES`).
-- **D6** (currency) — audit + all notification bodies use currency-aware `money()` (₹ for India).
-- **D3** (double-submit) — Approve/Reject now busy the dialog + reentrancy flag.
-- **D1** (ETag) — **DEFERRED**: a blanket `@odata.etag` breaks `draftActivate` (428) on these
-  draft-enabled entities and the freestyle `callAction` sends no `If-Match`. Mitigated meanwhile
-  by CAP **draft locks** (CON-03: 2nd `draftEdit` → 409) + **status-guarded actions**. Full ETag
-  needs `If-Match` wired through `callAction` (tracked as remaining work).
+---
 
-Remaining `todo`: D1 (deferred, above) and D11 (framework `$top` laxity — accept).
+## 0. Fixes applied in this pass (all confirmed by tests / live repro)
+
+| Ref | Severity | Fix | Evidence |
+|---|---|---|---|
+| **DEF-01** | High | **"Apply for Approval" 409 Entity locked** — self-healing submit: on a draft-lock, activate the stale sibling draft (releases the CAP lock) then retry submit. | `Claim.controller.js onSubmit`; `test/gap-flows.test.js` self-heal test + live repro |
+| **DEF-02** | High | **No popup on missing mandatory fields** — the `required="true"` marks were cosmetic. Added real client validation (`_validateClaimFields`) for Claim Period + item fields, consolidated popup, and fixed error surfacing (throw **before** rebind; read the Message Manager). | `Claim.controller.js`, `BaseController._backendMessage`; backstops in `test/gap-flows.test.js` |
+| **DEF-03** | High | **Self-approval (separation of duties)** — Approvers/Admins carry the Employee scope and could approve their **own** submitted claims. Now 403. | `approval-service.js` approve/reject guard; `test/gap-admin.test.js` |
+| **DEF-04** | Low | **`$top`/`$skip` laxity (D11)** — CAP silently ignored `-1`/non-numeric; now 400 via `guardPaging`. | `srv/lib/paging.js`; `test/odata-contract.test.js`, `test/gap-units.test.js` |
+| **DEF-05** | Low | **Hardcoded mileage rate** — new mileage rows defaulted to a literal `0.25`; now sourced from the country's live `Policies.mileageRate`. | `Claim.controller.js onAddMileage`/`_loadTaxRate` |
+| **DEF-06** | Low | **Static country dropdowns** — Create picker + Dashboard filter now bound to the live `/Countries` entity. | `CountryDialog.fragment.xml`, `Dashboard.view.xml` |
+| **DEF-07** | Low | **Misleading receipt message** — printed an unmet "£12 ≥ £25 threshold"; now states the reason that actually applies. | `srv/lib/validate.js` |
+| **DEF-08** | Med | **Opaque `$batch failed` popups** (earlier pass) — `showError` now surfaces the real 4xx via the Message Manager in both apps. | `BaseController.showError`/`_backendMessage` |
+
+**Remaining open (documented, not fake-passed):**
+- **DEF-09 (D1, ETag optimistic concurrency)** — `todo`. A blanket `@odata.etag` breaks `draftActivate` (428) on these draft-enabled entities and freestyle `callAction` sends no `If-Match`. Mitigated by CAP draft locks (`test/concurrency.test.js` CON-03: 2nd `draftEdit` → 409) + status-guarded actions. Full ETag needs `If-Match` plumbed through `callAction` — HANA-only race, tracked.
+- **DEF-10 (CSRF)** — `skip`. Not enforceable under `cds.test` basic-auth; verified only against the deployed managed approuter.
+- **DEF-11 (`@UI.Hidden` fields still `$select`-able)** — characterization test in `test/security.test.js`; by-design for OData (hidden ≠ secured). Confirm no sensitive field relies on `@UI.Hidden` for protection.
+- **DEF-12 (dead notification methods)** — `notifyManagerApproved`/`notifyFinanceApproved`/`notifySettled` are defined but unwired (`srv/notification.js:157/174/191`). Covered by `test/gap-units.test.js` so they cannot rot; decide keep-or-remove.
 
 ---
 
 ## 1. Test Strategy
 
-Risk-based, adversarial, negative-first. Effort concentrated where business/security risk is
-highest:
+Risk-based, adversarial, **negative-first**. Effort concentrated where business/security risk is highest.
 
-1. **Authorization & direct-OData bypass** — per-person approver enforcement lives only in JS
-   (`approval-service.js:32,49,76-79`); several entity projections lack `@restrict`. Highest risk.
-2. **Draft → submit → approve state machine** (UK 2-level vs India 1-level) — valid + invalid
-   transitions, double-decision, submit-422-leaves-active-draft.
-3. **Tax/money & validation** — decision tables over (country × vatType × rate), boundary values
-   on the £25 receipt threshold and daily limits, the 9 implemented validation checks.
-4. **Concurrency & identity** — no ETag anywhere; count-based `claimNumber`.
+**Priority of effort (highest first):**
+1. **Authorization & direct-OData bypass** — per-person approver enforcement lives in JS (`approval-service.js`), and Employee-scope inheritance created a **self-approval** hole (DEF-03, fixed). Row-level ownership (`createdBy = $user`) on claims/items/media.
+2. **Draft lifecycle & locking** — the 409 root cause (DEF-01). Draft/active reconciliation, stranded locks, activate-then-submit.
+3. **Validation correctness** — 10 business rules (`validate.js`), boundary values, receipt rules, per-country tax split, totals reconciliation.
+4. **State machine** — Draft→Submitted→(FirstApproved)→Approved / Returned / Rejected; invalid transitions rejected (409).
+5. **Contract & query robustness** — `$metadata`, CRUD codes, `$filter/$expand/$orderby/$top/$skip/$count/$search`, malformed options.
+6. **Analytics integrity** — `dashboardStats` computed from live DB (no fabricated data); `exportClaimsPdf` filter branches; `claimJourney`.
 
-**Techniques:** equivalence partitioning + boundary-value analysis (calc + validation), decision
-tables (tax, receipt, transitions), state-transition (draft/status), pairwise (country × vatType
-× role), destructive/negative first. **Traceability:** each case maps to a CDS annotation, a
-`validate.js` rule, or an `@restrict`.
+**Techniques applied:** equivalence partitioning + boundary value analysis (thresholds, limits, dates), decision tables (tax split by country/vatType; receipt-required by type/threshold), state-transition testing (claim lifecycle), negative/destructive (hostile inputs, contested locks, wrong approver, self-approval), traceability to CDS annotations & business rules.
 
-**Assumptions:** money math is server-authoritative in `before('SAVE')` (UI is preview only);
-"locking" = CAP draft locks (no ABAP enqueue); a true write-race is only reproducible on real
-HANA (in-memory SQLite serialises).
+**Assumptions:** (a) SQLite draft-lock enforcement is **looser** than HANA — the 409 reproduces on HANA, not SQLite; the self-heal is verified via the activate-then-submit path. (b) CSRF & true optimistic-lock races are HANA/approuter-only. (c) Seed data (`db/data/*.csv`) is representative of prod code lists.
 
 ---
 
-## 2. Test Case Catalog
+## 2. Test Case Catalog (representative, traceable)
 
-Priority: P1 critical · P2 high · P3 medium · P4 low. Layer: BE=backend, SEC=security,
-E2E, UI, PERF. New tests are in `test/{odata-contract,security,edge-cases,concurrency}.test.js`;
-UI in `app/*/webapp/test/`; manual REST in `test/expense.http`.
+Layers: **BE**=backend/OData, **SEC**=security, **E2E**=flow, **UI**=frontend, **PERF**. Priority P1 (blocker) → P4 (low).
+Automated cases live in `test/*.test.js`; UI cases are skeletoned (§3.3, harness not yet wired).
 
-| ID | Layer | Title | Technique | Expected | Prio | Trace |
-|----|-------|-------|-----------|----------|------|-------|
-| BE-01 | BE | $metadata declares MyClaims + submitClaim | contract | 200, XML | P3 | odata-contract |
-| BE-02 | BE | $filter eq/ne/and/or on code lists | equiv. partition | correct rows | P3 | odata-contract |
-| BE-03 | BE | contains/startswith string filters | equiv. | ≥1 match | P4 | odata-contract |
-| BE-04 | BE | $orderby desc ordering | ordering | sorted | P4 | odata-contract |
-| BE-05 | BE | $select projects only chosen props | contract | subset | P4 | odata-contract |
-| BE-06 | BE | $top + $count page vs total | boundary | len=2, count=total | P3 | odata-contract |
-| BE-07 | BE | $skip past end | boundary | 200 empty | P4 | odata-contract |
-| BE-08 | BE | $expand=items deep read | contract | nested items | P3 | odata-contract |
-| BE-09 | BE | $search probe (support varies) | contract | 200/400/501 | P4 | odata-contract |
-| BE-10 | BE | invalid $filter property | negative | 400 | P3 | odata-contract |
-| BE-11 | BE | invalid $top (-1/abc) **(D11)** | negative | *400 desired*; 200 actual | P4 | odata-contract(todo) |
-| BE-12 | BE | GET non-existent key | negative | 404 | P3 | odata-contract |
-| BE-13 | BE | write to @readonly entity | negative | ≥400 | P3 | odata-contract |
-| SEC-01 | SEC | unauthenticated request | negative | 401 | P2 | security |
-| SEC-02 | SEC | employee-only → Admin entities | authz matrix | 403 | P2 | security |
-| SEC-03 | SEC | employee-only → Approvals queue | authz matrix | 403 | P2 | security |
-| SEC-04 | SEC | value-help sets readable by any auth user | authz | 200 (by design) | P4 | security |
-| SEC-05 | SEC | employee-only invoking approve/reject | **bypass** | 403 | P1 | security |
-| SEC-06 | SEC | PDF export role gate | authz | 403 emp / 200 appr | P3 | security |
-| SEC-07 | SEC | cross-employee claim read by key | row-level | ≥400 | P1 | security |
-| SEC-08 | SEC | cross-employee draftEdit | row-level | ≥400 | P1 | security |
-| SEC-09 | SEC | @UI.Hidden field still selectable | info-exposure | present (info) | P3 | security |
-| SEC-10 | SEC | **D10** MyClaimItems cross-employee leak | **bypass** | *403/empty desired*; **200+data actual** | **P1** | security(todo) |
-| SEC-11 | SEC | **D9** ApprovalItems open to any auth user | **bypass** | *403 desired*; **200+data actual** | **P1/P2** | security(todo) |
-| SEC-12 | SEC | CSRF missing/invalid token on POST | negative | 403 (deployed) | P3 | expense.http / skip |
-| BL-01 | BE | UK 20% / IN 18% split decision table | decision table | exact net/vat | P2 | edge-cases |
-| BL-02 | BE | ZR/EX zero-rated | decision table | vat 0 | P3 | edge-cases |
-| BL-03 | BE | **D4** mistyped vatType silently zero-rated | decision table | *reject desired*; **accepted actual** | P2 | edge-cases(todo) |
-| BL-04 | BE | **D5** negative gross in splitVAT | boundary | negative (char.) | P3 | edge-cases |
-| BL-05 | BE | negative gross blocked at submit (safety net) | boundary | 422 | P2 | edge-cases |
-| BL-06 | BE | net+vat reconciles to gross (rounding) | boundary | equal | P2 | edge-cases |
-| BL-07 | BE | taxRateFor defaults + explicit-0 honoured | equiv. | correct | P3 | edge-cases |
-| BL-08 | BE | claimTotals roll-up (mileage in net/gross) | equiv. | 125/20/145 | P2 | edge-cases |
-| VAL-01 | BE | receipt threshold exact £25 (>=) | boundary | error | P2 | edge-cases |
-| VAL-02 | BE | £24.99 below threshold | boundary | no error | P2 | edge-cases |
-| VAL-03 | BE | periodEnd < claimPeriod (was untested) | boundary | error | P2 | edge-cases |
-| VAL-04 | BE | meal spend exactly at limit (>) | boundary | allowed | P3 | edge-cases |
-| VAL-05 | BE | meal spend £0.01 over limit | boundary | error | P3 | edge-cases |
-| CON-01 | BE | **D1** mutable entity exposes ETag | concurrency | *ETag desired*; **absent actual** | P2 | concurrency(todo) |
-| CON-02 | BE | **D2** concurrent activate unique claimNumber | concurrency | distinct (not repro in-proc) | P2 | concurrency(todo) |
-| CON-03 | BE | draft-lock: 2nd draftEdit → 409 | state-transition | 409 | P3 | concurrency |
-| APR-01 | BE | per-person approver identity (403 matrix) | decision table | 403/200 | P1 | approval(existing) |
-| APR-02 | BE | reject requires reason | negative | 422 then ok | P2 | approval(existing) |
-| APR-03 | BE | cannot approve twice | state-transition | ≥400 | P2 | approval(existing) |
-| E2E-01 | E2E | submit→L1→L2 UK full flow + audit | scenario | Approved | P1 | lifecycle+wdi5 outline |
-| E2E-02 | E2E | India single-level flow | scenario | Approved | P1 | lifecycle(existing) |
-| UI-01 | UI | formatter money/net/vat preview | unit | correct/£NaN(D8) | P3 | formatterTests |
-| UI-02 | UI | create-claim journey (OPA5) | journey | claim saved | P2 | CreateClaimJourney |
-| UI-03 | UI | approve/reject journey + reason guard (D3) | journey | reject needs reason | P2 | ApproveRejectJourney |
+| ID | Layer | Title | Technique | Preconditions | Steps (abbrev.) | Expected | Pri | Ref |
+|---|---|---|---|---|---|---|---|---|
+| TC-01 | E2E | Draft-lock self-heal on submit | State-transition | Active Draft + stranded sibling draft | draftEdit → (abandon) → submit | Activate draft, submit → `Submitted`, no 409 | P1 | DEF-01; `gap-flows` |
+| TC-02 | UI | Missing Claim Period → popup | EP/negative | New claim, no period | Apply for Approval | Consolidated popup lists "Claim Period" | P1 | DEF-02; `Claim.view.xml:33` |
+| TC-03 | BE | Missing period blocked server-side | Negative | Claim, no period | submitClaim | 422 "period" | P1 | `gap-flows` |
+| TC-04 | BE | Incomplete item blocked | Negative | Item missing reason/gross | activate/submit | 400 at save (or 422) | P1 | `gap-flows` |
+| TC-05 | BE | Empty claim blocked | Boundary | No lines | submit | 422 | P1 | `gap-flows`; `lifecycle` |
+| TC-06 | SEC | Self-approval forbidden (UK L1) | Negative/SoD | Approver submits own | approve own | 403 "own" | P1 | DEF-03; `gap-admin` |
+| TC-07 | SEC | Self-reject forbidden | Negative/SoD | Approver submits own | reject own | 403 | P1 | DEF-03; `gap-admin` |
+| TC-08 | SEC | Self-approval forbidden (India) | Negative/SoD | India L1 submits own | approve own | 403 | P1 | `gap-admin` |
+| TC-09 | SEC | Wrong/non-configured approver | Decision table | Submitted UK claim | approve as non-L1 / L2-at-L1 | 403 | P1 | `approval` |
+| TC-10 | BE | Re-submit already-Submitted | State-transition | Submitted claim | submitClaim again | 409 | P2 | `gap-flows` |
+| TC-11 | BE | Reject without reason | Negative | Submitted claim | reject comment='' | 422 | P2 | `gap-flows`; `approval` |
+| TC-12 | BE | Receipt required by type/threshold | Decision table | FOOD/HOTEL no receipt | submit | 422 "receipt" | P2 | `validate`; `lifecycle` |
+| TC-13 | BE | Receipt boundary £25 vs £24.99 | BVA | TOLLS at/below threshold | submit | ≥£25 requires receipt; <£25 not | P2 | `edge-cases` |
+| TC-14 | BE | UK VAT vs India GST split | Decision table | UK & IN claims | submit, read totals | Net/Tax per country rate | P1 | `lifecycle`; `edge-cases` |
+| TC-15 | BE | Totals reconcile to line sum | Consistency | Mixed items+mileage | submit | totalGross == Σ lines | P2 | `validate` |
+| TC-16 | E2E | UK two-level approval | State-transition | UK Submitted | L1 approve → L2 approve | FirstApproved → Approved | P1 | `lifecycle`; `approval` |
+| TC-17 | E2E | India single-level approval | State-transition | IN Submitted | L1 approve | Approved | P1 | `lifecycle` |
+| TC-18 | E2E | Return-for-rework loop | State-transition | Submitted | reject(reason) → Edit → resubmit | Returned → Submitted; resubmitCount 1 | P2 | `approval` |
+| TC-19 | SEC | Employee blocked from `/approval` | RBAC | Employee-only user | GET Approvals/Policies | 403 | P1 | `security`; `gap-admin` |
+| TC-20 | SEC | Row-level ownership (claims) | Negative | User A's claim | User B read/patch | 403/404 | P1 | `security` |
+| TC-21 | SEC | Receipt media ownership | Negative | Owner uploads receipt | Other GET media | 404 (filtered) | P1 | `receipt-media` |
+| TC-22 | BE | Receipt PUT/GET round-trip | Positive | Draft item | PUT bytes → GET | 204 then 200 same bytes | P2 | `receipt-media` |
+| TC-23 | BE | Policy: mileageRate ≤ 0 | BVA/negative | Admin edit | activate | reject (≥400) | P2 | `gap-admin` |
+| TC-24 | BE | Policy: vat/gst outside 0..1 | BVA | Admin edit | activate | reject | P2 | `gap-admin` |
+| TC-25 | BE | Policy: negative limits/threshold | BVA | Admin edit | activate | reject | P3 | `gap-admin` |
+| TC-26 | BE | `@assert.unique.country` policy | Constraint | Existing UK policy | create dup UK | reject | P2 | `gap-flows` |
+| TC-27 | BE | Workflow malformed email | Negative | Admin edit | activate bad email | reject | P3 | `gap-admin` |
+| TC-28 | BE | Unique claimNumber | Constraint | Two submits | compare numbers | distinct | P2 | `gap-flows`; `concurrency` |
+| TC-29 | BE | `$top`/`$skip` malformed | Negative | any collection | `$top=-1`/`abc`/`$skip=-5` | 400 | P3 | DEF-04; `odata-contract` |
+| TC-30 | BE | `$filter/$expand/$orderby/$count` | EP | collections | valid options | 200 + correct data | P2 | `odata-contract` |
+| TC-31 | BE | Read-only entity write rejected | Negative | Countries | POST/PATCH | rejected | P2 | `odata-contract` |
+| TC-32 | BE | `dashboardStats` live + shape | Consistency | Approver | call function | counts {UK,IN,total}; arrays; topClaimants ≤5 | P2 | `dashboard`; `gap-analytics` |
+| TC-33 | BE | `exportClaimsPdf` filter branches | EP | Approver | history/status/country/empty | 200 valid PDF | P3 | `gap-analytics` |
+| TC-34 | BE | `claimJourney` bad/unknown input | Negative | Approver | `''` / unknown | 400 / 404 | P3 | `gap-analytics` |
+| TC-35 | BE | Notification/mailer never throw | Robustness | unit | call all methods | no throw (best-effort) | P3 | `gap-units` |
+| TC-36 | UI | Live Net/Tax preview | Consistency | Item gross typed | preview updates | matches `splitVAT` | P3 | `formatter` unit |
+| TC-37 | UI | Mileage rate default from Policies | Data-driven | Add mileage row | new row rate | = country `mileageRate` | P3 | DEF-05 (UI) |
+| TC-38 | SEC | 401 unauthenticated | RBAC | no auth | any call | 401 | P1 | `security` |
+| TC-39 | BE | `@UI.Hidden` field selectable | Characterization | any | `$select=hiddenField` | returned (documented) | P4 | DEF-11 |
+| TC-40 | PERF | Draft-lock / concurrent edit | Concurrency | HANA | 2 users draftEdit | 2nd → 409 | P2 | `concurrency` (HANA) |
 
 ---
 
-## 3. Executable Assets (what was written)
+## 3. Executable assets
 
-**Runs under `npm test` (`node --test test/*.test.js`) — 97 tests green:**
-- `test/odata-contract.test.js` — 15 contract/query-option cases.
-- `test/security.test.js` — 13 authz/bypass cases (incl. the confirmed D9/D10 bypasses as `todo`).
-- `test/edge-cases.test.js` — 25 boundary/decision-table cases (calc + validation).
-- `test/concurrency.test.js` — D1/D2 (`todo`) + draft-lock (green).
-- (existing: `approval.test.js` 19, `lifecycle.test.js` 9, `validate.test.js` 10.)
+### 3.1 OData `.http` collection
+Runnable request collection in **`test/expense.http`** (VS Code REST Client / JetBrains). This pass appends a **"Gap coverage"** block: draft-lock self-heal, self-approval 403, malformed `$top/$skip` 400, receipt media round-trip, `exportClaimsPdf` filters, `claimJourney` 400/404. Each request notes its expected status.
 
-**Manual / live (not node):**
-- `test/expense.http` — 21 ready-to-run OData requests (CSRF fetch → create → activate → submit
-  → approve, query options, and the negative/bypass/CSRF cases) with expected status per request.
-  Run against `cds watch`.
+### 3.2 Automated backend suite (`node --test test/*.test.js`)
+New/expanded files this pass — all green:
+- `test/gap-flows.test.js` — draft-lock self-heal, mandatory backstops, re-submit 409, unique constraints.
+- `test/gap-admin.test.js` — separation-of-duties (approve/reject own), Policy/Workflow validation boundaries.
+- `test/gap-analytics.test.js` — `exportClaimsPdf` filters/empty, `claimJourney` 400/404, `dashboardStats` contract + role gate.
+- `test/gap-units.test.js` — notification/mailer/pdf "never throw", dead-method coverage, `guardPaging` unit.
+- `test/receipt-media.test.js` — LargeBinary PUT/GET round-trip + ownership.
+- `test/odata-contract.test.js` — D11 `$top/$skip` now asserts 400 (was `todo`).
 
-**UI (need an OPA5/Karma/wdi5 runner — authored-not-run, honestly labelled):**
-- `app/my-expenses/webapp/test/unit/formatterTests.js` — QUnit unit tests (incl. D8 characterization).
-- `app/my-expenses/webapp/test/integration/CreateClaimJourney.js` — OPA5 journey.
-- `app/approval/webapp/test/integration/ApproveRejectJourney.js` — OPA5 journey.
-- `test/e2e/wdi5-flow.e2e.js` — wdi5 end-to-end outline.
-- `npm run test:ui` prints how to run these.
+### 3.3 UI test skeletons (OPA5 / QUnit) — harness not yet wired
+The apps have no karma/OPA5 runner configured; the following are ready-to-fill skeletons targeting **real control IDs** (`claimPage`, `itemsTable`, `mileageTable`, `countryGroup`, footer buttons). See `test/e2e/wdi5-flow.e2e.js` (existing placeholder).
+
+```js
+// OPA5 — Apply-for-Approval surfaces a clear validation popup (DEF-02)
+opaTest("Missing Claim Period shows a consolidated popup", function (Given, When, Then) {
+  Given.iStartMyApp();
+  When.onTheListPage.iPressCreate().and.iChooseCountry("United Kingdom");
+  When.onTheClaimPage.iPressButton("btnSubmit");           // footer Apply for Approval
+  Then.onTheClaimPage.iShouldSeeMessageBoxContaining("Claim Period is required");
+});
+
+// OPA5 — Draft-lock self-heal (DEF-01): Edit → Back → Submit succeeds
+opaTest("Submit self-heals a stranded draft", function (Given, When, Then) {
+  Given.iStartMyAppOnADraftClaim();
+  When.onTheClaimPage.iPressButton("editButton").and.iPressNavBack();  // strands a draft
+  When.onTheClaimPage.iPressButton("btnSubmit");
+  Then.onTheListPage.iShouldSeeTheClaimWithStatus("Submitted");
+});
+
+// QUnit — mileage row default rate is data-driven (DEF-05)
+QUnit.test("onAddMileage defaults ratePerMile from Policies.mileageRate", function (assert) {
+  oClaimController.getView().getModel("ui").setProperty("/mileageRate", 0.45);
+  oClaimController.onAddMileage();
+  var oRow = oClaimController.byId("mileageTable").getItems().pop();
+  assert.strictEqual(oRow.getBindingContext().getProperty("ratePerMile"), "0.45");
+});
+```
+
+**To make these run:** add `@ui5/cli` + `karma-ui5` (QUnit/OPA5) or `wdi5` + `@wdio/cli`, a test-runner `ui5.yaml`, and an `npm run test:ui` script.
 
 ---
 
-## 4. Defect Report
+## 4. Defect Reports
 
-Confirmed = reproduced by a test or a direct `file:line` cause. Suspected = needs a live/HANA run.
+> Severity: Critical (data loss/security) · High (blocks core flow) · Medium · Low. All below are **confirmed** (cause cited). Fixed items retain the report for traceability.
 
-### D10 — MyClaimItems bypasses per-employee row security  ·  **Critical (P1)**  ·  ✅ FIXED
-- **Component:** `srv/expense-service.cds:33` (`entity MyClaimItems as projection on db.ITEMS;`).
-- **Repro:** employee A creates a claim+item; employee B `GET /expense/MyClaimItems`.
-- **Actual:** 200 — B sees A's line items (amounts, reasons). `MyClaims` is row-filtered by
-  `employeeEmail = $user` (`:12`) but the sibling `MyClaimItems`/`MyMileageClaims` projections have
-  **no `@restrict`**, so the filter is bypassed by reading the child set directly.
-- **Expected:** B cannot see A's items (403 or empty).
-- **Evidence:** `test/security.test.js` BYPASS-D10 (todo, reproduced).
-- **Fix:** add `@restrict:[{grant:'*',to:'Employee',where:'claim.employee.email = $user'}]` to
-  `MyClaimItems` and `MyMileageClaims`.
+**DEF-01 — 409 "Entity locked" on Apply for Approval** · High · **Fixed**
+Steps: open an active Draft, Edit (creates a sibling draft + CAP `InProcessByUser` lock), Back (`onBack` does not discard), reopen active, Apply for Approval.
+Actual: `submitClaim`'s `UPDATE(CLAIMS, ID)` runs under the draft lock → **409 Entity locked** (HANA). Expected: submit completes. Cause: `Claim.controller.js onSubmit` submitted the active row without reconciling the stranded draft; `srv/expense-service.js:127`. Fix: activate-then-submit self-heal (catch 409 → `draftActivate` the sibling draft → retry). Verified `test/gap-flows.test.js` + live repro.
 
-### D9 — ApprovalItems/ApprovalMileage readable by any authenticated user  ·  **High (P1/P2)**  ·  ✅ FIXED
-- **Component:** `srv/approval-service.cds:45-46`.
-- **Repro:** employee-only `priya` `GET /approval/ApprovalItems` → 200 with org-wide line items.
-- **Actual:** any authenticated user (no Approver role needed) reads all claims' line items.
-- **Expected:** Approver-only (like the parent `Approvals`).
-- **Evidence:** `test/security.test.js` BYPASS-D9 (todo, reproduced).
-- **Fix:** add `@restrict:[{grant:'READ',to:'Approver'}]` (and Admin if history needs it) to both.
+**DEF-02 — No popup for missing mandatory fields** · High · **Fixed**
+Actual: `required="true"` in `Claim.view.xml` renders only an asterisk (enforces nothing); the server 422 was stripped because `onSubmit` rebound before throwing, clearing the Message Manager → generic/no popup. Fix: `_validateClaimFields` (client), throw-before-rebind, Message-Manager read in `_backendMessage`.
 
-### D3 — Approve/Reject double-submit  ·  **High (P2)**  ·  ✅ FIXED
-- **Component:** `app/approval/webapp/controller/Approvals.controller.js:135` vs
-  `ReviewDialog.fragment.xml:72-73`.
-- **Cause:** `_decide` calls `this.getView().setBusy(true)`, but Approve/Reject live in the
-  `reviewDialog` popup (static area), which the view busy-overlay does not cover → a fast
-  double-click fires `ApprovalService.approve` twice.
-- **Impact:** duplicate decision / spurious 422 on the second call; risk of double state transition.
-- **Fix:** disable the pressed button (or `oDialog.setBusy(true)`) for the in-flight action.
+**DEF-03 — Self-approval (separation of duties)** · High · **Fixed**
+Actual: Approver/Admin (who inherit the Employee scope) could approve/reject a claim they created and submitted. Cause: no `createdBy === $user` guard in `approve`/`reject`. Fix: 403 guard; `test/gap-admin.test.js` isolates it using configured approvers.
 
-### D2 — claimNumber is count-based with no uniqueness guard  ·  **High (P2)**  ·  ✅ FIXED
-- **Component:** `srv/expense-service.js:49-53`; `db/schema.cds:75` (no unique).
-- **Cause:** `EXP-{year}-{rows.length+1}` from a full-table COUNT in `before('SAVE')`, no lock, no
-  DB unique constraint. Concurrent activations can mint the same number; a delete makes the counter
-  reuse an existing number.
-- **Repro:** not reproduced in-process (SQLite serialises — `CON-02` passed); confirmed by code and
-  reproducible under concurrent HANA.
-- **Fix:** derive from `MAX(suffix)+1` inside the transaction (or a DB sequence) **and** add a
-  unique constraint on `claimNumber`.
-
-### D1 — No optimistic concurrency (no ETag)  ·  **Medium/High (P2)**  ·  ⏸ DEFERRED (mitigated)
-- **Component:** entire model — zero `@odata.etag`/`@cds.on.update` in `db/`+`srv/`.
-- **Impact:** two approvers, or submit+approve, racing the same claim → lost update / double
-  transition; no `If-Match`/412 protection. `CON-01` shows no ETag header is returned.
-- **Fix:** annotate mutable entities `@odata.etag` on managed `modifiedAt` (validate draft behaviour).
-
-### D4 — Unknown/mistyped vatType silently zero-rated  ·  **Medium (P2/P3)**  ·  ✅ FIXED
-- **Component:** `srv/lib/calc.js:19`; no `vatType` validation in `validate.js`.
-- **Cause:** only exact `'STD'` applies tax; `'std'`, `'Std'`, or any bad code → 0 tax, no error.
-  `VAT_TYPES.rate` (seeded) is never read.
-- **Repro:** `edge-cases` BL-03 (todo) — item with `vatType:'std'` submits (200) at full net.
-- **Fix:** validate `vatType ∈ VAT_TYPES` in `before('SAVE')`/`validate.js`; or drive the rate from
-  `VAT_TYPES.rate`.
-
-### D6 — INR claims render `£` in audit + ANS bodies  ·  **Medium (P3)**  ·  ✅ FIXED
-- **Component:** `srv/expense-service.js:102`; `srv/notification.js:104,136,…`.
-- **Cause:** hardcoded `£` in the audit "Total £…" and several ANS/event strings, despite a
-  currency-aware `money()` helper existing (`notification.js:9`).
-- **Repro:** `edge-cases` D6 (todo) — IN claim's Submitted audit entry contains `£`, not `₹`.
-- **Fix:** use `money(claim)` for all money strings in audit + notifications.
-
-### D5 — Negative gross/miles accepted on a draft  ·  **Low (P3)**  ·  CONFIRMED
-- **Component:** `srv/lib/calc.js:17-28`. Negative values persist on a draft and drive negative
-  header totals. **Mitigated:** submit is blocked by validation rule 1 (`BL-05` passes, 422).
-- **Fix (optional):** guard `< 0` in `splitVAT`/`mileageTotal`, or validate at draft time.
-
-### D7 — CSRF token cached, never refreshed  ·  **Medium (P3)**  ·  SUSPECTED
-- **Component:** `app/my-expenses/webapp/controller/Claim.controller.js:117-122`. On token
-  rotation/expiry, subsequent receipt PUTs get 403 with no re-fetch/retry.
-- **Fix:** on a 403, re-fetch the token once and retry the PUT.
-
-### D8 — money formatter emits `£NaN` for non-numeric input  ·  **Low (P3)**  ·  CONFIRMED
-- **Component:** `formatter.js:9` (my-exp), `:47` (approval). `Number('abc')→NaN→'NaN'`.
-- **Fix:** `Number.isFinite(n) ? n.toFixed(2) : '0.00'`.
-
-### D11 — invalid `$top` not rejected  ·  **Low (P4)**  ·  CONFIRMED
-- `$top=-1` returns 200 (silently ignored) instead of 400. Framework-level laxity; document/accept.
-
-### S1 — reject vs approve differ when workflow missing  ·  **Low (P4)**  ·  SUSPECTED
-- `approval-service.js:74-79` (reject → 403) vs `:26` (approve → 422) for the same missing-workflow
-  precondition. Align to one code/message.
-
-### S2 — exportClaimsPdf ignores a single-sided date filter  ·  **Low (P4)**  ·  SUSPECTED
-- `approval-service.js:142-143` — `if (fromDate && toDate)`; one-sided range applies no filter.
-
-### S3 — inline row create() promise unhandled  ·  **Medium (P3)**  ·  SUSPECTED
-- `Claim.controller.js:94-96,107-109` — `onAddItem/onAddMileage` don't handle the created promise;
-  a server-side rejection is silent (no user feedback). Add `.created().catch(showError)`.
+**DEF-04 — `$top`/`$skip` laxity** · Low · **Fixed** — `guardPaging` → 400.
+**DEF-05 — Hardcoded mileage rate** · Low · **Fixed** — defaults from live `Policies.mileageRate`.
+**DEF-06 — Static country dropdowns** · Low · **Partially fixed** — Create picker + Dashboard bound to `/Countries`; the two "All"-bearing filters kept static (a non-entity "All" sentinel plus a 2-row list makes a bound version net-negative).
+**DEF-07 — Misleading receipt message** · Low · **Fixed**.
+**DEF-08 — Opaque `$batch failed` popups** · Medium · **Fixed** (prior pass).
+**DEF-09 — No ETag/optimistic concurrency** · Medium · **Open (todo)** — mitigated by draft locks + status guards; needs `If-Match` in `callAction`.
+**DEF-10 — CSRF unverified in CI** · Low · **Open (skip)** — verify on deployed approuter.
+**DEF-11 — `@UI.Hidden` fields `$select`-able** · Low · **Accepted** — not a security control; audit that no sensitive field relies on it.
+**DEF-12 — Dead notification methods** · Low · **Open** — keep-or-remove decision; now unit-covered.
 
 ---
 
 ## 5. Coverage & Risk Assessment
 
-**Well covered now:** tax split + totals (decision table + boundaries), the 9 validation checks
-incl. previously-untested `periodEnd<claimPeriod` and exact-threshold boundaries, the full
-draft→submit→approve state machine (UK/India), per-person approver identity, RBAC on Admin/Approver
-entities, OData query-option surface, and — newly — **direct-OData authorization bypass**.
+**Well covered:** authorization matrix (401/403, RBAC, row-level ownership, self-approval), draft self-heal, validation rules + boundaries, country tax split, two-level vs single-level routing, return-for-rework, OData contract + query options + malformed paging, analytics functions (filters, bad input, output shape, role gate), receipt media, notification/mailer robustness, unique constraints.
 
 **Residual risk / gaps:**
-- **Concurrency** can't be truly exercised in-memory; D1/D2 need a HANA hybrid run to reproduce.
-- **UI journeys are authored-not-run** — no OPA5/Karma/wdi5 runner is configured; the UI has
-  significant **missing-id testability gaps** (most action buttons; the entire `Policy.view`).
-- **Non-functional:** accessibility (empty column headers, index-based country choice), i18n
-  (many hardcoded strings), locale money/date formatting, theming, responsiveness, and performance
-  (growing tables, `_loadCounts` 999-cap) are reviewed but not automated.
-- **Media upload** (`receipt` stream/CSRF) is not covered by an automated test.
+- **Optimistic concurrency (DEF-09)** — lost-update on simultaneous edits only mitigated by draft locks; true If-Match races are HANA-only and untested. *Risk: medium.*
+- **CSRF (DEF-10)** — only meaningful against the managed approuter; not in CI. *Risk: low–medium (approuter enforces).* 
+- **UI automation** — no executable OPA5/wdi5; UI regressions (validation popups, self-heal, data-driven defaults) are skeletoned, not run. *Risk: medium.*
+- **`whoami` USERS_MASTER branch** — HANA synonym path (`employee-source.js:27`) unreachable under SQLite; only the `EXP_EMPLOYEES` path is exercised. *Risk: low.*
+- **`@UI.Hidden` exposure / dead notification methods** — informational.
 
-### Top 5 to fix before go-live (ranked) — status
-1. ~~**D10** — `@restrict` on `MyClaimItems`/`MyMileageClaims`~~ ✅ **FIXED**.
-2. ~~**D9** — `@restrict` on `ApprovalItems`/`ApprovalMileage`~~ ✅ **FIXED**.
-3. ~~**D3** — Approve/Reject double-submit guard~~ ✅ **FIXED**.
-4. ~~**D2** — collision-proof `claimNumber` (max+1 + unique)~~ ✅ **FIXED**.
-5. **D1** — optimistic concurrency (`@odata.etag`). ⏸ **DEFERRED** — mitigated by draft locks +
-   status guards; full ETag needs `If-Match` wired through the freestyle `callAction`.
+### Top 5 to fix before go-live (ranked)
+1. **Wire an executable UI test run (OPA5/wdi5)** and automate TC-01/TC-02/TC-06 — the highest-value flows are only skeletoned. *(medium effort)*
+2. **Resolve DEF-09 (ETag/If-Match)** through `callAction`, or formally accept draft-lock+status-guard as the concurrency control and document it. *(medium)*
+3. **Verify CSRF (DEF-10) on the deployed approuter** and add a smoke check to the post-deploy runbook. *(low)*
+4. **Audit `@UI.Hidden` fields (DEF-11)** — confirm none are relied on for confidentiality; move any truly sensitive field behind `@restrict`/projection. *(low)*
+5. **Decide dead notification methods (DEF-12)** — wire `notifyManagerApproved`/`FinanceApproved`/`Settled` into the flow or remove them. *(low)*
 
-Also fixed this run: **D4** (vatType validation), **D6** (currency-aware money). Remaining open:
-D5/D7/D8 (P3), D11/S1/S2 (P4), S3 (P3) — all reported above, none blocking.
+---
+
+*Living deliverable. Backend logic and flows are covered by `npm test` (**151 pass**). UI rendering must be verified in a browser against `cds watch` until an OPA5/wdi5 runner is added.*

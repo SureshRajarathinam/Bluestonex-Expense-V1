@@ -7,6 +7,7 @@ const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
 const employeeSource = require('./lib/employee-source');
+const { guardPaging } = require('./lib/paging');
 
 // Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
 const nameFromEmail = (email) => String(email || '').split('@')[0]
@@ -18,6 +19,9 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
     const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW } = cds.entities('EXP');
+
+    // Reject malformed $top/$skip (400) instead of silently ignoring them.
+    this.before('READ', guardPaging);
 
     // ─── whoami: resolve the logged-in user's display name for the greeting ────
     // Uses the shared employee source (EXP_EMPLOYEES in dev/test, USERS_MASTER in

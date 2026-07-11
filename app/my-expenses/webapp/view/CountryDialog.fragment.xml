@@ -7,9 +7,9 @@
     <content>
       <VBox class="sapUiMediumMargin" alignItems="Stretch">
         <Text text="{i18n>selectCountryPrompt}" class="sapUiSmallMarginBottom" />
-        <RadioButtonGroup id="countryGroup" columns="1" selectedIndex="-1">
-          <RadioButton text="{i18n>countryUK}" />
-          <RadioButton text="{i18n>countryIN}" />
+        <RadioButtonGroup id="countryGroup" columns="1" selectedIndex="-1"
+          buttons="{ path: '/Countries', templateShareable: false }">
+          <RadioButton text="{description}" />
         </RadioButtonGroup>
       </VBox>
     </content>

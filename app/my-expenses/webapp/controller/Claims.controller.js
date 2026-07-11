@@ -102,12 +102,16 @@ sap.ui.define([
     },
 
     onCountryContinue: function () {
-      var iIdx = this.byId("countryGroup").getSelectedIndex();
-      if (iIdx < 0) {
+      var oGroup = this.byId("countryGroup");
+      var oSelBtn = oGroup.getSelectedButton();
+      // Country code comes from the live /Countries row bound to the selected radio
+      // button (not a hardcoded index→code map), so it stays correct if the code
+      // list grows or reorders.
+      var sCountry = oSelBtn && oSelBtn.getBindingContext() ? oSelBtn.getBindingContext().getProperty("code") : null;
+      if (!sCountry) {
         sap.m.MessageToast.show(this.getText("countryRequired"));
         return;
       }
-      var sCountry = iIdx === 0 ? "UK" : "IN";
       var sToday = new Date().toISOString().slice(0, 10);
       var that = this;
       var oList = this.byId("claimsTable").getBinding("items");
