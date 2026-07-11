@@ -11,7 +11,7 @@ service ExpenseService {
   // Identity of the logged-in user (resolved from $user via the employee source),
   // so the app can greet the employee by name on open. firstName/lastName are the
   // fullName split on the first space.
-  type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
+  type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; isEmployee : Boolean; isApprover : Boolean; isAdmin : Boolean; }
   function whoami() returns WhoAmI;
 
   @odata.draft.enabled
