@@ -12,6 +12,38 @@ const LOG = cds.log('notification');
 // approver email) silently fails in production. SQLite masks this locally.
 const money = (claim) => `${claim.currency === 'INR' ? '₹' : '£'}${Number(claim.totalGross || 0).toFixed(2)}`;
 
+// ─── Branded HTML email builder ──────────────────────────────────────────────
+// Email clients strip <style>/external CSS, so everything is INLINE. Kept small
+// and table-free where possible for broad client support. `text` (plain) is
+// always sent alongside as the fallback.
+const BRAND = '#2a4b8d'; // BluestoneX blue (matches the app header)
+
+// Key/value detail rows for the claim summary block.
+const detailRows = (pairs) => pairs
+  .filter(([, v]) => v != null && v !== '')
+  .map(([k, v]) => `<tr>
+      <td style="padding:7px 0;color:#6b7a90;font-size:13px;">${k}</td>
+      <td style="padding:7px 0;color:#1a2b45;font-size:13px;font-weight:600;text-align:right;">${v}</td>
+    </tr>`).join('');
+
+// Full HTML shell: header band + card + intro + optional detail table + CTA line.
+const emailShell = ({ heading, intro, rows, closing, accent }) => `<div style="margin:0;padding:0;background:#f4f6fa;">
+  <div style="max-width:560px;margin:0 auto;padding:24px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="background:#ffffff;border:1px solid #e3e8f0;border-radius:12px;overflow:hidden;">
+      <div style="background:${accent || BRAND};padding:16px 24px;">
+        <span style="color:#ffffff;font-size:18px;font-weight:600;letter-spacing:.2px;">BluestoneX Expenses</span>
+      </div>
+      <div style="padding:24px;color:#1a2b45;">
+        <h2 style="margin:0 0 14px;font-size:18px;line-height:1.3;color:#1a2b45;">${heading}</h2>
+        <p style="margin:0 0 18px;font-size:14px;line-height:1.55;color:#3a4a63;">${intro}</p>
+        ${rows && rows.length ? `<table style="width:100%;border-collapse:collapse;border-top:1px solid #eef1f6;border-bottom:1px solid #eef1f6;margin:0 0 20px;">${detailRows(rows)}</table>` : ''}
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#3a4a63;">${closing}</p>
+      </div>
+    </div>
+    <p style="max-width:560px;margin:16px auto 0;padding:0 4px;font-size:12px;color:#8a97ab;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">This is an automated message from the BluestoneX Expense Reimbursement System — please do not reply.</p>
+  </div>
+</div>`;
+
 // Wraps SAP BTP Alert Notification Service (ANS).
 // In production: bind an `alert-notification` service instance to the app.
 // In BTP Cockpit: configure Conditions + Email Actions + Subscriptions.
@@ -123,7 +155,18 @@ class NotificationService {
       to:      firstApprover,
       subject: `Expense Claim ${claim.claimNumber} awaiting your approval`,
       text:    `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
-               `for ${money(claim)}. Please review and approve it in the Approvals app.`
+               `for ${money(claim)}. Please review and approve it in the Approvals app.`,
+      html:    emailShell({
+        heading: `Expense claim ${claim.claimNumber} awaiting your approval`,
+        intro:   `<strong>${employee.fullName}</strong> has submitted an expense claim for your review.`,
+        rows:    [
+          ['Claim number', claim.claimNumber],
+          ['Employee',     employee.fullName],
+          ['Amount',       money(claim)],
+          ['Period',       claim.claimPeriod]
+        ],
+        closing: `Please review and approve it in the <strong>Approvals</strong> app.`
+      })
     });
   }
 
@@ -154,7 +197,16 @@ class NotificationService {
       to:      nextApprover,
       subject: `Expense Claim ${claim.claimNumber} awaiting your second-level approval`,
       text:    `Claim ${claim.claimNumber} for ${money(claim)} has passed first-level ` +
-               `approval and now awaits your second-level approval in the Approvals app.`
+               `approval and now awaits your second-level approval in the Approvals app.`,
+      html:    emailShell({
+        heading: `Expense claim ${claim.claimNumber} awaiting your second-level approval`,
+        intro:   `This claim has cleared first-level approval and now needs your <strong>second-level</strong> sign-off.`,
+        rows:    [
+          ['Claim number', claim.claimNumber],
+          ['Amount',       money(claim)]
+        ],
+        closing: `Please review and approve it in the <strong>Approvals</strong> app.`
+      })
     });
   }
 
@@ -235,7 +287,18 @@ class NotificationService {
       subject: `Expense Claim ${claim.claimNumber} returned for rework`,
       text:    `Your expense claim ${claim.claimNumber} has been returned by ${returnedBy}. ` +
                `Reason: ${reason || 'No reason provided'}. ` +
-               `Please open the My Expenses app, fix the highlighted issues and re-apply for approval.`
+               `Please open the My Expenses app, fix the highlighted issues and re-apply for approval.`,
+      html:    emailShell({
+        accent:  '#b9541b', // amber/rust — this is an action-needed, not a success
+        heading: `Expense claim ${claim.claimNumber} returned for rework`,
+        intro:   `Your expense claim has been returned by <strong>${returnedBy}</strong> and needs changes before it can be approved.`,
+        rows:    [
+          ['Claim number', claim.claimNumber],
+          ['Returned by',  returnedBy],
+          ['Reason',       reason || 'No reason provided']
+        ],
+        closing: `Please open the <strong>My Expenses</strong> app, fix the highlighted issues and re-apply for approval.`
+      })
     });
   }
 }
