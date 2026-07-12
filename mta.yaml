@@ -50,6 +50,14 @@ modules:
     path: gen/db
     parameters:
       buildpack: nodejs_buildpack
+    properties:
+      # Let HDI undeploy container artifacts that no longer exist in the source.
+      # Needed because EXP-EMPLOYEES.csv/.hdbtabledata were removed (Model B: the
+      # EXP_EMPLOYEES table now deploys empty and is loaded manually in HANA).
+      # Without this, the orphaned .hdbtabledata lingers in the container and its
+      # make fails ("target table EXP_EMPLOYEES does not have a EMPLOYEENUMBER
+      # column"). Only artifacts absent from source are undeployed.
+      HDI_DEPLOY_OPTIONS: '{ "auto_undeploy": true }'
     requires:
       - name: expense-management-db
 
