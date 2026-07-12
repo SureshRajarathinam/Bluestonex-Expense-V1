@@ -34,8 +34,8 @@
             <DateRangeSelection
               dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
               secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
-              displayFormat="short"
-              width="16rem"
+              displayFormat="medium"
+              width="18rem"
               editable="{ui>/editable}" />
             <Label text="{i18n>lblEmployee}" />
             <Text text="{employeeName}" />
@@ -84,32 +84,32 @@
         </headerToolbar>
         <Table id="itemsTable" class="bsxTable" items="{items}" updateFinished=".onItemsUpdated" mode="None">
           <columns>
-            <Column><Label text="{i18n>itDate}" required="true" /></Column>
-            <Column><Label text="{i18n>itType}" required="true" /></Column>
+            <Column width="11rem"><Label text="{i18n>itDate}" required="true" /></Column>
+            <Column width="10rem"><Label text="{i18n>itType}" required="true" /></Column>
             <Column><Label text="{i18n>itDestination}" /></Column>
             <Column><Label text="{i18n>itReason}" required="true" /></Column>
-            <Column><Label text="{i18n>itTaxType}" /></Column>
-            <Column hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
-            <Column hAlign="End"><Label text="{i18n>itNet}" /></Column>
-            <Column hAlign="End"><Label text="{i18n>itVat}" /></Column>
-            <Column><Label text="{i18n>itAttachment}" /></Column>
-            <Column hAlign="Center" width="4rem"><Text text="" /></Column>
+            <Column width="9rem"><Label text="{i18n>itTaxType}" /></Column>
+            <Column width="8rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
+            <Column width="11rem"><Label text="{i18n>itAttachment}" /></Column>
+            <Column width="3.5rem" hAlign="Center"><Text text="" /></Column>
           </columns>
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="12rem" class="bsxDateCell" />
-                <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false"
+                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false" width="100%"
                   items="{ path: '/ExpenseTypes', templateShareable: false }">
                   <core:Item key="{code}" text="{description}" />
                 </Select>
-                <Input value="{destination}" editable="{ui>/editable}" />
-                <Input value="{reasonForTrip}" editable="{ui>/editable}" />
-                <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false"
+                <Input value="{destination}" editable="{ui>/editable}" width="100%" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
+                <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false" width="100%"
                   items="{ path: '/VATTypes', templateShareable: false }">
                   <core:Item key="{code}" text="{description}" />
                 </Select>
-                <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="7rem" />
+                <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center">
@@ -140,28 +140,28 @@
         </headerToolbar>
         <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" updateFinished=".onMileageUpdated" mode="None">
           <columns>
-            <Column><Label text="{i18n>mlDate}" required="true" /></Column>
+            <Column width="11rem"><Label text="{i18n>mlDate}" required="true" /></Column>
             <Column><Label text="{i18n>mlDestination}" required="true" /></Column>
             <Column><Label text="{i18n>mlReason}" required="true" /></Column>
-            <Column><Label text="{i18n>mlEngine}" /></Column>
-            <Column hAlign="End"><Label text="{i18n>mlMiles}" required="true" /></Column>
-            <Column hAlign="End"><Label text="{i18n>mlRate}" /></Column>
-            <Column hAlign="Center" width="4rem"><Text text="" /></Column>
+            <Column width="9rem"><Label text="{i18n>mlEngine}" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>mlMiles}" required="true" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>mlRate}" /></Column>
+            <Column width="3.5rem" hAlign="Center"><Text text="" /></Column>
           </columns>
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="12rem" class="bsxDateCell" />
-                <Input value="{destination}" editable="{ui>/editable}" />
-                <Input value="{reasonForTrip}" editable="{ui>/editable}" />
-                <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false">
+                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <Input value="{destination}" editable="{ui>/editable}" width="100%" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
+                <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false" width="100%">
                   <core:Item key="Petrol" text="Petrol" />
                   <core:Item key="Diesel" text="Diesel" />
                   <core:Item key="Hybrid" text="Hybrid" />
                   <core:Item key="Electric" text="Electric" />
                 </Select>
-                <Input value="{milesCount}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
-                <Input value="{ratePerMile}" type="Number" textAlign="End" editable="{ui>/editable}" width="6rem" />
+                <Input value="{milesCount}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ratePerMile}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
               </cells>
             </ColumnListItem>

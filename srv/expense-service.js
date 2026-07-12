@@ -149,6 +149,32 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       return SELECT.one.from(CLAIMS, ID);
     });
 
+    // ─── Guard: only pre-submission claims may be deleted ──────────────────
+    // The @restrict on MyClaims scopes DELETE to the owner but not by status, so
+    // without this a Submitted/in-flight/Approved claim could be deleted via a
+    // direct request — orphaning the approver queue and audit trail. Draft-discard
+    // (no active row yet, or status 'Draft') passes through untouched.
+    this.before('DELETE', 'MyClaims', async (req) => {
+      const p = req.params[0];
+      const ID = p && typeof p === 'object' ? p.ID : p;
+      if (!ID) return;
+      const claim = await SELECT.one.from(CLAIMS, ID).columns('status', 'claimNumber');
+      if (claim && ['Submitted', 'FirstApproved', 'Approved'].includes(claim.status)) {
+        return req.reject(409, `Claim ${claim.claimNumber} cannot be deleted — it is '${claim.status}'. Only Draft, Returned or Rejected claims can be deleted.`);
+      }
+    });
+
+    // ─── Function: approverFor(country) ────────────────────────────────────
+    // Returns the first-level approver email for a country, so the my-expenses
+    // "Apply for Approval" confirmation popup can name who the claim will go to.
+    // Read-only, Employee-callable; exposes only the recipient of your own claim.
+    this.on('approverFor', async (req) => {
+      const country = req.data.country;
+      if (!country) return null;
+      const wf = await SELECT.one.from(WORKFLOW).where({ country });
+      return (wf && wf.firstApprover) || null;
+    });
+
     await super.init();
   }
 };

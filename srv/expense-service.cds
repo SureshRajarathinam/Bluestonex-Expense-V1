@@ -14,6 +14,10 @@ service ExpenseService {
   type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
   function whoami() returns WhoAmI;
 
+  // First-level approver email for a country (UK | IN), so the "Apply for
+  // Approval" confirmation popup can name who the claim will be sent to.
+  function approverFor(country : String) returns String;
+
   @odata.draft.enabled
   // Ownership = the user who created the claim (managed `createdBy` = $user on
   // insert). Using createdBy — not the employee association — means any

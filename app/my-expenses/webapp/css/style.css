@@ -80,7 +80,8 @@ html, body, .sapUiBody, .bsxBody,
 .bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
 .bsxTable .sapMLIB:hover { background: #f5f8fc; }
 
-/* Date pickers inside item/mileage rows: guarantee room for the value + the
-   calendar button so the field is comfortable to pick from (was cramped). */
-.bsxDateCell { min-width: 11rem; }
-.bsxDateCell .sapMInputBaseInner { padding-right: 0.25rem; }
+/* Date pickers inside item/mileage rows: guarantee a minimum width so the value
+   AND the calendar value-help button are both fully visible. Do NOT override the
+   inner padding-right — that space is where the value-help icon renders; shrinking
+   it clipped/hid the calendar button (the "no value-help" bug). */
+.bsxDateCell { min-width: 10rem; }

@@ -144,3 +144,28 @@ test('H. mileage-only claim submits; total = miles × rate', async () => {
   const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   assert.ok(s.status < 400, `mileage-only submit ${s.status}: ${JSON.stringify(s.data?.error)}`);
 });
+
+test('I. a Submitted claim cannot be deleted (409); a Draft can', async () => {
+  const id = await submitClaim('UK');
+  assert.equal(await statusOf(id), 'Submitted');
+  const del = await t.axios.delete(`/expense/MyClaims${active(id)}`, { auth: EMP });
+  assert.equal(del.status, 409, `submitted delete got ${del.status}`);
+  assert.equal(await statusOf(id), 'Submitted', 'claim survives the blocked delete');
+
+  // A fresh, still-Draft claim (activated but not submitted) deletes fine.
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-05' }, { auth: EMP });
+  const did = c.data.ID;
+  await POST(`/expense/MyClaims${draft(did)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const okDel = await t.axios.delete(`/expense/MyClaims${active(did)}`, { auth: EMP });
+  assert.ok(okDel.status < 400, `draft delete got ${okDel.status}`);
+});
+
+test('J. approverFor returns the country first-level approver email', async () => {
+  const uk = await GET(`/expense/approverFor(country='UK')`, { auth: EMP });
+  assert.equal(uk.status, 200, `UK ${uk.status}`);
+  assert.equal(uk.data.value, 'manager@bluestonex.com', 'UK L1 approver');
+  const ind = await GET(`/expense/approverFor(country='IN')`, { auth: EMP });
+  assert.equal(ind.data.value, 'yuvaraj.kumar@bluestonex.com', 'India L1 approver');
+  const none = await GET(`/expense/approverFor(country='ZZ')`, { auth: EMP });
+  assert.ok(none.data.value == null, `unknown country → null (${JSON.stringify(none.data)})`);
+});

@@ -14,9 +14,8 @@
         <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
         <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
           <VBox>
-            <Label text="{i18n>searchLabel}" class="bsxFieldLbl" />
-            <SearchField id="fSearch" width="100%" placeholder="{i18n>searchPlaceholderMulti}"
-              search=".onSearch" liveChange=".onSearch" />
+            <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
+            <DateRangeSelection id="fPeriod" width="100%" displayFormat="medium" change=".onSearch" />
           </VBox>
           <VBox>
             <Label text="{i18n>filterStatus}" class="bsxFieldLbl" />
@@ -39,8 +38,9 @@
             </Select>
           </VBox>
           <VBox>
-            <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
-            <DateRangeSelection id="fPeriod" width="100%" change=".onSearch" />
+            <Label text="{i18n>searchLabel}" class="bsxFieldLbl" />
+            <SearchField id="fSearch" width="100%" placeholder="{i18n>searchPlaceholderMulti}"
+              search=".onSearch" liveChange=".onSearch" />
           </VBox>
         </l:Grid>
       </VBox>
@@ -70,7 +70,11 @@
           updateFinished=".onUpdateFinished"
           mode="None">
           <noData>
-            <IllustratedMessage illustrationType="sapIllus-NoEntries" title="{i18n>noClaims}" />
+            <!-- Spot size keeps the empty state compact so it doesn't leave a
+                 tall dead band below the card; explicit (blank) description
+                 suppresses the library's default second caption line. -->
+            <IllustratedMessage illustrationType="sapIllus-NoEntries" illustrationSize="Spot"
+              title="{i18n>noClaims}" description=" " />
           </noData>
           <columns>
             <Column><Text text="{i18n>colClaimNo}" /></Column>
