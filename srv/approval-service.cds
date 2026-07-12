@@ -48,14 +48,19 @@ type ClaimJourney : {
 @requires: 'authenticated-user'
 service ApprovalService {
 
+  // Identity of the logged-in user (resolved from $user via the shared employee
+  // source) — same contract as ExpenseService.whoami, so the Approval app greets
+  // the approver by name on open with identical logic.
+  type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
+  function whoami() returns WhoAmI;
+
   // ── Approvals queue: claims awaiting a decision ─────────────────────────────
   @restrict: [{ grant: ['READ', 'approve', 'reject'], to: 'Approver' }]
   entity Approvals as select from db.CLAIMS {
     *,
-    employee.fullName       as employeeName   : String,
-    employee.employeeNumber as employeeNumber : String,
-    employee.email          as employeeEmail  : String,
-    employee.department     as department     : String,
+    employee.FName || ' ' || employee.LName as employeeName : String,
+    employee.EmpID          as employeeNumber : String,
+    employee.Email          as employeeEmail  : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2
@@ -98,10 +103,9 @@ service ApprovalService {
   @restrict: [{ grant: 'READ', to: 'Approver' }, { grant: 'READ', to: 'Admin' }]
   entity ClaimHistory as select from db.CLAIMS {
     *,
-    employee.fullName       as employeeName   : String,
-    employee.employeeNumber as employeeNumber : String,
-    employee.email          as employeeEmail  : String,
-    employee.department     as department     : String,
+    employee.FName || ' ' || employee.LName as employeeName : String,
+    employee.EmpID          as employeeNumber : String,
+    employee.Email          as employeeEmail  : String,
     case status
       when 'Submitted'     then 2
       when 'FirstApproved' then 2
@@ -158,8 +162,15 @@ service ApprovalService {
   @readonly entity Countries    as projection on db.COUNTRIES;
   @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
   @readonly entity VATTypes     as projection on db.VAT_TYPES;
-  @readonly entity Employees    as projection on db.EMPLOYEES
-                                   excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
+  @readonly entity Employees as projection on db.EMPLOYEES {
+    ID,
+    Email                                   as email          : String,
+    FName || ' ' || LName                   as fullName       : String,
+    EmpID                                   as employeeNumber : String,
+    BaseSiteKey                             as site           : String,
+    UserTypeKey,
+    IsActive
+  };
 }
 
 // ─── Labels ──────────────────────────────────────────────────────────────────
@@ -169,7 +180,6 @@ annotate ApprovalService.Approvals with {
   statusCriticality @UI.Hidden;
   employeeEmail     @UI.Hidden;
   employeeName      @title: 'Employee';
-  department        @title: 'Department';
 }
 
 annotate ApprovalService.ApprovalItems   with { ID @UI.Hidden; };
@@ -180,7 +190,6 @@ annotate ApprovalService.ClaimHistory with {
   statusCriticality @UI.Hidden;
   employeeEmail     @UI.Hidden;
   employeeName      @title: 'Employee';
-  department        @title: 'Department';
 }
 
 annotate ApprovalService.Policies with {

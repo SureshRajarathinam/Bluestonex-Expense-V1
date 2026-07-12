@@ -41,8 +41,6 @@
             <Text text="{employeeName}" />
             <Label text="{i18n>lblEmpNo}" />
             <Text text="{employeeNumber}" />
-            <Label text="{i18n>lblDept}" />
-            <Text text="{department}" />
             <Label text="{i18n>lblSite}" />
             <Text text="{employeeSite}" />
             <Label text="{i18n>lblPayroll}" />

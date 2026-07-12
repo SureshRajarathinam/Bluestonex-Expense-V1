@@ -13,6 +13,7 @@
         <Button icon="sap-icon://menu2" type="Transparent" tooltip="Toggle menu" press=".onSideToggle" />
         <Text text="BluestoneX" class="bsxBrand" />
         <ToolbarSpacer />
+        <Text text="{app>/greeting}" class="bsxGreeting" visible="{= !!${app>/greeting} }" />
       </tnt:ToolHeader>
     </tnt:header>
 

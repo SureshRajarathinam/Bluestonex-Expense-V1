@@ -45,11 +45,9 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     const applyDefaults = async (req) => {
       req.data.status   = req.data.status || 'Draft';
       req.data.currency = req.data.currency || 'GBP';
-      const emp = await SELECT.one.from(EMPLOYEES).where({ email: req.user?.id });
-      if (!req.data.employee_ID && emp) {
-        req.data.employee_ID = emp.ID;
-        if (!req.data.payrollArea) req.data.payrollArea = emp.payrollArea;
-      }
+      // EXP_EMPLOYEES mirrors USERS_MASTER — match on Email (case-insensitive).
+      const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user?.id || '').toLowerCase());
+      if (!req.data.employee_ID && emp) req.data.employee_ID = emp.ID;
     };
 
     // 'NEW' fires when a Fiori draft is created; 'CREATE' for non-draft inserts.
@@ -65,11 +63,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       // Fallback: ensure the employee is set even if NEW didn't run
       if (!claim.employee_ID && req.user?.id) {
-        const emp = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
-        if (emp) {
-          claim.employee_ID = emp.ID;
-          if (!claim.payrollArea) claim.payrollArea = emp.payrollArea;
-        }
+        const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user.id).toLowerCase());
+        if (emp) claim.employee_ID = emp.ID;
       }
 
       if (!claim.claimNumber) {
@@ -136,12 +131,13 @@ module.exports = class ExpenseService extends cds.ApplicationService {
         policyFlags: (flags && flags.length) ? flags.join(' • ') : null
       });
 
-      const employee = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });
+      const employee = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user.id).toLowerCase());
+      const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
       // slow/unreachable SMTP would otherwise block the awaited submit long enough for
       // the approuter to 504. notifyClaimSubmitted is best-effort and self-logs.
-      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id }, wf?.firstApprover)
+      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, { fullName: employeeName || req.user.id }, wf?.firstApprover)
         .catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
       const sym = claim.currency === 'INR' ? '₹' : '£';
       // Distinguish a fresh submission from a rework resubmission so the History

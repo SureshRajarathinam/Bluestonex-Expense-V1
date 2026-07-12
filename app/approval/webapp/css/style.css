@@ -39,6 +39,7 @@ html, body, .sapUiBody, .bsxBody,
 }
 .bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
 .bsxBrand .bsxBrandX { color: var(--bsx-blue); }
+.bsxGreeting { font-weight: 600; color: var(--bsx-navy); padding: 0 .5rem 0 0; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }

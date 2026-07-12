@@ -41,15 +41,18 @@ async function findByEmail(email) {
     };
   }
 
+  // EXP_EMPLOYEES is now an exact USERS_MASTER mirror (FName/LName/Email/EmpID/…).
+  // Match on Email case-insensitively; prefer an active ('Y') row.
   const { EMPLOYEES } = cds.entities('EXP');
-  const e = await SELECT.one.from(EMPLOYEES).where({ email });
+  const rows = await SELECT.from(EMPLOYEES).where(`lower(Email) =`, String(email).toLowerCase());
+  const e = rows.find((r) => String(r.IsActive || '').toUpperCase() !== 'N') || rows[0];
   if (!e) return null;
   return {
-    email: e.email,
-    fullName: e.fullName,
-    employeeNumber: e.employeeNumber,
-    site: e.site,
-    active: e.active !== false,
+    email: e.Email,
+    fullName: [e.FName, e.LName].filter(Boolean).join(' ').trim(),
+    employeeNumber: e.EmpID,
+    site: e.BaseSiteKey,
+    active: String(e.IsActive || '').toUpperCase() !== 'N',
     externalId: e.ID
   };
 }

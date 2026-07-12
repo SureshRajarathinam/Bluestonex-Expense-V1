@@ -1,5 +1,13 @@
-ID,employeeNumber,fullName,email,site,department,payrollArea,role,active,financeEmail
-f1a2b3c4-0001-0001-0001-000000000001,8,Sabarinathan Chandrasekar,sabarinathan.chandrasekar@bluestonex.com,"The Church Offices, Old Baptist Church, Salop Rd, Oswestry, Shropshire, SY11 2NR",Operations,GB - Central,Employee,true,Dan.Barton@bluestonex.com
-f1a2b3c4-0001-0001-0001-000000000002,1,Dan Barton,Dan.Barton@bluestonex.com,BluestoneX HQ,Finance,GB - Central,Approver,true,Dan.Barton@bluestonex.com
-f1a2b3c4-0001-0001-0001-000000000003,5,Team Manager,manager@bluestonex.com,BluestoneX HQ,Operations,GB - Central,Approver,true,Dan.Barton@bluestonex.com
-f1a2b3c4-0001-0001-0001-000000000004,12,Priya Sharma,priya.sharma@bluestonex.com,BluestoneX India,Operations,IN - South,Employee,true,Dan.Barton@bluestonex.com
+ID,UserID,OrgID,FName,LName,Email,Mobile,EmpID,UserTypeKey,BaseSiteKey,ManagerID,Pic,PicB,IsActive,TargetUtilization,TargetHrsPerWeek,BonusPercent,PensionRate
+3,S000000001,BSX,Dan,Barton,dan.barton@bluestonex.com,,S000000001,S,UKOSW,S000000001,,,Y,10,40:00,5,3
+4,S000000011,BSX,Carol,Barton,carol.barton@bluestonex.com,,S000000011,S,UKOSW,S000000001,,,Y,0,40:00,5,3
+5,S000000002,BSX,Feroz,Khan,feroz.khan@bluestonex.com,,S000000002,S,UKOSW,S000000002,,,Y,0,40:00,5,3
+8,S000000009,BSX,Vikash,Kumar,vikash.kumar@bluestonex.com,,S000000009,S,UKOSW,S000000001,,,Y,50,40:00,3,3
+9,S000000014,BSX,Bala,subramanian,bala.subramanian@bluestonex.com,,S000000014,S,INAUG,S000000008,,,Y,75,40:00,3,3
+17,S000000020,BSX,Dave,Williams,dave.williams@bluestonex.com,,S000000020,S,UKOSW,S000000001,,,Y,75,40:00,3,3
+20,S000000032,BSX,Ramesh,Gubba,ramesh.gubba@bluestonex.com,,S000000032,S,UKOSW,S000000002,,,N,50,40:00,5,3
+21,S000000005,BSX,Kyle,Barnfield,kyle.barnfield@bluestonex.com,,S000000005,S,UKOSW,S000000002,,,Y,50,40:00,5,3
+22,S000000008,BSX,Sabarinathan,Chandrasekar,sabari.chandrasekar@bluestonex.com,,S000000008,S,UKOSW,S000000001,,,Y,75,40:00,3,3
+25,S000000015,BSX,Nick,Sullivan,nick.sullivan@bluestonex.com,,S000000015,S,UKOSW,S000000001,,,N,25,32:00,5,3
+46,S000000035,BSX,Yuvaraj,Kumar,Yuvaraj.kumar@bluestonex.com,,S000000035,S,UKOSW,S000000008,,,Y,75,40:00,3,0
+116,41BF363FB0AD3100F000000246A75000,BSX,Suresh,Rajarathinam,Suresh.Rajarathinam@Bluestonex.com,,41BF363FB0AD3100F000000246A75000,S,INAUG,S000000008,,,Y,75,40:00,3,0

@@ -45,6 +45,15 @@ test('whoami returns the logged-in employee first + last name', async () => {
   assert.equal(r.data.email, EMP.username, 'email echoes $user');
 });
 
+test('approval app whoami mirrors expense whoami (same identity contract)', async () => {
+  const r = await GET('/approval/whoami()', { auth: EMP });
+  assert.equal(r.status, 200, `approval whoami ${r.status}`);
+  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'ApprovalService.whoami resolves the same name');
+  assert.equal(r.data.firstName, 'Sabarinathan', 'first name');
+  assert.equal(r.data.lastName, 'Chandrasekar', 'last name');
+  assert.equal(r.data.email, EMP.username, 'email echoes $user');
+});
+
 test('whoami falls back to the email local-part for a user with no employee row', async () => {
   const r = await GET('/expense/whoami()', { auth: { username: 'nobody.here@bluestonex.com', password: 'x' } });
   // Unknown creds → 401; a known-but-unseeded authenticated user → titled local-part.

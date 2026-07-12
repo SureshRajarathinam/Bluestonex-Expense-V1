@@ -5,11 +5,19 @@ const notification = require('./notification');
 const audit = require('./lib/audit');
 const { renderClaimsPdf } = require('./lib/pdf');
 const { guardPaging } = require('./lib/paging');
+const employeeSource = require('./lib/employee-source');
 
 const LOG = cds.log('approval-service');
 
+// Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
+const nameFromEmail = (email) => String(email || '').split('@')[0]
+  .replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+
 // Bound-action key: object {ID,...} for draft entities, raw scalar otherwise.
 const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'object' ? p.ID : p; };
+
+// Display name from a raw EMPLOYEES (USERS_MASTER-mirror) row: FName + ' ' + LName.
+const empName = (e) => e ? [e.FName, e.LName].filter(Boolean).join(' ').trim() : '';
 
 // All identities the current caller might be known by, lower-cased. Needed because
 // the deployed IdP sets `req.user.id` to the logon name (e.g. "Srajarathinam") while
@@ -37,6 +45,23 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
     this.before('READ', guardPaging);
+
+    // ─── whoami: resolve the logged-in user's display name for the greeting ────
+    // Identical logic to ExpenseService.whoami — matches EXP_EMPLOYEES by Email
+    // (case-insensitive) via the shared source; falls back to the email local-part.
+    this.on('whoami', async (req) => {
+      const email = req.user?.id || '';
+      let fullName = '';
+      try {
+        const id = await employeeSource.findByEmail(email);
+        fullName = (id && id.fullName) || '';
+      } catch (e) { LOG.warn('whoami lookup failed', e.message); }
+      if (!fullName) fullName = nameFromEmail(email);
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      const firstName = parts.shift() || '';
+      const lastName = parts.join(' ');
+      return { email, fullName: fullName.trim(), firstName, lastName };
+    });
 
     // ─── Action: approve (country-aware: UK 2-level, India 1-level) ──────────
     this.on('approve', 'Approvals', async (req) => {
@@ -194,7 +219,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       if (!claimNumber) return req.error(400, 'A claim number is required.');
 
       const claim = await SELECT.one.from(CLAIMS)
-        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); e('employeeNumber'); }); })
+        .columns((c) => { c('*'); c.employee((e) => { e('FName'); e('LName'); e('EmpID'); }); })
         .where({ claimNumber });
       if (!claim) return req.error(404, 'Expense claim not found.');
 
@@ -206,8 +231,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       return {
         claimNumber:    claim.claimNumber,
-        employeeName:   (claim.employee && claim.employee.fullName) || claim.employee_ID || '',
-        employeeNumber: (claim.employee && claim.employee.employeeNumber) || '',
+        employeeName:   empName(claim.employee) || String(claim.employee_ID || ''),
+        employeeNumber: (claim.employee && claim.employee.EmpID) || '',
         createdBy:      claim.createdBy || '',
         country:        claim.country || '',
         currency:       claim.currency || '',
@@ -234,7 +259,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const scope = d.scope === 'history' ? 'history' : 'approvals';
 
       let rows = await SELECT.from(CLAIMS)
-        .columns((c) => { c('*'); c.employee((e) => { e('fullName'); e('employeeNumber'); }); })
+        .columns((c) => { c('*'); c.employee((e) => { e('FName'); e('LName'); e('EmpID'); }); })
         .orderBy('submittedAt desc');
 
       rows = rows.filter((r) => scope === 'history'
@@ -249,8 +274,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       const data = rows.map((r) => ({
         ...r,
-        employeeName: (r.employee && r.employee.fullName) || r.employee_ID || '',
-        employeeNumber: (r.employee && r.employee.employeeNumber) || '',
+        employeeName: empName(r.employee) || String(r.employee_ID || ''),
+        employeeNumber: (r.employee && r.employee.EmpID) || '',
         decidedBy: r.level2ApprovedBy || r.level1ApprovedBy || r.rejectedBy || ''
       }));
 
@@ -279,7 +304,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       let rows = await SELECT.from(CLAIMS).columns((c) => {
         c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
         c('submittedAt'); c('claimPeriod'); c('createdBy');
-        c.employee((e) => { e('fullName'); });
+        c.employee((e) => { e('FName'); e('LName'); });
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
 
@@ -347,7 +372,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           for (const it of (r.items || [])) addCat(catMap, r, it);
           // Top 5 claimants — APPROVED (reimbursed) amount per person only, so a
           // claimant surfaces on the card once their claim is approved.
-          const nm = (r.employee && r.employee.fullName) || r.createdBy || '—';
+          const nm = empName(r.employee) || r.createdBy || '—';
           const cm = claimantMap.get(nm) || { name: nm, gbp: 0, inr: 0 };
           if (isIN(r)) cm.inr += g; else cm.gbp += g;
           claimantMap.set(nm, cm);

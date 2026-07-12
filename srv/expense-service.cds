@@ -27,11 +27,10 @@ service ExpenseService {
   @restrict: [{ grant: '*', to: 'Employee', where: 'createdBy = $user' }]
   entity MyClaims as projection on db.CLAIMS {
     *,
-    employee.fullName       as employeeName   : String,
-    employee.employeeNumber as employeeNumber : String,
-    employee.email          as employeeEmail  : String,
-    employee.site           as employeeSite   : String,
-    employee.department     as department     : String,
+    employee.FName || ' ' || employee.LName as employeeName : String,
+    employee.EmpID          as employeeNumber : String,
+    employee.Email          as employeeEmail  : String,
+    employee.BaseSiteKey    as employeeSite   : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2
@@ -66,8 +65,17 @@ service ExpenseService {
   // Read-only so the UI can preview the net/VAT split live as gross is typed
   // (server before('SAVE') stays the source of truth for saved values).
   @readonly entity Policies     as projection on db.POLICY;
-  @readonly entity Employees    as projection on db.EMPLOYEES
-                                   excluding { manager, createdAt, createdBy, modifiedAt, modifiedBy };
+  // Convenience aliases (email/fullName/employeeNumber) kept stable so the
+  // approval Workflow picker and any consumer keep working after the mirror.
+  @readonly entity Employees as projection on db.EMPLOYEES {
+    ID,
+    Email                                   as email          : String,
+    FName || ' ' || LName                   as fullName       : String,
+    EmpID                                   as employeeNumber : String,
+    BaseSiteKey                             as site           : String,
+    UserTypeKey,
+    IsActive
+  };
 }
 
 annotate ExpenseService.MyClaims with {
@@ -75,7 +83,6 @@ annotate ExpenseService.MyClaims with {
   statusCriticality @UI.Hidden;
   employeeEmail     @UI.Hidden;
   employeeName      @title: 'Employee';
-  department        @title: 'Department';
   employeeSite      @title: 'Site';
   country           @mandatory
                     @Common.ValueListWithFixedValues

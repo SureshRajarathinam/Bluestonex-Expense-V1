@@ -24,18 +24,33 @@ entity COUNTRIES {
 
 // ─── Master Data ─────────────────────────────────────────────────────────────
 
-entity EMPLOYEES : managed {
-  key ID             : UUID;
-      employeeNumber : String(20) @mandatory;
-      fullName       : String(100) @mandatory;
-      email          : String(255) @mandatory;
-      site           : String(500);
-      department     : String(100);
-      payrollArea    : String(50);
-      role           : String(20) default 'Employee';  // Employee | Manager | Finance | Admin
-      active         : Boolean default true;
-      manager        : Association to EMPLOYEES;
-      financeEmail   : String(255) default 'Dan.Barton@bluestonex.com';
+// Employee master — an EXACT MIRROR of the classic USERS_MASTER table.
+// Column names/order match USERS_MASTER 1:1, so db/data/EXP-EMPLOYEES.csv (a copy
+// of Master_User_BSX.csv) imports directly on deploy. There is NO runtime
+// dependency on the external USERS_MASTER container — this table IS the master.
+//   • ID          — source BIGINT primary key (also the FK target for CLAIMS.employee)
+//   • Email       — join key to the logged-in $user (matched case-insensitively)
+//   • FName/LName — display name is FName + ' ' + LName (see service projections)
+//   • EmpID       — business employee number · BaseSiteKey — site code · IsActive — 'Y'/'N'
+entity EMPLOYEES {
+  key ID          : Integer64;      // USERS_MASTER.ID (BIGINT PK)
+      UserID      : String(50);
+      OrgID       : String(10);
+      FName       : String(100);
+      LName       : String(100);
+      Email       : String(255);
+      Mobile      : String(30);
+      EmpID       : String(50);
+      UserTypeKey : String(10);     // S | C
+      BaseSiteKey : String(50);     // UKOSW | INAUG | PLRMT | Apphaus
+      ManagerID   : String(50);
+      Pic         : LargeString;    // base64 data-URI photo
+      PicB        : LargeString;
+      IsActive    : String(1);      // Y | N
+      TargetUtilization : Integer;
+      TargetHrsPerWeek  : String(10);   // e.g. '40:00'
+      BonusPercent      : Integer;
+      PensionRate       : Integer;
 }
 
 // One policy row PER COUNTRY (UK | IN) — each country has its own rate and limits.
