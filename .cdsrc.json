@@ -15,8 +15,8 @@
           "password": "dan",
           "roles": ["Employee", "Approver", "Admin"]
         },
-        "yuvaraj.kumar@bluestonex.com": {
-          "password": "yuvaraj",
+        "suresh.rajarathinam@bluestonex.com": {
+          "password": "suresh",
           "roles": ["Employee", "Approver", "Admin"]
         },
         "priya.sharma@bluestonex.com": {

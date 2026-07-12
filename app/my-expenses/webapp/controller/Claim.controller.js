@@ -373,7 +373,11 @@ sap.ui.define([
           var gross = Number(oItemCtx.getProperty("grossAmount")) || 0;
           var sType = oItemCtx.getProperty("expenseType_code");
           var bNeedsReceipt = !!oTypes[sType] || (nThreshold >= 0 && gross >= nThreshold);
-          var bHasReceipt = !!oItemCtx.getProperty("receiptAttached") || !!oItemCtx.getProperty("receiptFileName");
+          // Use receiptFileName (always set alongside the attachment, and part of
+          // the items table's $select) as the "has receipt" signal. Reading
+          // receiptAttached here caused a V4 drill-down error because that column
+          // isn't referenced in the table, so $$autoExpandSelect never fetches it.
+          var bHasReceipt = !!oItemCtx.getProperty("receiptFileName");
           if (bNeedsReceipt && !bHasReceipt) { aReceiptRows.push(i + 1); }
         }
       });
@@ -440,12 +444,22 @@ sap.ui.define([
     // submit — the confirmation then falls back to a generic message.
     _resolveApprover: function (sCountry) {
       if (!sCountry) { return Promise.resolve(""); }
-      var sLit = String(sCountry).replace(/'/g, "''");
-      var oOp = this.getModel().bindContext("/approverFor(country='" + sLit + "')");
-      return oOp.execute().then(function () {
-        var oBound = oOp.getBoundContext();
-        return (oBound && oBound.getProperty("value")) || "";
-      }).catch(function () { return ""; });
+      try {
+        // V4 operation binding MUST be deferred: the path ends with the literal
+        // "(...)" and parameters are supplied via setParameter — NOT inlined in
+        // the path (that form is not a deferred binding, so execute() throws
+        // "The binding must be deferred" synchronously and breaks onSubmit).
+        var oOp = this.getModel().bindContext("/approverFor(...)");
+        oOp.setParameter("country", sCountry);
+        return oOp.execute().then(function () {
+          var oBound = oOp.getBoundContext();
+          return (oBound && oBound.getProperty("value")) || "";
+        }).catch(function () { return ""; });
+      } catch (e) {
+        // Never let the approver lookup block submit — fall back to the generic
+        // confirmation message.
+        return Promise.resolve("");
+      }
     },
 
     // Human label for the approver level (UK routes through a 1st-level approver;

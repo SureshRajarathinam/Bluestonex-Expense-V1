@@ -231,7 +231,7 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 | `sabarinathan.chandrasekar@bluestonex.com` | `sab` | all (dev) | — (submits claims) |
 | `manager@bluestonex.com` | `mgr` | all (dev) | UK level-1 |
 | `Dan.Barton@bluestonex.com` | `dan` | all (dev) | UK level-2 |
-| `yuvaraj.kumar@bluestonex.com` | `yuvaraj` | all (dev) | India level-1 |
+| `suresh.rajarathinam@bluestonex.com` | `suresh` | all (dev) | India level-1 |
 | `priya.sharma@bluestonex.com` | `priya` | Employee | — (India employee) |
 | `clerk@bluestonex.com` | `clerk` | Employee | — (RBAC demo) |
 
@@ -239,7 +239,7 @@ Open the served index, then the apps under **Web Applications**. Log in with a m
 
 **End-to-end demo flow:**
 1. **My Expenses** (as `sab`) → Create → choose **UK** or **India** → add inline items + attachments → **Apply for Approval**.
-2. **Approvals** → For a **UK** claim, as `manager` approve level-1, then as `Dan.Barton` approve level-2 → **Approved**. For an **India** claim, as `yuvaraj.kumar` approve level-1 → **Approved**.
+2. **Approvals** → For a **UK** claim, as `manager` approve level-1, then as `Dan.Barton` approve level-2 → **Approved**. For an **India** claim, as `suresh.rajarathinam` approve level-1 → **Approved**.
 3. **Policy Configuration** (as `sab`/Admin) → edit a rate → Save. **Approval Workflow Members** → set approvers per country.
 
 ---
@@ -323,7 +323,7 @@ These are standalone freestyle apps added to the **existing** org Work Zone — 
 - **UK + India restructure** — consolidated to **2 services**; added **country** (UK/IN) on Create with **VAT vs GST** tax; **country-driven approval** (UK two-level, India single-level) via configurable **Approval Workflow Members**; merged Finance + Approver + Admin into the **Approval** area (Approvals · Policy Configuration · Workflow Members); inline multi-item entry on My Expenses; roles simplified to **Employee / Approver / Admin**.
 - **Freestyle rewrite** — both front-ends rebuilt as **freestyle SAPUI5** (XML views + JS controllers, `sap.tnt` shell, standard `ComponentContainer`); the four Fiori Elements apps became **two freestyle apps** (My Expenses + a 3-tab Approval app); per-country policies; History tab + server-side PDF export.
 - **Live Net/Tax preview** — my-expenses items show a client-derived Net + Tax preview next to Gross (read-only `Policies` projection; `before('SAVE')` remains authoritative).
-- **Approver email alerts** — `srv/lib/mailer.js` sends targeted emails to the configured approver (submit→L1, UK L1-approve→L2) via SMTP/`nodemailer`, with a zero-setup `MAIL_DEV` mode and an optional `expense-mail` binding; India L1 approver set to `yuvaraj.kumar@bluestonex.com`.
+- **Approver email alerts** — `srv/lib/mailer.js` sends targeted emails to the configured approver (submit→L1, UK L1-approve→L2) via SMTP/`nodemailer`, with a zero-setup `MAIL_DEV` mode and an optional `expense-mail` binding; India L1 approver set to `suresh.rajarathinam@bluestonex.com` (via the EXP-WORKFLOW config table).
 - **BTP deploy + Work Zone go-live** — deployed to CF `bsx-tdd/TDD` on **HANA Cloud**; both apps integrated into the existing org **SAP Build Work Zone** via the html5-apps-repo (`sap.cloud.public`, `crossNavigation` + tile icons, **relative** backend paths for the managed approuter, `expense-srv-api` + app-host-registration subaccount destinations). MTA slimmed to drop the standalone approuter, launchpad/portal, and ANS; added the `before-all` CAP build and `resources/` content staging. See **§14**.
 - **Error-message surfacing** — a failed V4 bound action inside a `$batch` surfaced only the opaque `"$batch failed"` wrapper; `BaseController.showError` (both apps) now reads the real 4xx text from the UI5 Message Manager. Receipt validation message no longer prints an unmet threshold.
 - **Draft-lock fix, validation UX, SoD + QA hardening** — (1) **409 "Entity locked" on Apply for Approval**: a stranded draft (Edit → Back) held the CAP lock; `onSubmit` self-heals by activating the sibling draft then retrying submit. (2) **Real client-side mandatory validation** (Claim Period + item fields) with a consolidated popup (the `required="true"` marks were cosmetic); error surfacing reordered so the 422 is not stripped. (3) **Separation of duties** — approvers cannot approve/reject their **own** claims (403). (4) **`$top`/`$skip`** malformed values rejected 400 (`srv/lib/paging.js`). (5) **Live data** — new mileage-row rate defaults from `Policies.mileageRate`; country Create picker + Dashboard filter bound to `/Countries`. (6) **QA**: suite grown **113 → 151 passing** (`gap-flows`/`gap-admin`/`gap-analytics`/`gap-units`/`receipt-media` + `$top` contract); deliverable in `test/QA-REPORT.md`, runnable requests in `test/expense.http`.

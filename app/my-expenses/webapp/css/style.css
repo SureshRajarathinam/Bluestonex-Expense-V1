@@ -85,3 +85,7 @@ html, body, .sapUiBody, .bsxBody,
    inner padding-right — that space is where the value-help icon renders; shrinking
    it clipped/hid the calendar button (the "no value-help" bug). */
 .bsxDateCell { min-width: 10rem; }
+
+/* Compact receipt-attached tick: clickable (opens the receipt) with a little
+   breathing room before the upload button. */
+.bsxReceiptOk { cursor: pointer; margin-right: 0.35rem; }

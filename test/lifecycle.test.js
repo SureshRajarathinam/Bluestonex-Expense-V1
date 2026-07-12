@@ -6,7 +6,7 @@ const calc = require('../srv/lib/calc');
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' }; // employee (not an approver in workflow)
 const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };                // UK L2
-const YUV = { username: 'yuvaraj.kumar@bluestonex.com', password: 'yuvaraj' };         // India L1
+const IN1 = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' };     // India L1 (from EXP-WORKFLOW config)
 const near = (a, b) => Math.abs(a - b) < 0.01;
 
 let baseURL;
@@ -94,9 +94,9 @@ test('C. UK = TWO-level approval (L1 then L2 → Approved)', async () => {
 
 test('D. India = SINGLE-level approval (L1 → Approved)', async () => {
   const id = await submitClaim('IN', 118);
-  // India L1 approver is yuvaraj.kumar@ (per Approval Workflow config)
+  // India L1 approver is suresh.rajarathinam@ (per Approval Workflow config)
   assert.equal(await statusOf(id), 'Submitted');
-  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
+  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
   assert.ok(a.status < 400, `IN approve ${a.status}: ${JSON.stringify(a.data?.error)}`);
   assert.equal(await statusOf(id), 'Approved'); // single level completes it
 });
@@ -165,7 +165,7 @@ test('J. approverFor returns the country first-level approver email', async () =
   assert.equal(uk.status, 200, `UK ${uk.status}`);
   assert.equal(uk.data.value, 'manager@bluestonex.com', 'UK L1 approver');
   const ind = await GET(`/expense/approverFor(country='IN')`, { auth: EMP });
-  assert.equal(ind.data.value, 'yuvaraj.kumar@bluestonex.com', 'India L1 approver');
+  assert.equal(ind.data.value, 'suresh.rajarathinam@bluestonex.com', 'India L1 approver');
   const none = await GET(`/expense/approverFor(country='ZZ')`, { auth: EMP });
   assert.ok(none.data.value == null, `unknown country → null (${JSON.stringify(none.data)})`);
 });

@@ -4,7 +4,7 @@
     "id": "com.bluestonex.expense.myexpenses",
     "type": "application",
     "i18n": "i18n/i18n.properties",
-    "applicationVersion": { "version": "2.0.0" },
+    "applicationVersion": { "version": "2.0.1" },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
     "dataSources": {

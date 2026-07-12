@@ -6,7 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };   // UK L1 approver (+Employee)
-const YUV = { username: 'yuvaraj.kumar@bluestonex.com', password: 'yuvaraj' }; // India L1 (+Employee)
+const IN1 = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' }; // India L1 (+Employee)
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' }; // Employee only
 
 let baseURL;
@@ -51,8 +51,8 @@ test('SoD: the configured approver cannot reject/return their OWN claim (403)', 
 });
 
 test('SoD: India single-level approver cannot approve their OWN claim (403)', async () => {
-  const id = await submitAs(YUV, 'IN'); // yuvaraj IS the India L1 approver
-  const res = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'self' }, { auth: YUV });
+  const id = await submitAs(IN1, 'IN'); // suresh IS the India L1 approver
+  const res = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'self' }, { auth: IN1 });
   assert.equal(res.status, 403, `own-claim approval (India) must be 403, got ${res.status}`);
 });
 

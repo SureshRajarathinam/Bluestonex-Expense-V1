@@ -84,16 +84,16 @@
         </headerToolbar>
         <Table id="itemsTable" class="bsxTable" items="{items}" updateFinished=".onItemsUpdated" mode="None">
           <columns>
-            <Column width="11rem"><Label text="{i18n>itDate}" required="true" /></Column>
-            <Column width="10rem"><Label text="{i18n>itType}" required="true" /></Column>
-            <Column><Label text="{i18n>itDestination}" /></Column>
-            <Column><Label text="{i18n>itReason}" required="true" /></Column>
-            <Column width="9rem"><Label text="{i18n>itTaxType}" /></Column>
-            <Column width="8rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
-            <Column width="7rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
-            <Column width="7rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
-            <Column width="11rem"><Label text="{i18n>itAttachment}" /></Column>
-            <Column width="3.5rem" hAlign="Center"><Text text="" /></Column>
+            <Column width="10.5rem"><Label text="{i18n>itDate}" required="true" /></Column>
+            <Column width="9rem"><Label text="{i18n>itType}" required="true" /></Column>
+            <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itDestination}" /></Column>
+            <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itReason}" required="true" /></Column>
+            <Column width="8.5rem"><Label text="{i18n>itTaxType}" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column width="6rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
+            <Column width="6rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
+            <Column width="6.5rem" hAlign="Center"><Label text="{i18n>itAttachment}" /></Column>
+            <Column width="3rem" hAlign="Center"><Text text="" /></Column>
           </columns>
           <items>
             <ColumnListItem>
@@ -112,12 +112,12 @@
                 <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
-                <HBox alignItems="Center">
-                  <ObjectStatus
-                    icon="{= ${receiptFileName} ? 'sap-icon://document' : '' }"
-                    text="{path: 'receiptFileName', formatter: '.formatter.receiptText'}"
-                    state="{= ${receiptFileName} ? 'Success' : 'None' }" />
-                  <Link text="{i18n>btnView}" class="sapUiTinyMarginBegin" visible="{= !!${receiptFileName} }" press=".onViewReceipt" />
+                <HBox alignItems="Center" justifyContent="Center">
+                  <!-- Compact receipt status: a small green tick when a receipt is
+                       attached (filename shown as tooltip / via View), nothing when
+                       not. Frees the column so it needs far less width. -->
+                  <core:Icon src="sap-icon://sys-enter-2" color="#107e3e" size="1.15rem"
+                    tooltip="{path: 'receiptFileName'}" visible="{= !!${receiptFileName} }" press=".onViewReceipt" class="bsxReceiptOk" />
                   <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
                 </HBox>
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />

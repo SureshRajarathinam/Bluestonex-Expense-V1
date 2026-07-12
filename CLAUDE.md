@@ -35,7 +35,7 @@ Deployed to CF **bsx-tdd / TDD** (eu10, HANA Cloud). Build+deploy: `mbt build &&
 ## Country-aware behaviour
 - Claim has a **`country`** (UK | IN), chosen on Create (mandatory).
 - Tax: UK → `ExpensePolicy.vatRate` (VAT), India → `ExpensePolicy.gstRate` (GST). Picked in `srv/lib/calc.js` `taxRateFor()`, applied in `expense-service.js before('SAVE')`. Field names stay `vatType/vatAmount/totalVAT` (hold the country tax); UI labels say "Tax". Currency GBP (UK) / INR (IN).
-- Approval routing from **`ApprovalWorkflow`** (seed: UK first=manager@, second=Dan.Barton@; IN first=yuvaraj.kumar@):
+- Approval routing from **`ApprovalWorkflow`** (seed: UK first=manager@, second=Dan.Barton@; IN first=suresh.rajarathinam@):
   - **UK = 2-level**: `Submitted → FirstApproved → Approved`
   - **India = 1-level**: `Submitted → Approved`
   - (+ `Draft`, `Rejected`). No "Settled" step.
@@ -69,7 +69,7 @@ Deployed to CF **bsx-tdd / TDD** (eu10, HANA Cloud). Build+deploy: `mbt build &&
 - `sabarinathan.chandrasekar@bluestonex.com` / `sab`
 - `manager@bluestonex.com` / `mgr` (UK L1)
 - `Dan.Barton@bluestonex.com` / `dan` (UK L2)
-- `yuvaraj.kumar@bluestonex.com` / `yuvaraj` (IN L1)
+- `suresh.rajarathinam@bluestonex.com` / `suresh` (IN L1)
 - `clerk@bluestonex.com` / `clerk` (employee-only)
 - `priya.sharma@bluestonex.com` / `priya` (India employee)
 

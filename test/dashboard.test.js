@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 const EMP   = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' }; // seeded emp, dept Operations
 const MGR   = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1
 const FIN   = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };                // UK L2
-const YUV   = { username: 'yuvaraj.kumar@bluestonex.com', password: 'yuvaraj' };         // IN L1
+const IN1   = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' };     // IN L1
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' };                   // Employee only, NOT seeded emp
 const PRIYA = { username: 'priya.sharma@bluestonex.com', password: 'priya' };            // Employee only
 
@@ -45,7 +45,7 @@ const approveUK = async (id) => {
   await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
   await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: FIN });
 };
-const approveIN = (id) => POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: YUV });
+const approveIN = (id) => POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
 const reject = (id) => POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'no' }, { auth: MGR });
 
 test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
