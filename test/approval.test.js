@@ -250,6 +250,24 @@ test('India single-level approval sends no further approver email', async () => 
     'India (single-level) approval must not send a second-level email');
 });
 
+// Regression: HANA returns DECIMAL columns as STRINGS ("20.00"), so the email
+// amount formatter must coerce with Number() before toFixed. SQLite returns
+// numbers and hides this, so we call the notifier directly with a string
+// totalGross to reproduce the production shape. Pre-fix this threw
+// "(claim.totalGross || 0).toFixed is not a function" and the approver email
+// was silently dropped.
+test('approver email survives a string totalGross (HANA DECIMAL shape)', async () => {
+  const before = MAILS.length;
+  await notification.notifyClaimSubmitted(
+    { ID: 'regr-1', claimNumber: 'EXP-REGR-1', totalGross: '20.00', currency: 'INR', claimPeriod: '2026-02-28' },
+    { fullName: 'Test User' },
+    'suresh.rajarathinam@bluestonex.com'
+  );
+  const mails = mailsSince(before);
+  assert.ok(mails.some((m) => m.to === 'suresh.rajarathinam@bluestonex.com' && /₹20\.00/.test(m.text)),
+    'approver is emailed with a correctly formatted ₹ amount despite a string totalGross');
+});
+
 test('rework loop: return → resubmit reuses the SAME claim (no dup, one history row, resubmitCount 1)', async () => {
   const id = await submitUK();
   const noBefore = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data.claimNumber;

@@ -6,7 +6,11 @@ const mailer = require('./lib/mailer');
 const LOG = cds.log('notification');
 
 // Currency-aware amount for email bodies (GBP for UK, INR for India).
-const money = (claim) => `${claim.currency === 'INR' ? '₹' : '£'}${(claim.totalGross || 0).toFixed(2)}`;
+// NOTE: HANA returns DECIMAL columns as STRINGS ("20.00"), unlike SQLite which
+// returns numbers — so totalGross must be coerced with Number() before toFixed,
+// otherwise `"20.00".toFixed` throws and the whole notification (incl. the
+// approver email) silently fails in production. SQLite masks this locally.
+const money = (claim) => `${claim.currency === 'INR' ? '₹' : '£'}${Number(claim.totalGross || 0).toFixed(2)}`;
 
 // Wraps SAP BTP Alert Notification Service (ANS).
 // In production: bind an `alert-notification` service instance to the app.
