@@ -8,7 +8,6 @@ sap.ui.define([
 ], function (BaseController, formatter, JSONModel, ResponsivePopover, VBox, MText) {
   "use strict";
 
-  var SVC = "approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v3"; // localStorage key; bumped (card set changed: avr → Top 5 claimants)
 
@@ -218,7 +217,9 @@ sap.ui.define([
 
     _load: function () {
       var m = this._m, that = this;
-      var url = SVC + "/dashboardStats(fromDate=" + ymd(m.getProperty("/fromDate")) +
+      // Resolve against the OData model's service URL (not a literal "approval/")
+      // so the fetch hits the correct app mount under the Work Zone approuter.
+      var url = this._serviceUrl() + "dashboardStats(fromDate=" + ymd(m.getProperty("/fromDate")) +
         ",toDate=" + ymd(m.getProperty("/toDate")) + ",country='" + m.getProperty("/country") + "')";
       m.setProperty("/busy", true); m.setProperty("/error", "");
       // cache:'no-store' — always pull the live aggregation; never let the browser

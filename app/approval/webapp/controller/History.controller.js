@@ -8,7 +8,6 @@ sap.ui.define([
 ], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator) {
   "use strict";
 
-  var SVC = "approval";
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   function esc(s) {
@@ -85,25 +84,38 @@ sap.ui.define([
     onInit: function () {
       this.getView().setModel(new JSONModel({ count: 0, approved: 0, rejected: 0 }), "view");
       this.getView().setModel(new JSONModel({}), "journey");
+      this._loadCounts();
     },
 
     onUpdateFinished: function (oEvent) {
+      // Total comes from the server $count; the per-status badges are computed
+      // over the FULL filtered result in _loadCounts (not just the loaded page,
+      // which grows 50 at a time) so they stay accurate beyond the first page.
+      this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
+    },
+
+    // Accurate Approved / Returned badges across ALL matching rows (independent of
+    // the growing page size). Mirrors Approvals._loadCounts — a separate list
+    // binding with the same filters, read in one direct request.
+    _loadCounts: function () {
       var oView = this.getView().getModel("view");
-      oView.setProperty("/count", oEvent.getParameter("total") || 0);
-      var aCtx = this.byId("historyTable").getBinding("items").getCurrentContexts();
-      var nA = 0, nR = 0;
-      aCtx.forEach(function (c) {
-        var s = c.getProperty("status");
-        if (s === "Approved") { nA++; }
-        // "Declined" = returned-for-rework (current) + legacy Rejected.
-        if (s === "Returned" || s === "Rejected") { nR++; }
-      });
-      oView.setProperty("/approved", nA);
-      oView.setProperty("/rejected", nR);
+      var oList = this.getModel().bindList("/ClaimHistory", null, null, this._buildFilters(), { $$groupId: "$direct" });
+      oList.requestContexts(0, 999).then(function (aCtx) {
+        var nA = 0, nR = 0;
+        aCtx.forEach(function (c) {
+          var s = c.getProperty("status");
+          if (s === "Approved") { nA++; }
+          // "Declined" = returned-for-rework (current) + legacy Rejected.
+          if (s === "Returned" || s === "Rejected") { nR++; }
+        });
+        oView.setProperty("/approved", nA);
+        oView.setProperty("/rejected", nR);
+      }).catch(function () { /* leave badges as-is */ });
     },
 
     onRefresh: function () {
       this.byId("historyTable").getBinding("items").refresh();
+      this._loadCounts();
     },
 
     _ymd: function (oDate) {
@@ -122,11 +134,9 @@ sap.ui.define([
       };
     },
 
-    // Free multi-field search: the box matches across claim number, employee name,
-    // employee ID and status; the Status/Country/Period selects narrow it (AND).
-    // Fires on Enter / search-icon (SearchField) and on any dropdown/date change —
-    // there is no Go button.
-    onSearch: function () {
+    // Build the active filter array from the look-up controls (shared by the table
+    // and the accurate count query so they always agree).
+    _buildFilters: function () {
       var s = this._filterState();
       var aFilters = [];
       if (s.status) { aFilters.push(new Filter("status", FilterOperator.EQ, s.status)); }
@@ -143,7 +153,16 @@ sap.ui.define([
           and: false
         }));
       }
-      this.byId("historyTable").getBinding("items").filter(aFilters);
+      return aFilters;
+    },
+
+    // Free multi-field search: the box matches across claim number, employee name,
+    // employee ID and status; the Status/Country/Period selects narrow it (AND).
+    // Fires on Enter / search-icon (SearchField) and on any dropdown/date change —
+    // there is no Go button.
+    onSearch: function () {
+      this.byId("historyTable").getBinding("items").filter(this._buildFilters());
+      this._loadCounts();
     },
 
     onExportPdf: function () {
@@ -166,7 +185,7 @@ sap.ui.define([
         return oDialog;
       }));
 
-      var sUrl = SVC + "/claimJourney(claimNumber='" + String(sNo).replace(/'/g, "''") + "')";
+      var sUrl = this._serviceUrl() + "claimJourney(claimNumber='" + String(sNo).replace(/'/g, "''") + "')";
       var pJourney = fetch(encodeURI(sUrl), { headers: { Accept: "application/json" }, credentials: "same-origin" })
         .then(function (r) { if (!r.ok) { throw new Error("HTTP " + r.status); } return r.json(); });
 
@@ -187,12 +206,12 @@ sap.ui.define([
       if (oDialog) { oDialog.close(); }
     },
 
-    // Open an attachment's receipt in a new tab (uses the same media route as the
-    // review dialog's receiptHref).
+    // Open an attachment's receipt in a new tab. Uses the BaseController helper so
+    // the media URL resolves against the service base (works under the approuter).
     onOpenAttachment: function (oEvent) {
       var oCtx = oEvent.getSource().getBindingContext("journey");
       var sId = oCtx && oCtx.getProperty("itemID");
-      if (sId) { window.open(this.formatter.receiptHref(sId), "_blank"); }
+      if (sId) { window.open(this.receiptUrl(sId), "_blank"); }
     }
   });
 });

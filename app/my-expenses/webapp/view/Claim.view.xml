@@ -34,7 +34,8 @@
             <DateRangeSelection
               dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
               secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
-              displayFormat="long"
+              displayFormat="short"
+              width="16rem"
               editable="{ui>/editable}" />
             <Label text="{i18n>lblEmployee}" />
             <Text text="{employeeName}" />
@@ -97,7 +98,7 @@
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="9rem" />
+                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="12rem" class="bsxDateCell" />
                 <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false"
                   items="{ path: '/ExpenseTypes', templateShareable: false }">
                   <core:Item key="{code}" text="{description}" />
@@ -150,7 +151,7 @@
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="9rem" />
+                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="12rem" class="bsxDateCell" />
                 <Input value="{destination}" editable="{ui>/editable}" />
                 <Input value="{reasonForTrip}" editable="{ui>/editable}" />
                 <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false">

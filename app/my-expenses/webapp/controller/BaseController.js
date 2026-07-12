@@ -82,6 +82,22 @@ sap.ui.define([
 
     toast: function (sKey) {
       MessageToast.show(this.getText(sKey));
+    },
+
+    /**
+     * Resolved base URL of the OData service, always ending in "/".
+     *
+     * Raw fetch() calls (receipt CSRF/PUT/GET) MUST NOT use a literal relative
+     * path like "expense/": under the Work Zone managed approuter the app is
+     * mounted under a generated prefix, and a relative fetch resolves against
+     * document.baseURI (the approuter shell page), not the app mount → 404. The
+     * OData V4 model resolves its dataSource uri correctly for that mount, so we
+     * borrow its already-resolved service URL as the fetch base.
+     */
+    _serviceUrl: function () {
+      var oModel = this.getOwnerComponent().getModel();
+      var sUrl = (oModel && oModel.getServiceUrl && oModel.getServiceUrl()) || "expense/";
+      return /\/$/.test(sUrl) ? sUrl : sUrl + "/";
     }
   });
 });

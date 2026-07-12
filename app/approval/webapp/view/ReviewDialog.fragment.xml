@@ -31,7 +31,7 @@
                 <Text text="{expenseType_code}" />
                 <Text text="{reasonForTrip}" />
                 <Text text="{grossAmount}" />
-                <Link text="{i18n>viewReceipt}" target="_blank" href="{ path: 'ID', formatter: '.formatter.receiptHref' }" visible="{= !!${receiptAttached} }" />
+                <Link text="{i18n>viewReceipt}" press=".onOpenReceipt" visible="{= !!${receiptAttached} }" />
               </cells>
             </ColumnListItem>
           </items>

@@ -46,16 +46,6 @@ sap.ui.define([], function () {
       var n = Number(vAmount || 0);
       var sym = sCurrency === "INR" ? "₹" : (sCurrency === "GBP" ? "£" : "");
       return sym + n.toFixed(2);
-    },
-
-    /** Download URL for an item's receipt (active, non-draft projection). */
-    receiptHref: function (sItemId) {
-      return sItemId ? "approval/ApprovalItems(" + sItemId + ")/receipt" : "";
-    },
-
-    /** True only for the UK workflow row (enables the 2nd-level approver field). */
-    isUK: function (sCountry) {
-      return sCountry === "UK";
     }
   };
 });

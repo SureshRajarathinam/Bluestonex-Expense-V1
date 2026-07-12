@@ -4,8 +4,10 @@ sap.ui.define([
   "sap/ui/core/Fragment",
   "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
-  "sap/ui/model/FilterOperator"
-], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator) {
+  "sap/ui/model/FilterOperator",
+  "sap/m/MessageBox",
+  "sap/m/MessageToast"
+], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
   "use strict";
 
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.Claims", {
@@ -54,19 +56,33 @@ sap.ui.define([
       return oDate.getFullYear() + "-" + p(oDate.getMonth() + 1) + "-" + p(oDate.getDate());
     },
 
-    /** Apply the Look-up card filters (status, country, period, claim no). */
-    onGo: function () {
+    /**
+     * Live look-up: one free-text box searches across several fields (claim
+     * number, employee name/number) combined with the Status / Country / Period
+     * filters. Runs on every keystroke / dropdown change (no "Go" button).
+     */
+    onSearch: function () {
       var aFilters = [];
       var sStatus = this.byId("fStatus").getSelectedKey();
       var sCountry = this.byId("fCountry").getSelectedKey();
-      var sNo = (this.byId("fClaimNo").getValue() || "").trim();
+      var sQuery = (this.byId("fSearch").getValue() || "").trim();
       var oPeriod = this.byId("fPeriod");
       var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
 
       if (sStatus) { aFilters.push(new Filter("status", FilterOperator.EQ, sStatus)); }
       if (sCountry) { aFilters.push(new Filter("country", FilterOperator.EQ, sCountry)); }
-      if (sNo) { aFilters.push(new Filter("claimNumber", FilterOperator.Contains, sNo)); }
       if (dFrom && dTo) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(dFrom), this._ymd(dTo))); }
+      if (sQuery) {
+        // OR across the searchable text fields — a single box matches any of them.
+        aFilters.push(new Filter({
+          filters: [
+            new Filter("claimNumber", FilterOperator.Contains, sQuery),
+            new Filter("employeeName", FilterOperator.Contains, sQuery),
+            new Filter("employeeNumber", FilterOperator.Contains, sQuery)
+          ],
+          and: false
+        }));
+      }
 
       this.byId("claimsTable").getBinding("items").filter(aFilters);
     },
@@ -74,6 +90,31 @@ sap.ui.define([
     onOpenClaim: function (oEvent) {
       var oCtx = oEvent.getSource().getBindingContext();
       this.navTo("detail", { key: encodeURIComponent(this._predicateOf(oCtx.getPath())) });
+    },
+
+    /**
+     * Delete a claim the employee no longer needs. Only offered on Draft /
+     * Returned / Rejected rows (see the view's visible binding); the backend
+     * @restrict still scopes DELETE to the claim's own creator. Confirms first.
+     */
+    onDeleteClaim: function (oEvent) {
+      var that = this;
+      var oCtx = oEvent.getSource().getBindingContext();
+      if (!oCtx) { return; }
+      var sNo = oCtx.getProperty("claimNumber") || this.getText("deleteThisDraft");
+      MessageBox.warning(this.getText("confirmDeleteClaim", [sNo]), {
+        title: this.getText("confirmDeleteTitle"),
+        actions: [MessageBox.Action.DELETE, MessageBox.Action.CANCEL],
+        emphasizedAction: MessageBox.Action.DELETE,
+        onClose: function (sAction) {
+          if (sAction !== MessageBox.Action.DELETE) { return; }
+          that.getView().setBusy(true);
+          oCtx.delete().then(function () {
+            that.getView().setBusy(false);
+            MessageToast.show(that.getText("msgClaimDeleted"));
+          }).catch(function (e) { that.getView().setBusy(false); that.showError(e); });
+        }
+      });
     },
 
     // ---- Create flow --------------------------------------------------------

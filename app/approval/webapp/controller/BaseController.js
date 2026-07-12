@@ -65,6 +65,39 @@ sap.ui.define([
     },
 
     /**
+     * Resolved base URL of the OData service, always ending in "/".
+     *
+     * Raw fetch() calls (PDF export, dashboardStats) MUST NOT use a literal
+     * relative path like "approval/": under the Work Zone managed approuter the
+     * app is mounted under a generated prefix, and a relative fetch resolves
+     * against document.baseURI (the approuter shell page), not the app mount →
+     * 404. The OData V4 model resolves its dataSource uri correctly for that
+     * mount, so we borrow its already-resolved service URL as the fetch base.
+     */
+    _serviceUrl: function () {
+      var oModel = this.getOwnerComponent().getModel();
+      var sUrl = (oModel && oModel.getServiceUrl && oModel.getServiceUrl()) || "approval/";
+      return /\/$/.test(sUrl) ? sUrl : sUrl + "/";
+    },
+
+    /**
+     * Download URL for an expense item's receipt (active, non-draft projection),
+     * resolved against the service base so it works under the managed approuter.
+     * Must be built here (not in the static formatter) — the formatter has no
+     * controller `this` and so cannot reach the resolved service URL.
+     */
+    receiptUrl: function (sItemId) {
+      return sItemId ? this._serviceUrl() + "ApprovalItems(" + sItemId + ")/receipt" : "";
+    },
+
+    /** Open the receipt for the row that fired the event, in a new tab. */
+    onOpenReceipt: function (oEvent) {
+      var oCtx = oEvent.getSource().getBindingContext();
+      var sId = oCtx && oCtx.getProperty("ID");
+      if (sId) { window.open(this.receiptUrl(sId), "_blank"); }
+    },
+
+    /**
      * Trigger the server-side PDF export (ApprovalService.exportClaimsPdf).
      * sScope: 'approvals' | 'history'. oState: { status, country, claimNo, from, to }.
      */
@@ -72,7 +105,7 @@ sap.ui.define([
       var s = oState || {};
       var lit = function (v) { return (v == null || v === "") ? "null" : "'" + String(v).replace(/'/g, "''") + "'"; };
       var dt = function (v) { return v ? v : "null"; };
-      var sUrl = "approval/exportClaimsPdf(" +
+      var sUrl = this._serviceUrl() + "exportClaimsPdf(" +
         "scope='" + sScope + "'," +
         "status=" + lit(s.status) + "," +
         "country=" + lit(s.country) + "," +

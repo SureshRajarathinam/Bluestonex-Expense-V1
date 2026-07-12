@@ -9,15 +9,30 @@ sap.ui.define([
 ], function (BaseController, formatter, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
   "use strict";
 
-  var SVC = "expense";
-
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.Claim", {
 
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, currency: "GBP" }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP" }), "ui");
+      // Which expense types always require a receipt (code → true). Loaded once so
+      // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
+      this._receiptTypes = {};
+      this._loadReceiptTypes();
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
+    },
+
+    // Cache the per-type "requiresReceipt" flags from the read-only ExpenseTypes
+    // list so client validation matches the backend without a per-submit fetch.
+    _loadReceiptTypes: function () {
+      var that = this;
+      var oList = this.getModel().bindList("/ExpenseTypes");
+      oList.requestContexts(0, 100).then(function (aCtx) {
+        aCtx.forEach(function (c) {
+          var o = c.getObject();
+          that._receiptTypes[o.code] = !!o.requiresReceipt;
+        });
+      }).catch(function () { /* non-fatal: server still enforces on submit */ });
     },
 
     onItemsUpdated: function (oEvent) {
@@ -82,16 +97,19 @@ sap.ui.define([
         new Filter("country", FilterOperator.EQ, sCountry)
       ]);
       oList.requestContexts(0, 1).then(function (aCtx) {
-        var rate = 0, mileageRate = 0;
+        var rate = 0, mileageRate = 0, threshold = 25;
         if (aCtx.length) {
           var p = aCtx[0].getObject();
           rate = Number(sCountry === "IN" ? p.gstRate : p.vatRate) || 0;
           // Live per-country mileage rate — the new-row default comes from here,
           // not a hardcoded literal (mirrors the server-authoritative policy).
           mileageRate = Number(p.mileageRate) || 0;
+          // Receipt threshold drives the client-side "attach a receipt" gate.
+          if (p.receiptThreshold != null) { threshold = Number(p.receiptThreshold) || 0; }
         }
         oUi.setProperty("/stdRate", rate);
         oUi.setProperty("/mileageRate", mileageRate);
+        oUi.setProperty("/receiptThreshold", threshold);
       }).catch(function () { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); });
     },
 
@@ -130,13 +148,27 @@ sap.ui.define([
     _getToken: function () {
       if (this._csrf) { return Promise.resolve(this._csrf); }
       var that = this;
-      return fetch(SVC + "/", { method: "HEAD", headers: { "x-csrf-token": "Fetch" }, credentials: "same-origin" })
+      return fetch(this._serviceUrl(), { method: "HEAD", headers: { "x-csrf-token": "Fetch" }, credentials: "same-origin" })
         .then(function (r) { that._csrf = r.headers.get("x-csrf-token"); return that._csrf; });
     },
 
     _itemUrl: function (oCtx) {
-      return SVC + "/MyClaimItems(ID=" + oCtx.getProperty("ID") +
+      return this._serviceUrl() + "MyClaimItems(ID=" + oCtx.getProperty("ID") +
         ",IsActiveEntity=" + oCtx.getProperty("IsActiveEntity") + ")/receipt";
+    },
+
+    // Supported receipt formats. Kept deliberately narrow (image + PDF) so the
+    // backend LargeBinary never receives an unviewable blob; validated both via
+    // the picker's `accept` and an explicit check on selection (accept is only a
+    // hint — a user can still choose "All files").
+    _receiptAccept: ".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf",
+    _isAllowedReceipt: function (oFile) {
+      var sType = (oFile.type || "").toLowerCase();
+      var sName = (oFile.name || "").toLowerCase();
+      var aOkTypes = ["image/png", "image/jpeg", "application/pdf"];
+      var bOkExt = /\.(png|jpe?g|pdf)$/.test(sName);
+      // Some browsers report an empty type for known extensions — accept on extension.
+      return (sType && aOkTypes.indexOf(sType) > -1) || (!sType && bOkExt) || (bOkExt && aOkTypes.indexOf(sType) > -1);
     },
 
     onUploadReceipt: function (oEvent) {
@@ -148,7 +180,7 @@ sap.ui.define([
       var that = this;
       var oInput = document.createElement("input");
       oInput.type = "file";
-      oInput.accept = "image/*,application/pdf";
+      oInput.accept = this._receiptAccept;
       oInput.style.display = "none";
       // Must be in the DOM for the file picker to open reliably across browsers.
       document.body.appendChild(oInput);
@@ -156,7 +188,12 @@ sap.ui.define([
       oInput.onchange = function () {
         var oFile = oInput.files && oInput.files[0];
         cleanup();
-        if (oFile) { that._putReceipt(oCtx, oFile); }
+        if (!oFile) { return; }
+        if (!that._isAllowedReceipt(oFile)) {
+          MessageBox.error(that.getText("msgReceiptFormat"));
+          return;
+        }
+        that._putReceipt(oCtx, oFile);
       };
       // Safety net: remove the orphan input if the dialog is cancelled.
       window.addEventListener("focus", function onFocus() {
@@ -308,6 +345,14 @@ sap.ui.define([
       ];
       var sReq = this.getText("fieldRequired");
       var aBadRows = [];
+      // Receipt gate (mirrors srv/lib/validate.js Rule 4): a receipt is required
+      // when the expense type always needs one OR the gross is at/above the policy
+      // threshold. Flag such rows that have no attachment so the user gets an
+      // immediate, specific popup instead of a server 422 after submit.
+      var aReceiptRows = [];
+      var oUi = this.getView().getModel("ui");
+      var nThreshold = Number(oUi && oUi.getProperty("/receiptThreshold"));
+      var oTypes = this._receiptTypes || {};
       aItems.forEach(function (oItem, i) {
         var aCells = oItem.getCells();
         var oItemCtx = oItem.getBindingContext();
@@ -324,8 +369,16 @@ sap.ui.define([
           }
         });
         if (bRowBad) { aBadRows.push(i + 1); }
+        if (oItemCtx) {
+          var gross = Number(oItemCtx.getProperty("grossAmount")) || 0;
+          var sType = oItemCtx.getProperty("expenseType_code");
+          var bNeedsReceipt = !!oTypes[sType] || (nThreshold >= 0 && gross >= nThreshold);
+          var bHasReceipt = !!oItemCtx.getProperty("receiptAttached") || !!oItemCtx.getProperty("receiptFileName");
+          if (bNeedsReceipt && !bHasReceipt) { aReceiptRows.push(i + 1); }
+        }
       });
       if (aBadRows.length) { aProblems.push(this.getText("msgItemFieldsMissing", [aBadRows.join(", ")])); }
+      if (aReceiptRows.length) { aProblems.push(this.getText("msgReceiptRequired", [aReceiptRows.join(", ")])); }
       return aProblems;
     },
 

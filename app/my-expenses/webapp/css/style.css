@@ -79,3 +79,8 @@ html, body, .sapUiBody, .bsxBody,
 /* ---- Tables -------------------------------------------------------------- */
 .bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
 .bsxTable .sapMLIB:hover { background: #f5f8fc; }
+
+/* Date pickers inside item/mileage rows: guarantee room for the value + the
+   calendar button so the field is comfortable to pick from (was cramped). */
+.bsxDateCell { min-width: 11rem; }
+.bsxDateCell .sapMInputBaseInner { padding-right: 0.25rem; }

@@ -14,8 +14,13 @@
         <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
         <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
           <VBox>
+            <Label text="{i18n>searchLabel}" class="bsxFieldLbl" />
+            <SearchField id="fSearch" width="100%" placeholder="{i18n>searchPlaceholderMulti}"
+              search=".onSearch" liveChange=".onSearch" />
+          </VBox>
+          <VBox>
             <Label text="{i18n>filterStatus}" class="bsxFieldLbl" />
-            <Select id="fStatus" width="100%">
+            <Select id="fStatus" width="100%" change=".onSearch">
               <core:Item key="" text="{i18n>all}" />
               <core:Item key="Draft" text="Draft" />
               <core:Item key="Submitted" text="Submitted" />
@@ -27,7 +32,7 @@
           </VBox>
           <VBox>
             <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
-            <Select id="fCountry" width="100%">
+            <Select id="fCountry" width="100%" change=".onSearch">
               <core:Item key="" text="{i18n>all}" />
               <core:Item key="UK" text="United Kingdom" />
               <core:Item key="IN" text="India" />
@@ -35,15 +40,7 @@
           </VBox>
           <VBox>
             <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
-            <DateRangeSelection id="fPeriod" width="100%" />
-          </VBox>
-          <VBox>
-            <Label text="{i18n>searchPlaceholder}" class="bsxFieldLbl" />
-            <Input id="fClaimNo" width="100%" placeholder="{i18n>searchPlaceholder}" submit=".onGo" />
-          </VBox>
-          <VBox justifyContent="End">
-            <Label text=" " />
-            <Button text="{i18n>btnGo}" type="Emphasized" icon="sap-icon://search" press=".onGo" />
+            <DateRangeSelection id="fPeriod" width="100%" change=".onSearch" />
           </VBox>
         </l:Grid>
       </VBox>
@@ -85,6 +82,7 @@
             <Column hAlign="End"><Text text="{i18n>colNet}" /></Column>
             <Column hAlign="End"><Text text="{i18n>colTax}" /></Column>
             <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+            <Column hAlign="Center" width="4rem"><Text text="" /></Column>
           </columns>
           <items>
             <ColumnListItem type="Navigation" press=".onOpenClaim">
@@ -102,6 +100,12 @@
                 <ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+                <!-- Delete: only for claims that are with the employee (Draft /
+                     Returned) or terminally Rejected — never an in-flight or
+                     Approved claim (would orphan an approver queue / audit trail). -->
+                <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger"
+                  tooltip="{i18n>btnDelete}" press=".onDeleteClaim"
+                  visible="{= ${status} === 'Draft' || ${status} === 'Returned' || ${status} === 'Rejected' }" />
               </cells>
             </ColumnListItem>
           </items>
