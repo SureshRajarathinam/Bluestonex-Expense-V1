@@ -11,6 +11,25 @@ const LOG = cds.log('approval-service');
 // Bound-action key: object {ID,...} for draft entities, raw scalar otherwise.
 const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'object' ? p.ID : p; };
 
+// All identities the current caller might be known by, lower-cased. Needed because
+// the deployed IdP sets `req.user.id` to the logon name (e.g. "Srajarathinam") while
+// the Approval Workflow config stores the approver's EMAIL — so a plain
+// `req.user.id === approverEmail` check fails in Work Zone though it passes locally
+// (mock login id IS the email). We gather id + every email/user_name claim available.
+function callerIdentities(req) {
+  const set = new Set();
+  const add = (v) => { if (v != null && String(v).trim()) set.add(String(v).trim().toLowerCase()); };
+  add(req.user && req.user.id);
+  const attr = (req.user && req.user.attr) || {};
+  [attr.email, attr.mail, attr.userName, attr.user_name].forEach((v) => Array.isArray(v) ? v.forEach(add) : add(v));
+  try { const ai = req.http && req.http.req && req.http.req.authInfo; if (ai && ai.getEmail) add(ai.getEmail()); } catch { /* not xsuaa */ }
+  try { const p = req.user && req.user.tokenInfo && req.user.tokenInfo.getPayload && req.user.tokenInfo.getPayload(); if (p) { add(p.email); add(p.user_name); } } catch { /* no token */ }
+  return set;
+}
+// True when the caller is the configured approver `email` (matched against any of
+// their known identities, case-insensitively).
+const isConfiguredApprover = (req, email) => !!email && callerIdentities(req).has(String(email).trim().toLowerCase());
+
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
@@ -38,7 +57,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // can approve their own claim. The per-level checks below enforce that only
       // the configured first/second approver can act; everyone else gets 403.
       if (claim.status === 'Submitted') {
-        if (me !== wf.firstApprover)
+        if (!isConfiguredApprover(req, wf.firstApprover))
           return req.error(403, `You are not the first-level approver for ${claim.country}.`);
 
         if (claim.country === 'UK') {
@@ -57,7 +76,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           await audit.record({ userId: me, action: 'Approved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Single-level (India) approval complete` });
         }
       } else if (claim.status === 'FirstApproved') {
-        if (me !== wf.secondApprover)
+        if (!isConfiguredApprover(req, wf.secondApprover))
           return req.error(403, `You are not the second-level approver for ${claim.country}.`);
         await UPDATE(CLAIMS, ID).with({
           status: 'Approved', level2ApprovedBy: me, level2ApprovedAt: now, level2Comment: comment || ''
@@ -87,8 +106,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // Authority governed SOLELY by workflow membership (see approve): the
       // configured approver may return their own claim; anyone else gets 403.
       const allowed =
-        (claim.status === 'Submitted' && me === wf?.firstApprover) ||
-        (claim.status === 'FirstApproved' && me === wf?.secondApprover);
+        (claim.status === 'Submitted' && isConfiguredApprover(req, wf?.firstApprover)) ||
+        (claim.status === 'FirstApproved' && isConfiguredApprover(req, wf?.secondApprover));
       if (!allowed) return req.error(403, 'You are not the assigned approver for this claim.');
 
       // Decline = "return for rework": the claim goes back to the employee
@@ -267,7 +286,12 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // "Declined" bucket = returned-for-rework (current flow) + legacy Rejected,
       // so the figure stays truthful across old and new data.
       const isDeclined = (r) => r.status === 'Returned' || r.status === 'Rejected';
-      const dateOf = (r) => ymd(r.submittedAt) || ymd(r.claimPeriod);
+      // Dashboard date basis = the EXPENSE/TRAVEL period (claimPeriod), not the
+      // submission date — so the Trend and every window-scoped figure reflect WHEN
+      // the expense occurred. A Jan–Feb trip submitted in July lands in Jan/Feb,
+      // not July. Falls back to submittedAt only if claimPeriod is somehow absent
+      // (it is @mandatory, so that's just defensive).
+      const dateOf = (r) => ymd(r.claimPeriod) || ymd(r.submittedAt);
       const inCountry = (r) => (!country || country === 'ALL') ? true : r.country === country;
       const inWindow = (r) => {
         const d = dateOf(r);

@@ -80,10 +80,11 @@
     </FlexBox>
 
     <!-- ── Layer 3 · Approved vs Rejected + Trend ──────────────────────────── -->
-    <!-- alignItems="Start": cards size to their own content so the shorter cards
-         (e.g. Trend) don't stretch to match the taller geo map, which left a large
-         empty band under the Trend footer. -->
-    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Start" class="bsxCardRow" renderType="Bare">
+    <!-- alignItems="Stretch": cards in a row share one (even) height. The Trend
+         card's footer is pinned to the card bottom (.bsxChartCard > .bsxCardFoot
+         { margin-top:auto }) so the leftover height sits as headroom under the
+         chart instead of a dangling gap beneath the footer. -->
+    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />

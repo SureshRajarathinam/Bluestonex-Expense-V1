@@ -69,11 +69,12 @@
         <Label text="{= ${i18n>lblMileage} + (${ui>/isUK} ? ' — £/mile' : ' — ₹/mile') }" />
         <Input value="{mileageRate}" type="Number" editable="{ui>/editing}" />
         <Label text="{= ${i18n>lblHotel} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
-        <Input value="{hotelDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <!-- No type="Number" (see my-expenses): grouped values ≥ 1000 wouldn't stick. -->
+        <Input value="{hotelDailyLimit}" editable="{ui>/editing}" />
         <Label text="{= ${i18n>lblMeal} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
-        <Input value="{mealDailyLimit}" type="Number" editable="{ui>/editing}" />
+        <Input value="{mealDailyLimit}" editable="{ui>/editing}" />
         <Label text="{= ${i18n>lblThreshold} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
-        <Input value="{receiptThreshold}" type="Number" editable="{ui>/editing}" />
+        <Input value="{receiptThreshold}" editable="{ui>/editing}" />
       </f:content>
     </f:SimpleForm>
     <Text text="{i18n>ratesHint}" class="bsxCardPad" />

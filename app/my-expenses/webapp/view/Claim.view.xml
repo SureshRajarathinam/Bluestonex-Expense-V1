@@ -89,9 +89,9 @@
             <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itDestination}" /></Column>
             <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itReason}" required="true" /></Column>
             <Column width="8.5rem"><Label text="{i18n>itTaxType}" /></Column>
-            <Column width="7rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
-            <Column width="6rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
-            <Column width="6rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column width="7.5rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
+            <Column width="7.5rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
             <Column width="6.5rem" hAlign="Center"><Label text="{i18n>itAttachment}" /></Column>
             <Column width="3rem" hAlign="Center"><Text text="" /></Column>
           </columns>
@@ -109,7 +109,11 @@
                   items="{ path: '/VATTypes', templateShareable: false }">
                   <core:Item key="{code}" text="{description}" />
                 </Select>
-                <Input value="{grossAmount}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <!-- No type="Number": an HTML number input can't hold a grouped value
+                     (e.g. "9,891.00"), which capped amounts at 3 digits. A text input
+                     bound to the OData Decimal(15,2) type accepts large amounts and
+                     formats 2 decimals per the locale/currency. -->
+                <Input value="{grossAmount}" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center" justifyContent="Center">
@@ -160,8 +164,8 @@
                   <core:Item key="Hybrid" text="Hybrid" />
                   <core:Item key="Electric" text="Electric" />
                 </Select>
-                <Input value="{milesCount}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
-                <Input value="{ratePerMile}" type="Number" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{milesCount}" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ratePerMile}" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
               </cells>
             </ColumnListItem>

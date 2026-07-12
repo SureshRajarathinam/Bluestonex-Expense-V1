@@ -184,3 +184,17 @@ test('trend integrity: approved/returned never exceed submitted per month', asyn
   const totalReturned = r.data.trend.reduce((s, t) => s + (t.rejected || 0), 0);
   assert.equal(totalReturned, 1, 'trend sums one returned claim across months');
 });
+
+test('trend buckets by the EXPENSE period (claimPeriod), not the submission month', async () => {
+  // Submitted "now" (≈ test run, month 07) but with a January claimPeriod. A
+  // submittedAt-based trend would bucket it in the run month; a claimPeriod-based
+  // trend must place it in 2026-01.
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-01-15' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-01-10', expenseType_code: 'HOTEL', reasonForTrip: 'Jan trip', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `Jan-period claim submit failed: ${s.status}`);
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'UK'), { auth: MGR });
+  assert.ok(r.data.trend.some((t) => t.month === '2026-01'), `trend should carry a 2026-01 bucket: ${JSON.stringify(r.data.trend.map((t) => t.month))}`);
+});
