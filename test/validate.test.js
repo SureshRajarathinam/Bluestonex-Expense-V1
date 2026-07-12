@@ -50,14 +50,17 @@ test('rule 4: receipt mandatory at/above threshold', () => {
   assert.ok(!hasErr(run(o), 'receipt is required'), 'receipt attached should clear it');
 });
 
-test('rule 5: meal daily limit enforced', () => {
+test('rule 5: meal daily limit is a SOFT flag (warns + flags, does not block)', () => {
   const o = base();
   o.items = [
     { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Lunch', grossAmount: 30, receiptAttached: true },
     { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Dinner', grossAmount: 25, receiptAttached: true }
   ];
   o.claim.totalGross = 55; // 55 > 40 meal limit for that day
-  assert.ok(hasErr(run(o), 'exceed the daily limit'));
+  const r = run(o);
+  assert.ok(!hasErr(r, 'daily limit'), 'a daily-limit breach must NOT block submission');
+  assert.ok(r.flags.some((f) => f.toLowerCase().includes('daily limit')), 'it is raised as a policy flag for the approver');
+  assert.ok(r.warnings.some((w) => w.toLowerCase().includes('daily limit')), 'and surfaced to the submitter as a warning');
 });
 
 test('rule 5: mileage rate cannot exceed policy rate', () => {

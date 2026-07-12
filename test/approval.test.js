@@ -113,6 +113,20 @@ test('per-country policy: India hotel above the UK limit still submits (own limi
   assert.ok(s.status < 400, `India hotel 500 should submit under India policy, got ${s.status}: ${JSON.stringify(s.data?.error)}`);
 });
 
+test('daily-limit breach is SOFT: the claim still submits and carries a policyFlag for the approver', async () => {
+  // Two same-day UK hotel lines totalling £260 > UK hotel daily limit (200).
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'N1', vatType: 'STD', grossAmount: 130, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'N2', vatType: 'STD', grossAmount: 130, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `over-limit claim should still submit (soft flag), got ${s.status}: ${JSON.stringify(s.data?.error)}`);
+  // The approver sees the flag on the claim.
+  const apv = await GET(`/approval/Approvals(${id})`, { auth: MGR });
+  assert.ok(apv.data.policyFlags && /daily limit/i.test(apv.data.policyFlags), `policyFlags should be set: ${JSON.stringify(apv.data.policyFlags)}`);
+});
+
 test('Workflow members: UK has 2 approvers, India has 1', async () => {
   const wf = await GET('/approval/WorkflowMembers', { auth: MGR });
   assert.equal(wf.status, 200);

@@ -107,7 +107,12 @@
           <items>
             <ColumnListItem>
               <cells>
-                <ObjectIdentifier title="{claimNumber}" />
+                <HBox alignItems="Center">
+                  <ObjectIdentifier title="{claimNumber}" />
+                  <!-- Small "limit crossed" mark — over a daily policy limit; hover for detail. -->
+                  <core:Icon src="sap-icon://alert" color="#b9541b" size="0.9rem" class="sapUiTinyMarginBegin"
+                    visible="{= !!${policyFlags} }" tooltip="{policyFlags}" />
+                </HBox>
                 <Text text="{employeeName}" />
                 <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
                 <Text text="{claimPeriod}" />

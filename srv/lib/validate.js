@@ -18,6 +18,9 @@ const blank = (s) => s == null || String(s).trim() === '';
 function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, vatTypes = new Set(), today }) {
   const errors = [];
   const warnings = [];
+  // Soft policy flags (a subset of warnings) — persisted on the claim so the
+  // approver sees "limit crossed" and decides. Never block submission.
+  const flags = [];
 
   const threshold = Number(policy.receiptThreshold ?? 25);
   const mealLimit = Number(policy.mealDailyLimit ?? 0);
@@ -93,12 +96,18 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     }
   }
 
-  // Rule 5 — daily meal / hotel limits
+  // Rule 5 — daily meal / hotel limits. SOFT (per requirement): a breach does NOT
+  // block submission. It raises a warning (shown to the employee) AND a flag
+  // (persisted on the claim) so the approver sees the overage and decides.
   for (const [d, sums] of Object.entries(perDay)) {
-    if (mealLimit > 0 && (sums.FOOD || 0) > mealLimit)
-      errors.push(`Meals on ${d} (£${round2(sums.FOOD)}) exceed the daily limit of £${mealLimit}.`);
-    if (hotelLimit > 0 && (sums.HOTEL || 0) > hotelLimit)
-      errors.push(`Hotel on ${d} (£${round2(sums.HOTEL)}) exceeds the daily limit of £${hotelLimit}.`);
+    if (mealLimit > 0 && (sums.FOOD || 0) > mealLimit) {
+      const msg = `Meals on ${d} (£${round2(sums.FOOD)}) exceed the daily limit of £${mealLimit}.`;
+      warnings.push(msg); flags.push(msg);
+    }
+    if (hotelLimit > 0 && (sums.HOTEL || 0) > hotelLimit) {
+      const msg = `Hotel on ${d} (£${round2(sums.HOTEL)}) exceeds the daily limit of £${hotelLimit}.`;
+      warnings.push(msg); flags.push(msg);
+    }
   }
 
   // ── Mileage entries ─────────────────────────────────────────────────────────
@@ -132,7 +141,7 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
   if (round2(claim.totalGross || 0) !== expected)
     errors.push(`Claim total (£${round2(claim.totalGross || 0)}) does not match the sum of line items (£${expected}).`);
 
-  return { errors, warnings };
+  return { errors, warnings, flags };
 }
 
 module.exports = { validateClaim };

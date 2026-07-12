@@ -58,17 +58,21 @@
       <f:content>
         <Label text="{i18n>lblPolicyName}" />
         <Input value="{policyName}" editable="{ui>/editing}" />
+        <!-- Currency is fixed per country (UK = GBP, India = INR); shown read-only
+             so the limit/rate figures below are never ambiguous. -->
+        <Label text="{i18n>lblCurrency}" />
+        <Text text="{= ${ui>/isUK} ? 'GBP (£)' : 'INR (₹)' }" />
         <Label text="{i18n>lblVat}" visible="{ui>/isUK}" required="true" />
         <Input value="{vatRate}" type="Number" editable="{ui>/editing}" visible="{ui>/isUK}" />
         <Label text="{i18n>lblGst}" visible="{ui>/isIN}" required="true" />
         <Input value="{gstRate}" type="Number" editable="{ui>/editing}" visible="{ui>/isIN}" />
-        <Label text="{i18n>lblMileage}" />
+        <Label text="{= ${i18n>lblMileage} + (${ui>/isUK} ? ' — £/mile' : ' — ₹/mile') }" />
         <Input value="{mileageRate}" type="Number" editable="{ui>/editing}" />
-        <Label text="{i18n>lblHotel}" />
+        <Label text="{= ${i18n>lblHotel} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
         <Input value="{hotelDailyLimit}" type="Number" editable="{ui>/editing}" />
-        <Label text="{i18n>lblMeal}" />
+        <Label text="{= ${i18n>lblMeal} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
         <Input value="{mealDailyLimit}" type="Number" editable="{ui>/editing}" />
-        <Label text="{i18n>lblThreshold}" />
+        <Label text="{= ${i18n>lblThreshold} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
         <Input value="{receiptThreshold}" type="Number" editable="{ui>/editing}" />
       </f:content>
     </f:SimpleForm>

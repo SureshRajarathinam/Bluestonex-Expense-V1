@@ -36,24 +36,31 @@ async function submitAs(auth, country) {
   return id;
 }
 
-// ── Separation of duties ──────────────────────────────────────────────────────
-test('SoD: the configured UK L1 approver cannot approve their OWN claim (403)', async () => {
-  const id = await submitAs(MGR, 'UK'); // manager IS the UK L1 approver, so only SoD blocks
+// ── Approval authority = workflow membership (not authorship) ─────────────────
+// Per requirement: whoever is the configured approver for the country may act,
+// even on a claim they created themselves. Non-approvers are still blocked (403),
+// covered by the "approver IDENTITY" test in approval.test.js.
+const statusOf = async (id, auth) => (await GET(`/expense/MyClaims${active(id)}`, { auth })).data.status;
+
+test('authority: the configured UK L1 approver CAN approve their own claim', async () => {
+  const id = await submitAs(MGR, 'UK'); // manager IS the UK L1 approver
   const res = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'self' }, { auth: MGR });
-  assert.equal(res.status, 403, `own-claim approval must be 403, got ${res.status}`);
-  assert.match(JSON.stringify(res.data).toLowerCase(), /own/, 'message explains it is your own claim');
+  assert.ok(res.status < 400, `own-claim approval by the configured approver should succeed, got ${res.status}`);
+  assert.equal(await statusOf(id, MGR), 'FirstApproved', 'UK L1 approval advances the claim');
 });
 
-test('SoD: the configured approver cannot reject/return their OWN claim (403)', async () => {
+test('authority: the configured approver CAN return their own claim', async () => {
   const id = await submitAs(MGR, 'UK');
-  const res = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'nope' }, { auth: MGR });
-  assert.equal(res.status, 403, `own-claim reject must be 403, got ${res.status}`);
+  const res = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'needs a fix' }, { auth: MGR });
+  assert.ok(res.status < 400, `own-claim return by the configured approver should succeed, got ${res.status}`);
+  assert.equal(await statusOf(id, MGR), 'Returned', 'return sends it back for rework');
 });
 
-test('SoD: India single-level approver cannot approve their OWN claim (403)', async () => {
+test('authority: India single-level approver CAN approve their own claim (→ Approved)', async () => {
   const id = await submitAs(IN1, 'IN'); // suresh IS the India L1 approver
   const res = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'self' }, { auth: IN1 });
-  assert.equal(res.status, 403, `own-claim approval (India) must be 403, got ${res.status}`);
+  assert.ok(res.status < 400, `own-claim approval (India) should succeed, got ${res.status}`);
+  assert.equal(await statusOf(id, IN1), 'Approved', 'single-level India approval completes it');
 });
 
 // ── Policy configuration validation boundaries (before('SAVE','Policies')) ────

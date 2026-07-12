@@ -5,6 +5,13 @@
 
   <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="46rem" contentHeight="36rem" verticalScrolling="true">
     <content>
+      <!-- Soft policy-limit flag: the claim was submitted over a daily limit. Shown
+           so the approver can weigh it and decide (approve anyway or return). -->
+      <MessageStrip
+        visible="{= !!${policyFlags} }"
+        type="Warning" showIcon="true" showCloseButton="false"
+        class="sapUiSmallMarginBottom"
+        text="{= ${i18n>limitCrossed} + ' ' + ${policyFlags} }" />
       <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" class="sapUiSmallMarginBottom">
         <f:content>
           <Label text="{i18n>colClaimNo}" /><Text text="{claimNumber}" />

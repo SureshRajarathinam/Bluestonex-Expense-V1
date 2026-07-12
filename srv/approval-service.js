@@ -32,11 +32,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const me = req.user.id;
       const now = new Date().toISOString();
 
-      // Separation of duties: Approvers/Admins also carry the Employee scope and can
-      // submit their own claims — they must never approve those. (403, not silent.)
-      if (me === claim.createdBy)
-        return req.error(403, 'You cannot approve your own expense claim.');
-
+      // Authority to approve is governed SOLELY by Approval Workflow membership
+      // (per requirement): whoever is configured as the country's approver may
+      // approve, regardless of who created the claim — so a configured approver
+      // can approve their own claim. The per-level checks below enforce that only
+      // the configured first/second approver can act; everyone else gets 403.
       if (claim.status === 'Submitted') {
         if (me !== wf.firstApprover)
           return req.error(403, `You are not the first-level approver for ${claim.country}.`);
@@ -84,9 +84,8 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       const me = req.user.id;
-      // Separation of duties: cannot reject/return your own claim (see approve).
-      if (me === claim.createdBy)
-        return req.error(403, 'You cannot reject your own expense claim.');
+      // Authority governed SOLELY by workflow membership (see approve): the
+      // configured approver may return their own claim; anyone else gets 403.
       const allowed =
         (claim.status === 'Submitted' && me === wf?.firstApprover) ||
         (claim.status === 'FirstApproved' && me === wf?.secondApprover);

@@ -122,15 +122,18 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
       // Rule 8 — block submission if any critical policy violation exists
       const ctx = await loadValidationContext(ID);
-      const { errors, warnings } = validateClaim({ ...ctx, today: today() });
+      const { errors, warnings, flags } = validateClaim({ ...ctx, today: today() });
       if (errors.length)
         return req.error(422, `This claim cannot be submitted:\n• ${errors.join('\n• ')}`);
-      // Rule 7 — non-blocking warnings (e.g. possible duplicates)
+      // Non-blocking warnings (duplicates + soft daily-limit breaches) shown to the submitter.
       warnings.forEach((w) => req.warn(w));
 
       await UPDATE(CLAIMS, ID).with({
         status: 'Submitted',
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        // Soft policy flags (daily-limit breaches) for the approver to see and
+        // decide on; cleared to null when a resubmitted claim is within limits.
+        policyFlags: (flags && flags.length) ? flags.join(' • ') : null
       });
 
       const employee = await SELECT.one.from(EMPLOYEES).where({ email: req.user.id });

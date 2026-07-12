@@ -135,7 +135,8 @@ test('rule 2 header (previously untested): periodEnd before claimPeriod is an er
   });
   assert.ok(hasErr(r, 'before the start') || hasErr(r, 'period end'), 'periodEnd<claimPeriod must error');
 });
-test('rule 5 BOUNDARY: meal spend exactly at the daily limit (£40) is allowed (> not >=)', () => {
+const hasFlag = (r, s) => (r.flags || []).some((f) => f.toLowerCase().includes(s.toLowerCase()));
+test('rule 5 BOUNDARY: meal spend exactly at the daily limit (£40) raises no flag (> not >=)', () => {
   const r = validateClaim({
     claim: { claimPeriod: '2026-02-28', totalGross: 40 },
     items: [
@@ -144,9 +145,10 @@ test('rule 5 BOUNDARY: meal spend exactly at the daily limit (£40) is allowed (
     ],
     mileage: [], policy: POLICY, types: TYPES, today: TODAY
   });
-  assert.ok(!hasErr(r, 'daily limit'), 'exactly at the limit must be allowed');
+  assert.ok(!hasErr(r, 'daily limit'), 'daily limits are soft — never block');
+  assert.ok(!hasFlag(r, 'daily limit'), 'exactly at the limit is not flagged');
 });
-test('rule 5 BOUNDARY: meal spend one penny over the limit (£40.01) errors', () => {
+test('rule 5 BOUNDARY: meal spend one penny over the limit (£40.01) is FLAGGED, not blocked', () => {
   const r = validateClaim({
     claim: { claimPeriod: '2026-02-28', totalGross: 40.01 },
     items: [
@@ -155,7 +157,8 @@ test('rule 5 BOUNDARY: meal spend one penny over the limit (£40.01) errors', ()
     ],
     mileage: [], policy: POLICY, types: TYPES, today: TODAY
   });
-  assert.ok(hasErr(r, 'daily limit'), 'over the limit must error');
+  assert.ok(!hasErr(r, 'daily limit'), 'over the limit must not block submission');
+  assert.ok(hasFlag(r, 'daily limit'), 'over the limit raises a soft policy flag');
 });
 
 // ═══ PART E — INTEGRATION edge cases (need the running service) ════════════════

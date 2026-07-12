@@ -96,6 +96,10 @@ entity CLAIMS : managed {
       level2Comment       : String(500);
       rejectedBy          : String(255);
       rejectionReason     : String(500);
+      // Soft policy flags raised at submit (e.g. daily meal/hotel limit breaches).
+      // NON-blocking: the claim still submits; the approver sees these and decides.
+      // Set on each submit, cleared (null) when the resubmitted claim is clean.
+      policyFlags         : String(1000);
 
       items               : Composition of many ITEMS
                               on items.claim = $self;

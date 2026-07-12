@@ -30,7 +30,7 @@
           items="{ path: '/Countries', templateShareable: false }">
           <core:Item key="{code}" text="{description}" />
         </Select>
-        <Button text="{i18n>dashResetLayout}" icon="sap-icon://reset" type="Transparent" tooltip="{i18n>dashResetLayout}" press=".onResetLayout" />
+        <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" tooltip="{i18n>dashRefreshTip}" press=".onRefresh" />
       </OverflowToolbar>
     </VBox>
 
@@ -80,7 +80,10 @@
     </FlexBox>
 
     <!-- ── Layer 3 · Approved vs Rejected + Trend ──────────────────────────── -->
-    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+    <!-- alignItems="Start": cards size to their own content so the shorter cards
+         (e.g. Trend) don't stretch to match the taller geo map, which left a large
+         empty band under the Trend footer. -->
+    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Start" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
