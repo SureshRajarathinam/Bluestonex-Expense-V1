@@ -197,10 +197,16 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
+      // Default window = the FULL current calendar year (Jan 1 – Dec 31) so the
+      // Trend and every metric span every month that has claim-period records —
+      // not a rolling 6-month / current-month window (which showed "July only").
+      // Users can still narrow via the range picker or the D/W/M/Y presets.
       var today = new Date();
-      var from = new Date(); from.setMonth(from.getMonth() - 5); from.setDate(1);
+      var yr = today.getFullYear();
+      var from = new Date(yr, 0, 1);   // 1 Jan this year
+      var to = new Date(yr, 11, 31);   // 31 Dec this year
       this._m = new JSONModel({
-        fromDate: from, toDate: today, preset: "", country: "UK", cur: "£",
+        fromDate: from, toDate: to, preset: "", country: "UK", cur: "£",
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
@@ -290,11 +296,31 @@ sap.ui.define([
       m.setProperty("/geoSvgHtml", geoChart(geoRows, gmax)); // fallback body (see view comment)
       m.setProperty("/geoLegendHtml", geoFooter(geoRows));   // relevant per-country footer summary
 
-      var tr = (j.trend || []).map(function (t) {
-        var parts = (t.month || "").split("-");
-        var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
-        return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
-      });
+      // Build a COMPLETE month-wise series spanning the selected range so the
+      // Trend chart shows every month across the year (all 12 for the default
+      // full-year window) — months without records render as empty columns
+      // rather than collapsing the axis to whatever few months have data.
+      var byMonth = {};
+      (j.trend || []).forEach(function (t) { if (t && t.month) { byMonth[t.month] = t; } });
+      var tr = [];
+      var f = m.getProperty("/fromDate"), tEnd = m.getProperty("/toDate");
+      if (f && tEnd && !isNaN(f) && !isNaN(tEnd)) {
+        var cur = new Date(f.getFullYear(), f.getMonth(), 1);
+        var last = new Date(tEnd.getFullYear(), tEnd.getMonth(), 1);
+        for (var guard = 0; cur <= last && guard < 120; guard++) {
+          var mm = cur.getMonth() + 1;
+          var key = cur.getFullYear() + "-" + (mm < 10 ? "0" : "") + mm;
+          var rec = byMonth[key] || {};
+          tr.push({ label: MON[cur.getMonth()], submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0 });
+          cur.setMonth(cur.getMonth() + 1);
+        }
+      } else {
+        tr = (j.trend || []).map(function (t) {
+          var parts = (t.month || "").split("-");
+          var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
+          return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
+        });
+      }
       m.setProperty("/trendHtml", trendChart(tr));
 
       // Trend footer — count summary over the selected range (mirrors the geo footer).

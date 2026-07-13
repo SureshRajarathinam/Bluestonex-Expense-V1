@@ -121,7 +121,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const { comment } = req.data;
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');
 
-      const claim = await SELECT.one.from(CLAIMS, ID);
+      // Expand the claimant's directory email so the "returned" notification can
+      // be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
+      // createdBy inside notifyReturned when the association is unresolved).
+      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => e('Email')); });
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (!['Submitted', 'FirstApproved'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be rejected (status '${claim.status}').`);

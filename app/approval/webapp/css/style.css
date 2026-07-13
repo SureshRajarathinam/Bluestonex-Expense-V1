@@ -171,7 +171,8 @@ html, body, .sapUiBody, .bsxBody,
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
-.bsxVChart--trend { gap: 1rem; justify-content: space-between; }
+.bsxVChart--trend { gap: 1rem; justify-content: flex-start; overflow-x: auto; padding-bottom: .25rem; }
+.bsxVChart--trend .bsxVGroup { flex: 0 0 auto; min-width: 2.5rem; }
 .bsxVGroup { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; height: 100%; }
 .bsxVBars { display: flex; align-items: flex-end; gap: .5rem; flex: 1 1 auto; width: 100%; justify-content: center; }
 .bsxVChart--trend .bsxVBars { gap: .25rem; }

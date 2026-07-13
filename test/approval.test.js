@@ -67,6 +67,7 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   const id = await submitUK();
   const noReason = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: '' }, { auth: MGR });
   assert.equal(noReason.status, 422, `got ${noReason.status}`);
+  const mark = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'Missing detail' }, { auth: MGR });
   assert.ok(ok.status < 400, `reject ${ok.status}`);
   // A decline now returns the claim to the employee (reworkable), not a terminal Rejected.
@@ -74,6 +75,14 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   assert.equal(claim.status, 'Returned');
   assert.equal(claim.rejectedBy, 'manager@bluestonex.com', 'records who returned it');
   assert.equal(claim.rejectionReason, 'Missing detail', 'records the reason');
+  // Rejection MUST email the employee who created the claim (requirement). The
+  // recipient is the authoritative directory email or, unresolved, the createdBy login.
+  const returnedMail = mailsSince(mark).find((mm) => /returned for rework/i.test(mm.subject || ''));
+  assert.ok(returnedMail, 'reject sends a "returned for rework" email to the employee');
+  assert.ok(
+    /bluestonex\.com$/i.test(String(returnedMail.to || '')),
+    `email addressed to the employee, got "${returnedMail.to}"`
+  );
 });
 
 test('RBAC: employee-only user blocked from /approval data (403); metadata still loads', async () => {

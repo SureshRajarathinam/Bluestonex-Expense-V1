@@ -281,9 +281,12 @@ class NotificationService {
                 `Please review, make the necessary changes and re-apply for approval.`
     });
 
-    // Targeted email to the employee who owns the claim (createdBy = their login).
+    // Targeted email to the employee who owns the claim. Prefer the authoritative
+    // directory address (EXP_EMPLOYEES.Email, expanded by the reject handler) and
+    // fall back to createdBy (their login) when the association is unresolved.
+    const employeeEmail = (claim.employee && claim.employee.Email) || claim.createdBy;
     await mailer.sendMail({
-      to:      claim.createdBy,
+      to:      employeeEmail,
       subject: `Expense Claim ${claim.claimNumber} returned for rework`,
       text:    `Your expense claim ${claim.claimNumber} has been returned by ${returnedBy}. ` +
                `Reason: ${reason || 'No reason provided'}. ` +
