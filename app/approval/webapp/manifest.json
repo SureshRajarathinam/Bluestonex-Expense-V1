@@ -56,9 +56,7 @@
         "sap.f": {},
         "sap.tnt": {},
         "sap.ui.layout": {},
-        "sap.ui.unified": {},
-        "sap.ui.vbm": {},
-        "sap.viz": {}
+        "sap.ui.unified": {}
       }
     },
     "resources": {

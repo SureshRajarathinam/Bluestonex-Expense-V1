@@ -93,6 +93,11 @@ test('seed claims then dashboardStats aggregates correctly (ALL)', async () => {
   assert.equal(gb.rejected, 1, 'GB rejected count');
 
   assert.ok(Array.isArray(d.trend) && d.trend.length >= 1, 'trend has months');
+  // Per-month APPROVED gross total, currency-separated — drives the wave card.
+  const feb = d.trend.find((tt) => tt.month === '2026-02');
+  assert.ok(feb, 'trend has the 2026-02 bucket');
+  assert.equal(Number(feb.gbp), 300, 'trend month approved gbp (120+180, excludes returned £60)');
+  assert.equal(Number(feb.inr), 118, 'trend month approved inr');
 
   // Top 5 claimants — APPROVED (reimbursed) amount per person, sorted desc.
   assert.ok(Array.isArray(d.topClaimants) && d.topClaimants.length >= 2 && d.topClaimants.length <= 5,

@@ -77,8 +77,6 @@ html, body, .sapUiBody, .bsxBody,
   border-top: 1px solid var(--bsx-line);
   padding: 0.6rem 1rem; color: var(--bsx-muted); font-size: 0.8125rem;
 }
-.bsxGeoFoot { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
-.bsxGeoFoot b { color: var(--bsx-text); }
 /* Trend card: a slim single-row summary bar. Keeps the divider (from .bsxCardFoot)
    but trims padding/height/text so it stays proportional to the chart. */
 .bsxTrendFoot {
@@ -139,7 +137,6 @@ html, body, .sapUiBody, .bsxBody,
 .bsxKpiOk.sapMTitle { color: var(--bsx-green); }
 .bsxKpiNo.sapMTitle { color: var(--bsx-red); }
 .bsxKpiWait.sapMTitle { color: var(--bsx-blue); }
-.bsxPopSpend.sapMText { color: var(--bsx-blue); font-weight: 700; font-size: 1.1rem; }
 .bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }
 
 /* ---- Dashboard: stable flex rows (collapse hidden tiles, auto-fit) ------- */
@@ -152,8 +149,6 @@ html, body, .sapUiBody, .bsxBody,
    to the card bottom so a short chart leaves headroom under the chart, not a gap
    under the footer. Only the Trend card carries a .bsxCardFoot here. */
 .bsxChartCard > .bsxCardFoot { margin-top: auto; }
-/* Half-width card: never grows past ~half a row, leaving the slot beside it free. */
-.bsxHalfCard { flex: 1 1 26rem; max-width: calc(50% - 2rem); min-width: 20rem; box-sizing: border-box; }
 /* Draggable dashboard cards: grab affordance + drop-indicator polish */
 .bsxDragCard { cursor: grab; }
 .bsxDragCard:active { cursor: grabbing; }
@@ -172,9 +167,11 @@ html, body, .sapUiBody, .bsxBody,
 .bsxLegend { display: flex; gap: 1.25rem; margin: .25rem 0 .75rem; color: var(--bsx-muted); font-size: .8125rem; }
 .bsxLegend span { display: inline-flex; align-items: center; }
 .bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
-.bsxDot--ok  { background: var(--bsx-green); }
-.bsxDot--no  { background: var(--bsx-red); }
-.bsxDot--sub { background: var(--bsx-blue-l); }
+/* Trend palette — monochrome blue (image-3 style): Approved darkest (primary),
+   Submitted mid, Returned pale. Shared by the legend dots and the bars below. */
+.bsxDot--ok  { background: #2f6fd6; }
+.bsxDot--no  { background: #b9d0f5; }
+.bsxDot--sub { background: #8fb4f2; }
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
@@ -187,9 +184,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVChart--trend .bsxVCol { width: 1.1rem; }
 .bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
 .bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
-.bsxVBar--ok  { background: var(--bsx-green); }
-.bsxVBar--no  { background: var(--bsx-red); }
-.bsxVBar--sub { background: var(--bsx-blue-l); }
+.bsxVBar--ok  { background: #2f6fd6; }
+.bsxVBar--no  { background: #b9d0f5; }
+.bsxVBar--sub { background: #8fb4f2; }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); text-align: center; }
 /* Year stamp under the month, shown only at range start + each year change so a
    multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without clutter. */
@@ -229,11 +226,33 @@ html, body, .sapUiBody, .bsxBody,
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   box-shadow: 0 0 0 1px var(--bsx-line);
 }
-.bsxDonutNum { font-size: 1.9rem; font-weight: 700; color: var(--bsx-text); line-height: 1.1; }
-.bsxDonutLbl { font-size: .8125rem; color: var(--bsx-muted); margin-top: .15rem; }
+.bsxDonutNum { font-size: 2.15rem; font-weight: 700; color: var(--bsx-blue); line-height: 1.05; }
+.bsxDonutLbl { font-size: .9375rem; font-weight: 600; color: var(--bsx-blue); margin-top: .1rem; }
 .bsxDonutLegend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; justify-content: center; margin-top: .85rem; }
 .bsxDonutLeg { display: inline-flex; align-items: center; font-size: .8125rem; color: var(--bsx-text); }
 .bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .4rem; flex-shrink: 0; }
+/* Per-category icon badge sitting on the ring at each segment's mid-angle. */
+.bsxDonutIcon {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bsx-card); box-shadow: 0 1px 5px rgba(20, 43, 69, 0.22);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bsx-blue); font-size: 15px; line-height: 1; pointer-events: none;
+}
+
+/* ---- Approved-spend wave (smooth SVG area + line, replaces the Geo card) --- */
+.bsxWaveScroll { overflow-x: auto; padding: .5rem .5rem 1rem; }
+.bsxWave { display: block; }
+.bsxWaveGridH { stroke: var(--bsx-line); stroke-width: 1; }
+.bsxWaveGridV { stroke: #eef1f6; stroke-width: 1; stroke-dasharray: 2 4; }
+.bsxWaveYlab  { fill: var(--bsx-muted); font-size: 10px; text-anchor: end; }
+.bsxWaveXlab  { fill: var(--bsx-muted); font-size: 11px; font-weight: 600; text-anchor: middle; }
+.bsxWaveXyear { fill: var(--bsx-muted); font-size: 9px; font-weight: 500; }
+.bsxWaveArea  { fill: url(#bsxWaveGrad); }
+.bsxWaveLine  { fill: none; stroke: #4c8bf5; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.bsxWaveDot   { fill: #ffffff; stroke: #4c8bf5; stroke-width: 2.5; cursor: pointer; }
+.bsxWaveG0 { stop-color: #4c8bf5; stop-opacity: .28; }
+.bsxWaveG1 { stop-color: #4c8bf5; stop-opacity: .02; }
 
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }

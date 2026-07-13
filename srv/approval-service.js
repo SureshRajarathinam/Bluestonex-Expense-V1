@@ -5,7 +5,7 @@ const notification = require('./notification');
 const audit = require('./lib/audit');
 const { renderClaimsPdf } = require('./lib/pdf');
 const { guardPaging } = require('./lib/paging');
-const employeeSource = require('./lib/employee-source');
+const { callerIdentities, resolveEmployee } = require('./lib/identity');
 
 const LOG = cds.log('approval-service');
 
@@ -19,29 +19,14 @@ const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'objec
 // Display name from a raw EMPLOYEES (USERS_MASTER-mirror) row: FName + ' ' + LName.
 const empName = (e) => e ? [e.FName, e.LName].filter(Boolean).join(' ').trim() : '';
 
-// All identities the current caller might be known by, lower-cased. Needed because
-// the deployed IdP sets `req.user.id` to the logon name (e.g. "Srajarathinam") while
-// the Approval Workflow config stores the approver's EMAIL — so a plain
-// `req.user.id === approverEmail` check fails in Work Zone though it passes locally
-// (mock login id IS the email). We gather id + every email/user_name claim available.
-function callerIdentities(req) {
-  const set = new Set();
-  const add = (v) => { if (v != null && String(v).trim()) set.add(String(v).trim().toLowerCase()); };
-  add(req.user && req.user.id);
-  const attr = (req.user && req.user.attr) || {};
-  [attr.email, attr.mail, attr.userName, attr.user_name].forEach((v) => Array.isArray(v) ? v.forEach(add) : add(v));
-  try { const ai = req.http && req.http.req && req.http.req.authInfo; if (ai && ai.getEmail) add(ai.getEmail()); } catch { /* not xsuaa */ }
-  try { const p = req.user && req.user.tokenInfo && req.user.tokenInfo.getPayload && req.user.tokenInfo.getPayload(); if (p) { add(p.email); add(p.user_name); } } catch { /* no token */ }
-  return set;
-}
 // True when the caller is the configured approver `email` (matched against any of
-// their known identities, case-insensitively).
+// their known identities, case-insensitively — see srv/lib/identity.js).
 const isConfiguredApprover = (req, email) => !!email && callerIdentities(req).has(String(email).trim().toLowerCase());
 
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
-    const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG } = cds.entities('EXP');
+    const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG, EMPLOYEES } = cds.entities('EXP');
 
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
     this.before('READ', guardPaging);
@@ -53,8 +38,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const email = req.user?.id || '';
       let fullName = '';
       try {
-        const id = await employeeSource.findByEmail(email);
-        fullName = (id && id.fullName) || '';
+        // Resolve by ANY caller identity (Work Zone id = logon name, not email).
+        const emp = await resolveEmployee(req, EMPLOYEES);
+        fullName = emp ? [emp.FName, emp.LName].filter(Boolean).join(' ').trim() : '';
       } catch (e) { LOG.warn('whoami lookup failed', e.message); }
       if (!fullName) fullName = nameFromEmail(email);
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -353,9 +339,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
-          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0 };
+          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0, gbp: 0, inr: 0 };
           t.submitted += 1;
-          if (r.status === 'Approved') t.approved += 1;
+          // Approved GROSS spend per month, currency-separated — feeds the wave card.
+          if (r.status === 'Approved') { t.approved += 1; if (isIN(r)) t.inr += g; else t.gbp += g; }
           else if (isDeclined(r)) t.rejected += 1;
           trendMap.set(mk, t);
         }
@@ -397,7 +384,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         spendByCategory: fin([...catMap.values()]),
         topClaimants: fin([...claimantMap.values()]).slice(0, 5),
         spendByCountry: [...geoMap.values()].map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) })),
-        trend: [...trendMap.values()].sort((a, b) => (a.month < b.month ? -1 : 1))
+        trend: [...trendMap.values()]
+          .map((t) => ({ ...t, gbp: round2(t.gbp), inr: round2(t.inr) }))
+          .sort((a, b) => (a.month < b.month ? -1 : 1))
       };
     });
 

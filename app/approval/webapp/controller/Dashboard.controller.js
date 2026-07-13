@@ -2,10 +2,8 @@ sap.ui.define([
   "com/bluestonex/expense/approval/controller/BaseController",
   "com/bluestonex/expense/approval/model/formatter",
   "sap/ui/model/json/JSONModel",
-  "sap/m/ResponsivePopover",
-  "sap/m/VBox",
-  "sap/m/Text"
-], function (BaseController, formatter, JSONModel, ResponsivePopover, VBox, MText) {
+  "sap/ui/core/IconPool"
+], function (BaseController, formatter, JSONModel, IconPool) {
   "use strict";
 
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -35,43 +33,74 @@ sap.ui.define([
   }
   function pct(v, max) { return Math.max(0, Math.round((v / (max || 1)) * 100)); }
 
-  // Geographic card: ISO alpha-2 → display name, tier colours.
-  var GEO_NAMES = { GB: "United Kingdom", IN: "India" };
-  // Card footer: a concise, relevant summary of the in-scope country (spend · claims
-  // · approved · returned) — replaces the old High/Medium/Low shading legend, which
-  // was meaningless for a single-country view.
-  function geoFooter(rows) {
-    if (!rows.length) { return ""; }
-    var items = rows.map(function (r) {
-      var sym = r.code === "IN" ? "₹" : "£";
-      var amt = r.code === "IN" ? r.inr : r.gbp;
-      return "<span><b>" + esc(GEO_NAMES[r.code] || r.country || r.code) + "</b> · " +
-        money(sym, amt) + " approved spend · " +
-        (r.claims || 0) + " claims · " + (r.approved || 0) + " approved · " +
-        (r.rejected || 0) + " returned</span>";
-    }).join("");
-    return "<div class='bsxCardFoot bsxGeoFoot'>" + items + "</div>";
+  // "Nice" upper bound for a value axis (1/2/5 × 10ⁿ, ≥ x). Used for the wave Y ticks.
+  function niceNum(x) {
+    if (!(x > 0)) { return 1; }
+    var exp = Math.floor(Math.log(x) / Math.LN10);
+    var f = x / Math.pow(10, exp);
+    var nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+    return nf * Math.pow(10, exp);
   }
-  // Shade tier from approved count (relative to the max in the current result set).
-  function geoTier(n, max) {
-    var r = (n || 0) / (max || 1);
-    // Rich blue family from the reference (dark #2f6fd6 · mid #4c8bf5 · light #a9c7f7).
-    return r > 0.66 ? "rgba(47,111,214,1)" : r > 0.33 ? "rgba(76,139,245,1)" : "rgba(169,199,247,1)";
+
+  // ── Approved-spend wave (replaces the Geo card) ─────────────────────────────
+  // Smooth SVG area + line of monthly APPROVED gross total. X = months (year stamp
+  // at boundaries, matching the trend); Y = amount in the active currency. Circle
+  // markers per month, dotted gridlines, 5 currency-formatted Y ticks. Scrolls
+  // horizontally when the range spans many months.
+  function waveChart(rows, cur) {
+    if (!rows.length) { return "<div class='bsxTlEmpty bsxCardPad'>No approved spend for the selected filters.</div>"; }
+    var n = rows.length;
+    var maxV = rows.reduce(function (mx, r) { return Math.max(mx, Number(r.value) || 0); }, 0);
+    var nm = niceNum(maxV || 1);
+    var PL = 54, PR = 16, PT = 16, PB = 34, H = 220, step = 76;
+    var innerW = Math.max(step, (n - 1) * step);
+    var W = PL + PR + innerW, plotB = H - PB, plotT = PT, plotH = plotB - plotT;
+    var xAt = function (i) { return n === 1 ? PL + innerW / 2 : PL + (i / (n - 1)) * innerW; };
+    var yAt = function (v) { return plotB - (Math.max(0, Number(v) || 0) / nm) * plotH; };
+    var pts = rows.map(function (r, i) { return { x: xAt(i), y: yAt(r.value) }; });
+    // Smooth line: Catmull-Rom → cubic bezier control points.
+    var d = "M" + pts[0].x.toFixed(1) + " " + pts[0].y.toFixed(1);
+    for (var k = 0; k < n - 1; k++) {
+      var p0 = pts[k - 1] || pts[k], p1 = pts[k], p2 = pts[k + 1], p3 = pts[k + 2] || p2;
+      var c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+      var c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+      d += " C" + c1x.toFixed(1) + " " + c1y.toFixed(1) + " " + c2x.toFixed(1) + " " + c2y.toFixed(1) + " " + p2.x.toFixed(1) + " " + p2.y.toFixed(1);
+    }
+    var area = d + " L" + pts[n - 1].x.toFixed(1) + " " + plotB + " L" + pts[0].x.toFixed(1) + " " + plotB + " Z";
+    var grid = "", ylab = "";
+    for (var t = 0; t <= 4; t++) {
+      var gy = plotB - (t / 4) * plotH;
+      grid += "<line x1='" + PL + "' y1='" + gy.toFixed(1) + "' x2='" + (W - PR) + "' y2='" + gy.toFixed(1) + "' class='bsxWaveGridH'/>";
+      ylab += "<text x='" + (PL - 8) + "' y='" + (gy + 3).toFixed(1) + "' class='bsxWaveYlab'>" + esc(money(cur, nm * t / 4)) + "</text>";
+    }
+    var vgrid = "", marks = "", xlab = "";
+    pts.forEach(function (p, i) {
+      vgrid += "<line x1='" + p.x.toFixed(1) + "' y1='" + plotT + "' x2='" + p.x.toFixed(1) + "' y2='" + plotB + "' class='bsxWaveGridV'/>";
+      marks += "<circle cx='" + p.x.toFixed(1) + "' cy='" + p.y.toFixed(1) + "' r='4.5' class='bsxWaveDot'><title>" +
+        esc(rows[i].label) + (rows[i].year ? " " + rows[i].year : "") + " · " + esc(money(cur, rows[i].value)) + "</title></circle>";
+      xlab += "<text x='" + p.x.toFixed(1) + "' y='" + (plotB + 16) + "' class='bsxWaveXlab'>" + esc(rows[i].label) +
+        (rows[i].year ? "<tspan x='" + p.x.toFixed(1) + "' dy='11' class='bsxWaveXyear'>" + esc(rows[i].year) + "</tspan>" : "") + "</text>";
+    });
+    return "<div class='bsxWaveScroll'><svg class='bsxWave' width='" + W + "' height='" + H + "' viewBox='0 0 " + W + " " + H + "'>" +
+      "<defs><linearGradient id='bsxWaveGrad' x1='0' y1='0' x2='0' y2='1'>" +
+        "<stop offset='0%' class='bsxWaveG0'/><stop offset='100%' class='bsxWaveG1'/></linearGradient></defs>" +
+      grid + vgrid +
+      "<path d='" + area + "' class='bsxWaveArea'/>" +
+      "<path d='" + d + "' class='bsxWaveLine'/>" +
+      marks + ylab + xlab +
+    "</svg></div>";
   }
-  // Inline fallback (only used if AnalyticMap renders blank): a compact per-country
-  // summary shaded by the same tier, currency-native — driven by the SAME /geo data.
-  function geoChart(rows, max) {
-    if (!rows.length) { return ""; }
-    var body = rows.map(function (r) {
-      var sym = r.code === "IN" ? "₹" : "£";
-      var amt = r.code === "IN" ? r.inr : r.gbp;
-      return "<div class='bsxHRow'>" +
-        "<span class='bsxHLabel'><i class='bsxDot' style='background:" + geoTier(r.approved, max) + "'></i>" +
-          esc(GEO_NAMES[r.code] || r.country || r.code) + "</span>" +
-        "<span class='bsxHVal'>" + (r.approved || 0) + " approved · " + money(sym, amt) + "</span>" +
-      "</div>";
-    }).join("");
-    return "<div class='bsxHBars'>" + body + "</div>";
+
+  // ── Donut category icons ────────────────────────────────────────────────────
+  // Expense-type code → sap-icon name, resolved to a font glyph via IconPool so it
+  // can be rendered inside the raw-HTML donut. Falls back to a receipt glyph.
+  var CAT_ICON = {
+    TRAIN: "train", PHONE: "iphone", PARKING: "car", FOOD: "meal", HOTEL: "bed",
+    TAXI: "car", FLIGHT: "flight", TOLLS: "road", CAR_HIRE: "car-rental", OTHER: "receipt"
+  };
+  function iconGlyph(code) {
+    var info = IconPool.getIconInfo(CAT_ICON[code] || "receipt") || IconPool.getIconInfo("receipt");
+    return info ? { ch: info.content, ff: info.fontFamily } : { ch: "", ff: "" };
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
@@ -138,7 +167,10 @@ sap.ui.define([
         "<span><i class='bsxDot bsxDot--no'></i>Returned</span>" +
       "</div>";
     var bars = rows.map(function (r) {
-      return "<div class='bsxVGroup'>" +
+      var tot = (r.submitted || 0) + (r.approved || 0) + (r.rejected || 0);
+      var tip = "Submitted " + (r.submitted || 0) + " · Approved " + (r.approved || 0) +
+                " · Returned " + (r.rejected || 0) + " · Total " + tot;
+      return "<div class='bsxVGroup' title='" + tip + "'>" +
         "<div class='bsxVBars'>" +
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--sub' style='height:" + pct(r.submitted, max) + "%'></div></div>" +
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--ok' style='height:" + pct(r.approved, max) + "%'></div></div>" +
@@ -152,8 +184,46 @@ sap.ui.define([
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart bsxVChart--trend'>" + bars + "</div></div>";
   }
 
-  // (The "Total reimbursed spend" donut is now a sap.viz VizFrame — see the view
-  // + _styleDonut — so the hand-rolled SVG donut builder was removed.)
+  // Total reimbursed spend donut: a graduated-blue ring (darkest = largest share),
+  // small inter-segment gaps, a per-category icon badge on each segment's mid-angle,
+  // and a big center label = the TOP category's share % + its name. Currency-native
+  // (approved spend by category). Rows: [{code, title, value}].
+  function donutChart(rows, cur) {
+    var data = rows.filter(function (r) { return r.value > 0; })
+      .sort(function (a, b) { return b.value - a.value; });
+    if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
+    var total = data.reduce(function (s, r) { return s + r.value; }, 0);
+    var top = data[0], topPct = total ? Math.round((top.value / total) * 100) : 0;
+    var R = 76, C = 2 * Math.PI * R, GAP = data.length > 1 ? 2.4 : 0, acc = 0;
+    var arcs = "", badges = "", legend = "";
+    data.forEach(function (r, i) {
+      var seg = (r.value / total) * C;
+      var col = blueShade(i, data.length);
+      var dashLen = Math.max(0.5, seg - GAP);
+      arcs += "<circle cx='100' cy='100' r='" + R + "' fill='none' stroke='" + col +
+        "' stroke-width='22' stroke-dasharray='" + dashLen.toFixed(2) + " " + (C - dashLen).toFixed(2) +
+        "' stroke-dashoffset='" + (-acc).toFixed(2) + "'></circle>";
+      // Icon badge at the segment's mid-angle (clockwise from top, screen coords).
+      var th = 2 * Math.PI * ((acc + seg / 2) / C);
+      var x = 100 + R * Math.sin(th), y = 100 - R * Math.cos(th);
+      var g = iconGlyph(r.code);
+      badges += "<div class='bsxDonutIcon' style='left:" + (x / 2).toFixed(1) + "%;top:" + (y / 2).toFixed(1) + "%'>" +
+        "<span style=\"font-family:'" + g.ff + "'\">" + g.ch + "</span></div>";
+      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
+      acc += seg;
+    });
+    return "<div class='bsxDonut'>" +
+      "<div class='bsxDonutRingWrap'>" +
+        "<svg class='bsxDonutSvg' viewBox='0 0 200 200'><g transform='rotate(-90 100 100)'>" + arcs + "</g></svg>" +
+        "<div class='bsxDonutHole'>" +
+          "<div class='bsxDonutNum'>" + topPct + "%</div>" +
+          "<div class='bsxDonutLbl'>" + esc(top.title) + "</div>" +
+        "</div>" +
+        badges +
+      "</div>" +
+      "<div class='bsxDonutLegend'>" + legend + "</div>" +
+    "</div>";
+  }
 
   // Rounded UK/India split pills for a KPI tile (respects the country filter).
   function pills(country, uk, inn) {
@@ -181,8 +251,7 @@ sap.ui.define([
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
-        claimantsHtml: "", catHtml: "", donutData: [], hasDonut: true, trendHtml: "", trendFootHtml: "",
-        geo: [], geoLegendHtml: "", geoSvgHtml: ""
+        claimantsHtml: "", catHtml: "", donutHtml: "", waveHtml: "", trendHtml: "", trendFootHtml: ""
       });
       this.getView().setModel(this._m, "dash");
       this._loaded = false;
@@ -240,36 +309,13 @@ sap.ui.define([
       m.setProperty("/claimantsHtml", claimantsChart(claimants, cur));
 
       var cat = (j.spendByCategory || []).map(function (c) {
-        return { title: c.description || c.code, value: pick(c) };
+        return { code: c.code, title: c.description || c.code, value: pick(c) };
       }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur));
 
-      // Total reimbursed spend donut (sap.viz VizFrame) — APPROVED spend by
-      // category in the active currency. VizFrame derives each slice's % share +
-      // legend; _styleDonut applies the per-currency labels/palette. hasDonut
-      // toggles the empty-state text.
-      m.setProperty("/donutData", cat.map(function (c) { return { title: c.title, value: c.value }; }));
-      m.setProperty("/hasDonut", cat.length > 0);
-      this._styleDonut(cur);
-
-      // Spend by country — shade each region by approved count (currency-agnostic;
-      // native-currency spend rides in the tooltip). Country filter already scoped it.
-      var geoRows = j.spendByCountry || [];
-      var gmax = geoRows.reduce(function (mx, r) { return Math.max(mx, r.approved || 0); }, 0);
-      m.setProperty("/geo", geoRows.map(function (r) {
-        var sym = r.code === "IN" ? "₹" : "£";
-        var amt = r.code === "IN" ? r.inr : r.gbp;
-        return {
-          code: r.code,
-          color: geoTier(r.approved, gmax),
-          tooltip: (GEO_NAMES[r.code] || r.country) + " · " + money(sym, amt) + " · " + (r.approved || 0) + " approved",
-          name: GEO_NAMES[r.code] || r.country || r.code,
-          spendText: money(sym, amt),
-          claims: r.claims || 0
-        };
-      }));
-      m.setProperty("/geoSvgHtml", geoChart(geoRows, gmax)); // fallback body (see view comment)
-      m.setProperty("/geoLegendHtml", geoFooter(geoRows));   // relevant per-country footer summary
+      // Total reimbursed spend donut — APPROVED spend by category in the active
+      // currency: graduated-blue ring, ring icons, center = top category % + name.
+      m.setProperty("/donutHtml", donutChart(cat, cur));
 
       // Build a COMPLETE month-wise series spanning the selected range so the
       // Trend chart shows every month across the year (all 12 for the default
@@ -278,31 +324,40 @@ sap.ui.define([
       var byMonth = {};
       (j.trend || []).forEach(function (t) { if (t && t.month) { byMonth[t.month] = t; } });
       var tr = [];
+      // `value` = approved GROSS total for the month in the active currency (feeds
+      // the wave card); counts feed the trend bars. (dCur is a Date — kept distinct
+      // from the currency `cur` above.)
+      var amt = function (rec) { return cur === "₹" ? (Number(rec.inr) || 0) : (Number(rec.gbp) || 0); };
       var f = m.getProperty("/fromDate"), tEnd = m.getProperty("/toDate");
       if (f && tEnd && !isNaN(f) && !isNaN(tEnd)) {
-        var cur = new Date(f.getFullYear(), f.getMonth(), 1);
-        var last = new Date(tEnd.getFullYear(), tEnd.getMonth(), 1);
+        var dCur = new Date(f.getFullYear(), f.getMonth(), 1);
+        var dLast = new Date(tEnd.getFullYear(), tEnd.getMonth(), 1);
         var prevYear = null;
-        for (var guard = 0; cur <= last && guard < 120; guard++) {
-          var mm = cur.getMonth() + 1;
-          var yr = cur.getFullYear();
+        for (var guard = 0; dCur <= dLast && guard < 120; guard++) {
+          var mm = dCur.getMonth() + 1;
+          var yr = dCur.getFullYear();
           var key = yr + "-" + (mm < 10 ? "0" : "") + mm;
           var rec = byMonth[key] || {};
           // Stamp the year under the month only at range start and each year change,
           // so a multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without
           // repeating the year on every column.
-          tr.push({ label: MON[cur.getMonth()], year: (yr !== prevYear ? String(yr) : ""), submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0 });
+          tr.push({ label: MON[dCur.getMonth()], year: (yr !== prevYear ? String(yr) : ""), submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0, value: amt(rec) });
           prevYear = yr;
-          cur.setMonth(cur.getMonth() + 1);
+          dCur.setMonth(dCur.getMonth() + 1);
         }
       } else {
         tr = (j.trend || []).map(function (t) {
           var parts = (t.month || "").split("-");
           var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
-          return { label: lbl, year: parts.length === 2 ? parts[0] : "", submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
+          return { label: lbl, year: parts.length === 2 ? parts[0] : "", submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0, value: amt(t) };
         });
       }
       m.setProperty("/trendHtml", trendChart(tr));
+
+      // Approved-spend wave — same month series, plotting the approved amount.
+      m.setProperty("/waveHtml", waveChart(tr.map(function (t) {
+        return { label: t.label, year: t.year, value: t.value || 0 };
+      }), cur));
 
       // Trend footer — count summary over the selected range (mirrors the geo footer).
       var tSub = tr.reduce(function (s, t) { return s + t.submitted; }, 0);
@@ -315,27 +370,6 @@ sap.ui.define([
 
       var has = ((ap.total || 0) + (rj.total || 0) + (aw.total || 0) + cat.length) > 0;
       m.setProperty("/hasData", has);
-    },
-
-    // Style the sap.viz donut once the VizFrame exists. Percentage data labels
-    // ("Category (xx.x%)"), a titled legend, the BluestoneX palette, single-slice
-    // highlight, and a currency-formatted tooltip. Called on every _apply
-    // (idempotent) so the currency toggle re-labels without a refetch.
-    _styleDonut: function (cur) {
-      var oVF = this.byId("spendDonut");
-      if (!oVF) { return; }
-      var sym = cur === "₹" ? "₹" : "£";
-      var legendTitle = (this.getText ? this.getText("dashSpendCat") : "Category") + " (" + sym + ")";
-      oVF.setVizProperties({
-        title: { visible: false },
-        plotArea: {
-          dataLabel: { visible: true },      // pie/donut default → "Category (xx.x%)"
-          colorPalette: DONUT_COLORS
-        },
-        legend: { visible: true, title: { visible: true, text: legendTitle } },
-        tooltip: { visible: true, formatString: sym + "#,##0" },
-        interaction: { selectability: { mode: "single" } }
-      });
     },
 
     // "Feb – Jul 2026 · 6 months" from the selected range.
@@ -373,32 +407,6 @@ sap.ui.define([
     onCountry: function (oEvent) {
       this._m.setProperty("/country", oEvent.getSource().getSelectedKey());
       this._load();
-    },
-
-    // Geo region click → popover with country · native-currency spend · claims.
-    onRegionClick: function (oEvent) {
-      var oCtx = oEvent.getSource().getBindingContext("dash");
-      var d = oCtx && oCtx.getObject();
-      if (!d) { return; }
-      if (!this._geoPop) {
-        this._geoPopModel = new JSONModel({});
-        this._geoPop = new ResponsivePopover({
-          placement: "Auto", showHeader: true, contentWidth: "16rem",
-          title: "{dashPop>/name}",
-          content: [ new VBox({ items: [
-            // Single bold-blue headline "amount · N claims" (matches the card design).
-            new MText({ text: "{dashPop>/headline}" }).addStyleClass("bsxPopSpend sapUiTinyMargin")
-          ] }) ]
-        });
-        this._geoPop.setModel(this._geoPopModel, "dashPop");
-        this.getView().addDependent(this._geoPop);
-      }
-      var claimsLbl = this.getText ? this.getText("dashGeoClaims") : "claims";
-      this._geoPopModel.setData({
-        name: d.name || d.code,
-        headline: (d.spendText || "") + " · " + (d.claims || 0) + " " + claimsLbl
-      });
-      this._geoPop.openBy(this.byId("geoMap"));
     },
 
     // ── Drag-and-drop card personalisation (persisted to localStorage) ───────

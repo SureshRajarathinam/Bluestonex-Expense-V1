@@ -7,6 +7,7 @@ const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
 const { guardPaging } = require('./lib/paging');
+const { resolveEmployee } = require('./lib/identity');
 
 // Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
 const nameFromEmail = (email) => String(email || '').split('@')[0]
@@ -32,7 +33,9 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       // payroll area). Payroll Area is the employee's Base Site (per config).
       let employeeNumber = '', site = '';
       try {
-        const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(email).toLowerCase());
+        // Resolve by ANY caller identity — in Work Zone req.user.id is the logon
+        // name, not the email that EXP_EMPLOYEES is keyed on.
+        const emp = await resolveEmployee(req, EMPLOYEES);
         if (emp) {
           fullName = [emp.FName, emp.LName].filter(Boolean).join(' ').trim();
           employeeNumber = emp.EmpID || '';
@@ -51,8 +54,8 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     const applyDefaults = async (req) => {
       req.data.status   = req.data.status || 'Draft';
       req.data.currency = req.data.currency || 'GBP';
-      // EXP_EMPLOYEES mirrors USERS_MASTER — match on Email (case-insensitive).
-      const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user?.id || '').toLowerCase());
+      // Resolve by ANY caller identity (Work Zone id = logon name, not email).
+      const emp = await resolveEmployee(req, EMPLOYEES);
       if (emp) {
         if (!req.data.employee_ID) req.data.employee_ID = emp.ID;
         // Payroll Area is fetched from the employee master (Base Site).
@@ -74,7 +77,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       // Fallback: ensure the employee (and Base-Site-derived payroll area) are
       // set even if NEW didn't run.
       if (!claim.employee_ID && req.user?.id) {
-        const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user.id).toLowerCase());
+        const emp = await resolveEmployee(req, EMPLOYEES);
         if (emp) {
           claim.employee_ID = emp.ID;
           if (!claim.payrollArea) claim.payrollArea = emp.BaseSiteKey;
@@ -156,7 +159,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
         policyFlags: (flags && flags.length) ? flags.join(' • ') : null
       });
 
-      const employee = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user.id).toLowerCase());
+      const employee = await resolveEmployee(req, EMPLOYEES);
       const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
