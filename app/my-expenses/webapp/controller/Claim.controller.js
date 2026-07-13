@@ -238,6 +238,14 @@ sap.ui.define([
     _putReceipt: function (oCtx, oFile) {
       var sUrl = this._itemUrl(oCtx);
       var that = this;
+      // HTTP header values must be ISO-8859-1; a filename with any other character
+      // (₹, é, emoji, …) makes fetch() throw synchronously "String contains non
+      // ISO-8859-1 code point". Send an ASCII-safe quoted fallback plus the full
+      // UTF-8 name via RFC 5987 filename*. (The persisted name is set separately
+      // via setProperty below, so this header is only advisory.)
+      var sName = oFile.name || "receipt";
+      var sAscii = sName.replace(/[^\x20-\x7E]/g, "_").replace(/["\\]/g, "_");
+      var sDisposition = 'inline; filename="' + sAscii + '"; filename*=UTF-8\'\'' + encodeURIComponent(sName);
       this.getView().setBusy(true);
       this._getToken().then(function (sToken) {
         return fetch(sUrl, {
@@ -245,7 +253,7 @@ sap.ui.define([
           headers: {
             "x-csrf-token": sToken,
             "Content-Type": oFile.type || "application/octet-stream",
-            "Content-Disposition": 'inline; filename="' + oFile.name + '"'
+            "Content-Disposition": sDisposition
           },
           body: oFile,
           credentials: "same-origin"
@@ -308,7 +316,15 @@ sap.ui.define([
         return;
       }
       this.getView().setBusy(true);
-      this.callAction(oCtx, "ExpenseService.draftActivate", {}, { $$inheritExpandSelect: true })
+      // Bind a FRESH canonical draft context for draftActivate (mirrors _doSubmit's
+      // activateDraft). Pending field edits still flush in the same $auto batch
+      // (grouping drives that, not the action's context), so nothing is lost — and
+      // we avoid the view element-binding context, which can make the bound
+      // operation read a null internal context ("Cannot read properties of null
+      // (reading 'getPath')"). We rebind with $expand right after, so
+      // $$inheritExpandSelect is unnecessary.
+      var oDraft = this.getModel().bindContext("/MyClaims(ID=" + sId + ",IsActiveEntity=false)").getBoundContext();
+      this.callAction(oDraft, "ExpenseService.draftActivate")
         .then(function () {
           that.getView().setBusy(false);
           that._bindClaim("ID=" + sId + ",IsActiveEntity=true");

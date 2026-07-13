@@ -109,7 +109,7 @@
                      Approved claim (would orphan an approver queue / audit trail). -->
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger"
                   tooltip="{i18n>btnDelete}" press=".onDeleteClaim"
-                  visible="{= ${status} === 'Draft' || ${status} === 'Returned' || ${status} === 'Rejected' }" />
+                  visible="{= ${path: 'status', targetType: 'any'} === 'Draft' || ${path: 'status', targetType: 'any'} === 'Returned' || ${path: 'status', targetType: 'any'} === 'Rejected' }" />
               </cells>
             </ColumnListItem>
           </items>

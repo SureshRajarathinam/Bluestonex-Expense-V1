@@ -126,7 +126,7 @@
                        attached (filename shown as tooltip / via View), nothing when
                        not. Frees the column so it needs far less width. -->
                   <core:Icon src="sap-icon://sys-enter-2" color="#107e3e" size="1.15rem"
-                    tooltip="{path: 'receiptFileName'}" visible="{= !!${receiptFileName} }" press=".onViewReceipt" class="bsxReceiptOk" />
+                    tooltip="{path: 'receiptFileName'}" visible="{= !!${path: 'receiptFileName', targetType: 'any'} }" press=".onViewReceipt" class="bsxReceiptOk" />
                   <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
                 </HBox>
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
