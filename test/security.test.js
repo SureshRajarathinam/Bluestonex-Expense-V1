@@ -62,7 +62,7 @@ test('AUTHZ: employee-only user is blocked from the Approvals queue (403)', asyn
 test('AUTHZ: value-help entities are readable by any authenticated user (by design)', async () => {
   assert.equal((await GET('/expense/Countries', { auth: CLERK })).status, 200);
   assert.equal((await GET('/expense/ExpenseTypes', { auth: CLERK })).status, 200);
-  assert.equal((await GET('/expense/VATTypes', { auth: CLERK })).status, 200);
+  assert.equal((await GET('/expense/TaxTypes', { auth: CLERK })).status, 200);
 });
 
 // ═══ PART B — action-level authorization + per-person identity ════════════════

@@ -14,12 +14,34 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP" }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {} }), "ui");
       // Which expense types always require a receipt (code → true). Loaded once so
       // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
       this._receiptTypes = {};
       this._loadReceiptTypes();
+      // Identify the logged-in employee once and populate the header (name, number,
+      // site, payroll area) — so a brand-new draft shows the employee immediately.
+      this._loadEmployee();
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
+    },
+
+    // Fetch the current user's employee master data (EXP_EMPLOYEES via whoami())
+    // into the ui model. Resolved against the OData service URL so it works under
+    // the Work Zone managed approuter (never a literal relative path).
+    _loadEmployee: function () {
+      var oUi = this.getView().getModel("ui");
+      fetch(this._serviceUrl() + "whoami()", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j) { return; }
+          oUi.setProperty("/emp", {
+            fullName: j.fullName || "",
+            employeeNumber: j.employeeNumber || "",
+            site: j.site || "",
+            payrollArea: j.payrollArea || ""
+          });
+        })
+        .catch(function () { /* header employee fields are best-effort — ignore */ });
     },
 
     // Cache the per-type "requiresReceipt" flags from the read-only ExpenseTypes
@@ -92,7 +114,17 @@ sap.ui.define([
     // user types the gross. The server before('SAVE') remains authoritative.
     _loadTaxRate: function (sCountry) {
       var oUi = this.getView().getModel("ui");
-      if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); return; }
+      if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); oUi.setProperty("/taxTypes", []); return; }
+      // Country-aware tax types (VAT for UK, GST for India) for the item dropdown.
+      var oTax = this.getModel().bindList("/TaxTypes", null, null, [
+        new Filter("country", FilterOperator.EQ, sCountry)
+      ]);
+      oTax.requestContexts(0, 100).then(function (aCtx) {
+        oUi.setProperty("/taxTypes", aCtx.map(function (c) {
+          var o = c.getObject();
+          return { code: o.code, description: o.description };
+        }));
+      }).catch(function () { oUi.setProperty("/taxTypes", []); });
       var oList = this.getModel().bindList("/Policies", null, null, [
         new Filter("country", FilterOperator.EQ, sCountry)
       ]);

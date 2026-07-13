@@ -144,7 +144,9 @@ sap.ui.define([
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--ok' style='height:" + pct(r.approved, max) + "%'></div></div>" +
           "<div class='bsxVCol'><div class='bsxVBar bsxVBar--no' style='height:" + pct(r.rejected, max) + "%'></div></div>" +
         "</div>" +
-        "<div class='bsxVLabel'>" + esc(r.label) + "</div>" +
+        "<div class='bsxVLabel'>" + esc(r.label) +
+          (r.year ? "<span class='bsxVYear'>" + esc(r.year) + "</span>" : "") +
+        "</div>" +
       "</div>";
     }).join("");
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart bsxVChart--trend'>" + bars + "</div></div>";
@@ -307,18 +309,24 @@ sap.ui.define([
       if (f && tEnd && !isNaN(f) && !isNaN(tEnd)) {
         var cur = new Date(f.getFullYear(), f.getMonth(), 1);
         var last = new Date(tEnd.getFullYear(), tEnd.getMonth(), 1);
+        var prevYear = null;
         for (var guard = 0; cur <= last && guard < 120; guard++) {
           var mm = cur.getMonth() + 1;
-          var key = cur.getFullYear() + "-" + (mm < 10 ? "0" : "") + mm;
+          var yr = cur.getFullYear();
+          var key = yr + "-" + (mm < 10 ? "0" : "") + mm;
           var rec = byMonth[key] || {};
-          tr.push({ label: MON[cur.getMonth()], submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0 });
+          // Stamp the year under the month only at range start and each year change,
+          // so a multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without
+          // repeating the year on every column.
+          tr.push({ label: MON[cur.getMonth()], year: (yr !== prevYear ? String(yr) : ""), submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0 });
+          prevYear = yr;
           cur.setMonth(cur.getMonth() + 1);
         }
       } else {
         tr = (j.trend || []).map(function (t) {
           var parts = (t.month || "").split("-");
           var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
-          return { label: lbl, submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
+          return { label: lbl, year: parts.length === 2 ? parts[0] : "", submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0 };
         });
       }
       m.setProperty("/trendHtml", trendChart(tr));
@@ -328,7 +336,7 @@ sap.ui.define([
       var tApp = tr.reduce(function (s, t) { return s + t.approved; }, 0);
       var tRet = tr.reduce(function (s, t) { return s + t.rejected; }, 0);
       m.setProperty("/trendFootHtml",
-        "<div class='bsxCardFoot bsxGeoFoot'><span>" +
+        "<div class='bsxCardFoot bsxTrendFoot'><span>" +
           "<b>" + tSub + "</b> submitted · <b>" + tApp + "</b> approved · <b>" + tRet + "</b> returned" +
         "</span></div>");
 

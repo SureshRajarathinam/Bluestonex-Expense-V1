@@ -62,6 +62,10 @@
              so the limit/rate figures below are never ambiguous. -->
         <Label text="{i18n>lblCurrency}" />
         <Text text="{= ${ui>/isUK} ? 'GBP (£)' : 'INR (₹)' }" />
+        <!-- Starting Claim Number for this country (e.g. UKEXP1 / INEXP1). New
+             claims take this value first, then increment. -->
+        <Label text="{i18n>lblClaimStart}" />
+        <Input value="{claimNumberStart}" editable="{ui>/editing}" placeholder="{= ${ui>/isUK} ? 'e.g. UKEXP1' : 'e.g. INEXP1' }" />
         <Label text="{i18n>lblVat}" visible="{ui>/isUK}" required="true" />
         <Input value="{vatRate}" type="Number" editable="{ui>/editing}" visible="{ui>/isUK}" />
         <Label text="{i18n>lblGst}" visible="{ui>/isIN}" required="true" />

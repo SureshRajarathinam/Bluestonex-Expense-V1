@@ -37,14 +37,18 @@
               displayFormat="medium"
               width="18rem"
               editable="{ui>/editable}" />
+            <!-- Employee identity for the current (logged-in) user, resolved from
+                 EXP_EMPLOYEES via whoami(). Shown from the ui model so it appears
+                 immediately on a brand-new draft (which has no persisted employee
+                 yet). All MyClaims belong to the caller, so this is always right. -->
             <Label text="{i18n>lblEmployee}" />
-            <Text text="{employeeName}" />
+            <Text text="{ui>/emp/fullName}" />
             <Label text="{i18n>lblEmpNo}" />
-            <Text text="{employeeNumber}" />
+            <Text text="{ui>/emp/employeeNumber}" />
             <Label text="{i18n>lblSite}" />
-            <Text text="{employeeSite}" />
+            <Text text="{ui>/emp/site}" />
             <Label text="{i18n>lblPayroll}" />
-            <Text text="{payrollArea}" />
+            <Text text="{ui>/emp/payrollArea}" />
             <Label text="{i18n>lblStatus}" />
             <ObjectStatus
               inverted="true"
@@ -103,9 +107,11 @@
                 </Select>
                 <Input value="{destination}" editable="{ui>/editable}" width="100%" />
                 <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
+                <!-- Country-aware tax types (VAT for UK, GST for India): the list is
+                     loaded for the claim's country into the ui model by _loadTaxRate. -->
                 <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false" width="100%"
-                  items="{ path: '/VATTypes', templateShareable: false }">
-                  <core:Item key="{code}" text="{description}" />
+                  items="{ path: 'ui>/taxTypes', templateShareable: false }">
+                  <core:Item key="{ui>code}" text="{ui>description}" />
                 </Select>
                 <!-- No type="Number": an HTML number input can't hold a grouped value
                      (e.g. "9,891.00"), which capped amounts at 3 digits. A text input

@@ -161,7 +161,7 @@ service ApprovalService {
   // ── Value helps ─────────────────────────────────────────────────────────────
   @readonly entity Countries    as projection on db.COUNTRIES;
   @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
-  @readonly entity VATTypes     as projection on db.VAT_TYPES;
+  @readonly entity TaxTypes     as projection on db.TAX_TYPES;
   @readonly entity Employees as projection on db.EMPLOYEES {
     ID,
     Email                                   as email          : String,

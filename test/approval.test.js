@@ -188,8 +188,15 @@ test('History: shows non-draft claims (incl. approved/rejected), excludes drafts
 });
 
 test('UK level-1 approval fires a notification to the second-level approver', async () => {
+  // Submit MUST email the configured first-level approver (L1 mail mechanism).
+  const mSubmit = MAILS.length;
   const id = await submitUK();
+  const l1mail = mailsSince(mSubmit).find((mm) => /awaiting your approval/i.test(mm.subject || ''));
+  assert.ok(l1mail, 'submit emails the L1 approver');
+  assert.equal(String(l1mail.to || '').toLowerCase(), 'manager@bluestonex.com', 'L1 email addressed to the configured first approver');
+
   const before = NOTIFS.length;
+  const mApprove = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
   assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
   const evts = eventsFor(id, 'ExpenseClaim.Level1Approved');
@@ -198,6 +205,10 @@ test('UK level-1 approval fires a notification to the second-level approver', as
   assert.ok(JSON.stringify(evts[0]).includes('Dan.Barton@bluestonex.com'),
     'the event should reference the UK second-level approver');
   assert.ok(NOTIFS.length > before, 'a notification was recorded');
+  // UK L1 approval MUST email the configured second-level approver (L2 mail mechanism).
+  const l2mail = mailsSince(mApprove).find((mm) => /second-level approval/i.test(mm.subject || ''));
+  assert.ok(l2mail, 'UK L1 approval emails the L2 approver');
+  assert.equal(String(l2mail.to || '').toLowerCase(), 'dan.barton@bluestonex.com', 'L2 email addressed to the configured second approver');
 });
 
 test('India single-level approval does NOT fire a second-approver notification', async () => {
@@ -206,10 +217,14 @@ test('India single-level approval does NOT fire a second-approver notification',
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const mApprove = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
   assert.ok(ok.status < 400, `IN approve ${ok.status}`);
   assert.equal(eventsFor(id, 'ExpenseClaim.Level1Approved').length, 0,
     'India (single-level) approval must not fire a Level1Approved event');
+  // India is single-level → the L1 approval must NOT email any second-level approver.
+  assert.ok(!mailsSince(mApprove).some((mm) => /second-level/i.test(mm.subject || '')),
+    'India approval sends no second-level email');
 });
 
 test('server computes item net/VAT split on save (UK 20%: gross 120 → net 100, VAT 20)', async () => {

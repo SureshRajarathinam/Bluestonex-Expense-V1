@@ -11,7 +11,18 @@ service ExpenseService {
   // Identity of the logged-in user (resolved from $user via the employee source),
   // so the app can greet the employee by name on open. firstName/lastName are the
   // fullName split on the first space.
-  type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
+  // Also carries the employee-master fields the New Expense Claim header shows
+  // (number/site/payroll area), so the app can populate them for the current
+  // user even on a brand-new draft (which has no persisted employee yet).
+  type WhoAmI : {
+    email          : String;
+    fullName       : String;
+    firstName      : String;
+    lastName       : String;
+    employeeNumber : String;
+    site           : String;
+    payrollArea    : String;
+  }
   function whoami() returns WhoAmI;
 
   // First-level approver email for a country (UK | IN), so the "Apply for
@@ -61,7 +72,9 @@ service ExpenseService {
 
   @readonly entity Countries    as projection on db.COUNTRIES;
   @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
-  @readonly entity VATTypes     as projection on db.VAT_TYPES;
+  // Country-aware tax code list (VAT for UK, GST for India). The My Expenses
+  // item dropdown filters this by the claim's country.
+  @readonly entity TaxTypes     as projection on db.TAX_TYPES;
   // Read-only so the UI can preview the net/VAT split live as gross is typed
   // (server before('SAVE') stays the source of truth for saved values).
   @readonly entity Policies     as projection on db.POLICY;
@@ -99,7 +112,7 @@ annotate ExpenseService.MyClaimItems with {
   ID      @UI.Hidden;
   vatType @Common.ValueListWithFixedValues
           @Common.ValueList: {
-            CollectionPath: 'VATTypes',
+            CollectionPath: 'TaxTypes',
             Parameters: [
               { $Type: 'Common.ValueListParameterInOut',       LocalDataProperty: vatType, ValueListProperty: 'code' },
               { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' }

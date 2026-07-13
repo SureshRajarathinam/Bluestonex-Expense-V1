@@ -6,7 +6,6 @@ const { splitVAT, mileageTotal, claimTotals, taxRateFor } = require('./lib/calc'
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
-const employeeSource = require('./lib/employee-source');
 const { guardPaging } = require('./lib/paging');
 
 // Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
@@ -29,15 +28,22 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.on('whoami', async (req) => {
       const email = req.user?.id || '';
       let fullName = '';
+      // Employee-master fields for the New Expense Claim header (number/site/
+      // payroll area). Payroll Area is the employee's Base Site (per config).
+      let employeeNumber = '', site = '';
       try {
-        const id = await employeeSource.findByEmail(email);
-        fullName = (id && id.fullName) || '';
+        const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(email).toLowerCase());
+        if (emp) {
+          fullName = [emp.FName, emp.LName].filter(Boolean).join(' ').trim();
+          employeeNumber = emp.EmpID || '';
+          site = emp.BaseSiteKey || '';
+        }
       } catch (e) { LOG.warn('whoami lookup failed', e.message); }
       if (!fullName) fullName = nameFromEmail(email);
       const parts = fullName.trim().split(/\s+/).filter(Boolean);
       const firstName = parts.shift() || '';
       const lastName = parts.join(' ');
-      return { email, fullName: fullName.trim(), firstName, lastName };
+      return { email, fullName: fullName.trim(), firstName, lastName, employeeNumber, site, payrollArea: site };
     });
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
@@ -47,7 +53,11 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       req.data.currency = req.data.currency || 'GBP';
       // EXP_EMPLOYEES mirrors USERS_MASTER — match on Email (case-insensitive).
       const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user?.id || '').toLowerCase());
-      if (!req.data.employee_ID && emp) req.data.employee_ID = emp.ID;
+      if (emp) {
+        if (!req.data.employee_ID) req.data.employee_ID = emp.ID;
+        // Payroll Area is fetched from the employee master (Base Site).
+        if (!req.data.payrollArea) req.data.payrollArea = emp.BaseSiteKey;
+      }
     };
 
     // 'NEW' fires when a Fiori draft is created; 'CREATE' for non-draft inserts.
@@ -61,28 +71,43 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.before('SAVE', 'MyClaims', async (req) => {
       const claim = req.data;
 
-      // Fallback: ensure the employee is set even if NEW didn't run
+      // Fallback: ensure the employee (and Base-Site-derived payroll area) are
+      // set even if NEW didn't run.
       if (!claim.employee_ID && req.user?.id) {
         const emp = await SELECT.one.from(EMPLOYEES).where(`lower(Email) =`, String(req.user.id).toLowerCase());
-        if (emp) claim.employee_ID = emp.ID;
-      }
-
-      if (!claim.claimNumber) {
-        // Derive from the highest existing suffix for the year (not a row COUNT):
-        // survives deletions and, with the @assert.unique on claimNumber, a
-        // concurrent collision surfaces as an error instead of a silent dup (D2).
-        const year = new Date().getFullYear();
-        const rows = await SELECT.from(CLAIMS).columns('claimNumber').where({ claimNumber: { like: `EXP-${year}-%` } });
-        let max = 0;
-        for (const r of rows) {
-          const n = parseInt(String(r.claimNumber || '').split('-')[2], 10);
-          if (Number.isFinite(n) && n > max) max = n;
+        if (emp) {
+          claim.employee_ID = emp.ID;
+          if (!claim.payrollArea) claim.payrollArea = emp.BaseSiteKey;
         }
-        claim.claimNumber = `EXP-${year}-${String(max + 1).padStart(4, '0')}`;
       }
 
       // Country drives tax (VAT for UK, GST for India) and currency
       const country = claim.country || 'UK';
+
+      if (!claim.claimNumber) {
+        // Config-driven Claim Number: the per-country Policy row carries the
+        // starting value (e.g. 'UKEXP1' / 'INEXP1'). Split it into prefix +
+        // trailing digits; the first claim for the country takes the seed, and
+        // subsequent ones continue from the highest existing suffix for that
+        // prefix (survives deletions; @assert.unique catches a concurrent dup).
+        const startCfg = await SELECT.one.from(POLICY).columns('claimNumberStart').where({ country });
+        const seed = (startCfg && startCfg.claimNumberStart) || `${country}EXP1`;
+        const m = String(seed).match(/^(.*?)(\d+)$/);
+        const prefix = m ? m[1] : seed;
+        const startNum = m ? parseInt(m[2], 10) : 1;
+        const width = m ? m[2].length : 0;
+        const rows = await SELECT.from(CLAIMS).columns('claimNumber').where({ claimNumber: { like: `${prefix}%` } });
+        let max = 0;
+        for (const r of rows) {
+          const s = String(r.claimNumber || '');
+          if (!s.startsWith(prefix)) continue;
+          const n = parseInt(s.slice(prefix.length), 10);
+          if (Number.isFinite(n) && n > max) max = n;
+        }
+        const next = max ? max + 1 : startNum;
+        claim.claimNumber = prefix + String(next).padStart(width, '0');
+      }
+
       claim.currency = country === 'IN' ? 'INR' : 'GBP';
       // Per-country policy: load the row for this claim's country (UK | IN).
       const policy = await SELECT.one.from(POLICY).where({ country });

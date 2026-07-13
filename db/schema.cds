@@ -10,8 +10,13 @@ entity EXPENSE_TYPES {
       requiresReceipt : Boolean default false;
 }
 
-entity VAT_TYPES {
-  key code        : String(10);
+// Country-aware tax code list — replaces the old VAT-only VAT_TYPES table.
+// One row per (country, code): the UK rows carry VAT, the India rows carry GST,
+// so the New Expense Claim item dropdown loads the right set for the selected
+// country. Composite key lets UK and India each define their own STD/ZR/EX.
+entity TAX_TYPES {
+  key country     : String(2);    // UK | IN
+  key code        : String(10);   // STD | ZR | EX
       description : String(50);
       rate        : Decimal(5, 4);
 }
@@ -65,6 +70,11 @@ entity POLICY : managed {
       receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
       vatRate          : Decimal(5, 4);  // UK VAT rate   (set on the UK row)
       gstRate          : Decimal(5, 4);  // India GST rate (set on the IN row)
+      // Starting Claim Number for this country (e.g. 'UKEXP1' / 'INEXP1'). The
+      // trailing digits seed the sequence; new claims for the country take this
+      // value first, then increment (UKEXP1, UKEXP2, …). Maintained per country
+      // in Policy Configuration.
+      claimNumberStart : String(20);
       effectiveFrom   : Date;
       effectiveTo     : Date;
 }

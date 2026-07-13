@@ -79,6 +79,13 @@ html, body, .sapUiBody, .bsxBody,
 }
 .bsxGeoFoot { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; }
 .bsxGeoFoot b { color: var(--bsx-text); }
+/* Trend card: a slim single-row summary bar. Keeps the divider (from .bsxCardFoot)
+   but trims padding/height/text so it stays proportional to the chart. */
+.bsxTrendFoot {
+  display: flex; align-items: center; min-height: 0;
+  padding: 0.35rem 1rem; font-size: 0.75rem; line-height: 1.2;
+}
+.bsxTrendFoot b { color: var(--bsx-text); }
 .bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
 
 /* ---- Destructive icon button (row delete) -------------------------------- */
@@ -183,7 +190,10 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVBar--ok  { background: var(--bsx-green); }
 .bsxVBar--no  { background: var(--bsx-red); }
 .bsxVBar--sub { background: var(--bsx-blue-l); }
-.bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); }
+.bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); text-align: center; }
+/* Year stamp under the month, shown only at range start + each year change so a
+   multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without clutter. */
+.bsxVYear { display: block; font-size: .625rem; font-weight: 500; color: var(--bsx-muted); opacity: .8; margin-top: 1px; }
 
 /* ---- History detail: approval chain + activity timeline ------------------ */
 /* Blue/black palette, consistent with the Dashboard. Zero new library — a
