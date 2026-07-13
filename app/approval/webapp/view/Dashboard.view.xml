@@ -6,6 +6,9 @@
   xmlns:l="sap.ui.layout"
   xmlns:dnd="sap.ui.core.dnd"
   xmlns:vbm="sap.ui.vbm"
+  xmlns:viz="sap.viz.ui5.controls"
+  xmlns:vizData="sap.viz.ui5.data"
+  xmlns:vizFeeds="sap.viz.ui5.controls.common.feeds"
   height="100%"
   busy="{dash>/busy}">
 
@@ -96,11 +99,31 @@
         <core:HTML content="{dash>/claimantsHtml}" />
       </VBox>
 
-      <!-- Total reimbursed spend — approved category donut with total Amount + % shares. -->
+      <!-- Total reimbursed spend — approved spend by category as a sap.viz donut:
+           each slice highlightable, labelled "Category (xx.x%)", with a legend.
+           Data + per-currency styling come from the controller (_styleDonut). -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
         <customData><core:CustomData key="card" value="totalExp" /></customData>
         <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/donutHtml}" />
+        <viz:VizFrame id="spendDonut" vizType="donut" width="100%" height="320px"
+          class="bsxCardPad" visible="{dash>/hasDonut}"
+          uiConfig="{applicationSet:'fiori'}">
+          <viz:dataset>
+            <vizData:FlattenedDataset data="{dash>/donutData}">
+              <vizData:dimensions>
+                <vizData:DimensionDefinition name="Category" value="{dash>title}" />
+              </vizData:dimensions>
+              <vizData:measures>
+                <vizData:MeasureDefinition name="Amount" value="{dash>value}" />
+              </vizData:measures>
+            </vizData:FlattenedDataset>
+          </viz:dataset>
+          <viz:feeds>
+            <vizFeeds:FeedItem uid="size" type="Measure" values="Amount" />
+            <vizFeeds:FeedItem uid="color" type="Dimension" values="Category" />
+          </viz:feeds>
+        </viz:VizFrame>
+        <Text text="{i18n>dashNoData}" class="bsxTlEmpty bsxCardPad" visible="{= !${dash>/hasDonut} }" />
       </VBox>
 
       <!-- Spend by country (geographic choropleth). Primary renderer = AnalyticMap.

@@ -152,39 +152,8 @@ sap.ui.define([
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart bsxVChart--trend'>" + bars + "</div></div>";
   }
 
-  // Top Expense Items donut: a conic-gradient ring (one slice per category) with
-  // the grand total Amount in the centre + a colour-keyed legend. Native currency
-  // for the active scope (no cross-currency sum). Zero new library — pure HTML/CSS.
-  function donutChart(rows, cur, amountLabel) {
-    var data = rows.filter(function (r) { return r.value > 0; });
-    if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
-    var total = data.reduce(function (s, r) { return s + r.value; }, 0);
-    // SVG stroked-circle donut: one arc per category. Each arc carries a native
-    // <title>, so hovering a slice pops up "Category — amount (percent)" — the
-    // percentage lives in the popup, not in the legend below.
-    var R = 78, C = 2 * Math.PI * R, acc = 0, arcs = "", legend = "";
-    data.forEach(function (r, i) {
-      var col = DONUT_COLORS[i % DONUT_COLORS.length];
-      var dash = (r.value / total) * C;
-      var share = total ? (r.value / total) * 100 : 0;
-      var tip = esc(r.title) + " — " + money(cur, r.value) + " (" + share.toFixed(1) + "%)";
-      arcs += "<circle class='bsxDonutArc' cx='100' cy='100' r='" + R + "' fill='none' stroke='" + col +
-        "' stroke-width='26' stroke-dasharray='" + dash.toFixed(3) + " " + (C - dash).toFixed(3) +
-        "' stroke-dashoffset='" + (-acc).toFixed(3) + "'><title>" + tip + "</title></circle>";
-      acc += dash;
-      legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
-    });
-    return "<div class='bsxDonut'>" +
-      "<div class='bsxDonutRingWrap'>" +
-        "<svg class='bsxDonutSvg' viewBox='0 0 200 200'><g transform='rotate(-90 100 100)'>" + arcs + "</g></svg>" +
-        "<div class='bsxDonutHole'>" +
-          "<div class='bsxDonutNum'>" + money(cur, total) + "</div>" +
-          "<div class='bsxDonutLbl'>" + esc(amountLabel || "Amount") + "</div>" +
-        "</div>" +
-      "</div>" +
-      "<div class='bsxDonutLegend'>" + legend + "</div>" +
-    "</div>";
-  }
+  // (The "Total reimbursed spend" donut is now a sap.viz VizFrame — see the view
+  // + _styleDonut — so the hand-rolled SVG donut builder was removed.)
 
   // Rounded UK/India split pills for a KPI tile (respects the country filter).
   function pills(country, uk, inn) {
@@ -212,7 +181,7 @@ sap.ui.define([
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
-        claimantsHtml: "", catHtml: "", donutHtml: "", trendHtml: "", trendFootHtml: "",
+        claimantsHtml: "", catHtml: "", donutData: [], hasDonut: true, trendHtml: "", trendFootHtml: "",
         geo: [], geoLegendHtml: "", geoSvgHtml: ""
       });
       this.getView().setModel(this._m, "dash");
@@ -275,9 +244,13 @@ sap.ui.define([
       }).filter(function (r) { return r.value > 0; });
       m.setProperty("/catHtml", hBars(cat, cur));
 
-      // Top Expense Items donut — APPROVED spend by category (same data as the bars,
-      // approved claims only), in the active currency; centre shows the total Amount.
-      m.setProperty("/donutHtml", donutChart(cat, cur, this.getText ? this.getText("dashAmount") : "Amount"));
+      // Total reimbursed spend donut (sap.viz VizFrame) — APPROVED spend by
+      // category in the active currency. VizFrame derives each slice's % share +
+      // legend; _styleDonut applies the per-currency labels/palette. hasDonut
+      // toggles the empty-state text.
+      m.setProperty("/donutData", cat.map(function (c) { return { title: c.title, value: c.value }; }));
+      m.setProperty("/hasDonut", cat.length > 0);
+      this._styleDonut(cur);
 
       // Spend by country — shade each region by approved count (currency-agnostic;
       // native-currency spend rides in the tooltip). Country filter already scoped it.
@@ -342,6 +315,27 @@ sap.ui.define([
 
       var has = ((ap.total || 0) + (rj.total || 0) + (aw.total || 0) + cat.length) > 0;
       m.setProperty("/hasData", has);
+    },
+
+    // Style the sap.viz donut once the VizFrame exists. Percentage data labels
+    // ("Category (xx.x%)"), a titled legend, the BluestoneX palette, single-slice
+    // highlight, and a currency-formatted tooltip. Called on every _apply
+    // (idempotent) so the currency toggle re-labels without a refetch.
+    _styleDonut: function (cur) {
+      var oVF = this.byId("spendDonut");
+      if (!oVF) { return; }
+      var sym = cur === "₹" ? "₹" : "£";
+      var legendTitle = (this.getText ? this.getText("dashSpendCat") : "Category") + " (" + sym + ")";
+      oVF.setVizProperties({
+        title: { visible: false },
+        plotArea: {
+          dataLabel: { visible: true },      // pie/donut default → "Category (xx.x%)"
+          colorPalette: DONUT_COLORS
+        },
+        legend: { visible: true, title: { visible: true, text: legendTitle } },
+        tooltip: { visible: true, formatString: sym + "#,##0" },
+        interaction: { selectability: { mode: "single" } }
+      });
     },
 
     // "Feb – Jul 2026 · 6 months" from the selected range.
