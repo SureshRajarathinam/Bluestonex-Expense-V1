@@ -167,11 +167,12 @@ html, body, .sapUiBody, .bsxBody,
 .bsxLegend { display: flex; gap: 1.25rem; margin: .25rem 0 .75rem; color: var(--bsx-muted); font-size: .8125rem; }
 .bsxLegend span { display: inline-flex; align-items: center; }
 .bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
-/* Trend palette — monochrome blue (image-3 style): Approved darkest (primary),
-   Submitted mid, Returned pale. Shared by the legend dots and the bars below. */
-.bsxDot--ok  { background: #2f6fd6; }
-.bsxDot--no  { background: #b9d0f5; }
-.bsxDot--sub { background: #8fb4f2; }
+/* Trend palette — semantic (within the allowed set): Submitted = blue,
+   Approved = light-green, Returned = light-red. Shared by the legend dots and
+   the bars below. */
+.bsxDot--sub { background: #4c8bf5; }
+.bsxDot--ok  { background: #9bd3a0; }
+.bsxDot--no  { background: #f0a0a0; }
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
@@ -184,9 +185,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVChart--trend .bsxVCol { width: 1.1rem; }
 .bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
 .bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
-.bsxVBar--ok  { background: #2f6fd6; }
-.bsxVBar--no  { background: #b9d0f5; }
-.bsxVBar--sub { background: #8fb4f2; }
+.bsxVBar--sub { background: #4c8bf5; }
+.bsxVBar--ok  { background: #9bd3a0; }
+.bsxVBar--no  { background: #f0a0a0; }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); text-align: center; }
 /* Year stamp under the month, shown only at range start + each year change so a
    multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without clutter. */
@@ -214,9 +215,11 @@ html, body, .sapUiBody, .bsxBody,
 .bsxTlSub  { font-size: .8125rem; color: var(--bsx-muted); margin-top: .1rem; }
 .bsxTlEmpty { color: var(--bsx-muted); font-size: .875rem; padding: .5rem 0; }
 
-/* ---- Top Expense Items donut (conic-gradient ring + centre Amount) -------- */
-.bsxDonut { display: flex; flex-direction: column; align-items: center; padding: .5rem 1rem 1rem; }
-.bsxDonutRingWrap { position: relative; width: 220px; height: 220px; margin: .5rem auto; }
+/* ---- Total reimbursed spend donut (multi-colour ring · centre TOTAL) ------- */
+/* Ring on the left, category legend as a vertical list on the right (image style);
+   wraps to stacked on narrow cards. */
+.bsxDonut { display: flex; flex-flow: row wrap; align-items: center; justify-content: center; gap: 1.25rem 2rem; padding: .75rem 1rem 1rem; }
+.bsxDonutRingWrap { position: relative; width: 220px; height: 220px; flex: 0 0 auto; }
 .bsxDonutSvg { width: 100%; height: 100%; display: block; }
 .bsxDonutArc { cursor: pointer; transition: opacity .15s ease; }
 .bsxDonutArc:hover { opacity: .82; }
@@ -226,11 +229,11 @@ html, body, .sapUiBody, .bsxBody,
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   box-shadow: 0 0 0 1px var(--bsx-line);
 }
-.bsxDonutNum { font-size: 2.15rem; font-weight: 700; color: var(--bsx-blue); line-height: 1.05; }
-.bsxDonutLbl { font-size: .9375rem; font-weight: 600; color: var(--bsx-blue); margin-top: .1rem; }
-.bsxDonutLegend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; justify-content: center; margin-top: .85rem; }
-.bsxDonutLeg { display: inline-flex; align-items: center; font-size: .8125rem; color: var(--bsx-text); }
-.bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .4rem; flex-shrink: 0; }
+.bsxDonutNum { font-size: 1.6rem; font-weight: 700; color: var(--bsx-text); line-height: 1.05; }
+.bsxDonutLbl { font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); margin-top: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+.bsxDonutLegend { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; }
+.bsxDonutLeg { display: inline-flex; align-items: center; font-size: .875rem; color: var(--bsx-text); }
+.bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .55rem; flex-shrink: 0; }
 /* Per-category icon badge sitting on the ring at each segment's mid-angle. */
 .bsxDonutIcon {
   position: absolute; transform: translate(-50%, -50%);
@@ -254,6 +257,26 @@ html, body, .sapUiBody, .bsxBody,
 .bsxWaveG0 { stop-color: #4c8bf5; stop-opacity: .28; }
 .bsxWaveG1 { stop-color: #4c8bf5; stop-opacity: .02; }
 
+/* ---- Policy Violation Rate KPI card (compact tile: rate % + sparkline) ----- */
+.bsxViolCard { flex: 0 1 32rem; max-width: 36rem; }
+.bsxViol { padding: .5rem 1rem 1rem; }
+.bsxViolTop { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.bsxViolNumWrap { display: flex; align-items: baseline; gap: .6rem; }
+.bsxViolNum { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--bsx-text); letter-spacing: -.02em; }
+.bsxViolPct { font-size: 1.3rem; font-weight: 700; color: var(--bsx-muted); margin-left: 2px; }
+.bsxViolDelta { font-size: .8125rem; font-weight: 700; }
+.bsxViolDelta--good { color: #9bd3a0; }   /* fewer violations = good (light green, matches trend) */
+.bsxViolDelta--bad  { color: #f0a0a0; }   /* more violations = bad (light red, matches trend) */
+.bsxViolMeta { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin-top: .9rem; padding-top: .75rem;
+  border-top: 1px solid var(--bsx-line); font-size: .8125rem; color: var(--bsx-muted); }
+.bsxViolMeta b { color: var(--bsx-text); font-weight: 700; margin-left: .25rem; }
+.bsxViolSpark { display: block; }
+.bsxViolLine { fill: none; stroke: #4c8bf5; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bsxViolArea { fill: url(#bsxViolGrad); }
+.bsxViolEnd  { fill: #0a3d91; }
+.bsxViolG0 { stop-color: #4c8bf5; stop-opacity: .26; }
+.bsxViolG1 { stop-color: #4c8bf5; stop-opacity: .02; }
+
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }
 .bsxHRow { display: flex; align-items: center; gap: .75rem; padding: .3rem 0; }
@@ -264,8 +287,3 @@ html, body, .sapUiBody, .bsxBody,
 .bsxHFill--violet { background: #6b6ce0; }
 .bsxHFill--muted  { background: #b9c0e8; }
 .bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }
-
-/* Heat legend for Spend-by-category (colour scales with amount) */
-.bsxHeatLegend { display: flex; align-items: center; gap: .5rem; padding: .25rem 1rem .25rem; font-size: .75rem; color: var(--bsx-muted); }
-.bsxHeatBar { flex: 0 0 90px; height: .6rem; border-radius: 1rem;
-  background: linear-gradient(90deg, hsl(120,68%,45%), hsl(60,68%,45%), hsl(0,68%,45%)); }

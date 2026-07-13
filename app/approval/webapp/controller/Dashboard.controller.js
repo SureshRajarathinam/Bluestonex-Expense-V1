@@ -7,15 +7,28 @@ sap.ui.define([
   "use strict";
 
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  var LKEY = "bsx.dash.layout.v3"; // localStorage key; bumped (card set changed: avr → Top 5 claimants)
+  var LKEY = "bsx.dash.layout.v5"; // localStorage key; bumped (added Policy Violation Rate card as last row)
 
-  // Rich categorical palette taken from the Outbound-Processing dashboard reference:
-  // rich blue · emerald · coral · navy · purple, then more distinct rich hues,
-  // cycled if there are more expense categories than colours.
-  var DONUT_COLORS = [
-    "#4c8bf5", "#2e9e6b", "#e0574f", "#2f3345", "#7c5cff", "#f0ab00",
-    "#17a2b8", "#e0508c", "#2f6fd6", "#8bc34a", "#00b8a9", "#9c6ade"
+  // The ONLY colours used on the dashboard cards (per requirement): blue, purple,
+  // orange, light-blue, light-yellow, light-green, light-red, black/navy, grey.
+  // Each expense category gets one fixed colour from this palette, so a category
+  // reads the SAME colour in the donut ring, the donut legend, and the category
+  // bars. Unknown codes fall through to the palette by a stable hash.
+  var CAT_PALETTE = [
+    "#4c8bf5", "#7c5cff", "#f0ab00", "#a9c7f7", "#f2d16b", "#9bd3a0", "#f0a0a0", "#2f3345", "#9aa0a8"
   ];
+  var CAT_COLOR = {
+    TRAIN: "#4c8bf5", TAXI: "#7c5cff", FLIGHT: "#f0ab00", CAR_HIRE: "#a9c7f7",
+    FOOD: "#f2d16b", HOTEL: "#9bd3a0", PARKING: "#f0a0a0", TOLLS: "#2f3345",
+    PHONE: "#9aa0a8", OTHER: "#6a6d70"
+  };
+  function catColor(code) {
+    if (code && CAT_COLOR[code]) { return CAT_COLOR[code]; }
+    // Stable fallback: hash the code into the palette so it's deterministic.
+    var s = String(code || ""), h = 0;
+    for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) & 0xffff; }
+    return CAT_PALETTE[h % CAT_PALETTE.length];
+  }
 
   function ymd(d) {
     if (!d) { return ""; }
@@ -52,7 +65,7 @@ sap.ui.define([
     var n = rows.length;
     var maxV = rows.reduce(function (mx, r) { return Math.max(mx, Number(r.value) || 0); }, 0);
     var nm = niceNum(maxV || 1);
-    var PL = 54, PR = 16, PT = 16, PB = 34, H = 220, step = 76;
+    var PL = 54, PR = 16, PT = 16, PB = 34, H = 220, step = 104; // wider step — the wave is now a full-width card
     var innerW = Math.max(step, (n - 1) * step);
     var W = PL + PR + innerW, plotB = H - PB, plotT = PT, plotH = plotB - plotT;
     var xAt = function (i) { return n === 1 ? PL + innerW / 2 : PL + (i / (n - 1)) * innerW; };
@@ -127,15 +140,9 @@ sap.ui.define([
     return "<div class='bsxHBars'>" + body + "</div>";
   }
 
-  // Amount-driven heat colour: green (lowest) → amber → red (highest), by the
-  // bar's value relative to the largest in the set. hue 120°=green … 0°=red.
-  function heatColor(value, max) {
-    var ratio = Math.max(0, Math.min(1, (Number(value) || 0) / (max || 1)));
-    return "hsl(" + Math.round(120 * (1 - ratio)) + ", 68%, 45%)";
-  }
-
-  // Horizontal tracked bars: label · fill-on-track · value. The fill colour is
-  // set dynamically from the amount (heat scale), so bigger spend stands out.
+  // Horizontal tracked bars: label · fill-on-track · value. The fill colour is the
+  // category's fixed palette colour (catColor), so it matches the donut ring/legend
+  // for the same category.
   function hBars(rows, cur) {
     if (!rows.length) { return ""; }
     var max = 1;
@@ -143,15 +150,11 @@ sap.ui.define([
     var body = rows.map(function (r) {
       return "<div class='bsxHRow'>" +
         "<span class='bsxHLabel'>" + esc(r.title) + "</span>" +
-        "<span class='bsxHTrack'><span class='bsxHFill' style='width:" + pct(r.value, max) + "%;background:" + heatColor(r.value, max) + "'></span></span>" +
+        "<span class='bsxHTrack'><span class='bsxHFill' style='width:" + pct(r.value, max) + "%;background:" + catColor(r.code) + "'></span></span>" +
         "<span class='bsxHVal'>" + money(cur, r.value) + "</span>" +
       "</div>";
     }).join("");
-    // Compact gradient legend so the colour→amount encoding is explicit.
-    var legend = "<div class='bsxHeatLegend'>" +
-      "<span>Lower spend</span><span class='bsxHeatBar'></span><span>Higher spend</span>" +
-    "</div>";
-    return "<div class='bsxHBars'>" + body + legend + "</div>";
+    return "<div class='bsxHBars'>" + body + "</div>";
   }
 
   // Grouped VERTICAL columns per month: Submitted (light-blue) · Approved (green)
@@ -184,21 +187,21 @@ sap.ui.define([
     return "<div class='bsxChart'>" + legend + "<div class='bsxVChart bsxVChart--trend'>" + bars + "</div></div>";
   }
 
-  // Total reimbursed spend donut: a graduated-blue ring (darkest = largest share),
-  // small inter-segment gaps, a per-category icon badge on each segment's mid-angle,
-  // and a big center label = the TOP category's share % + its name. Currency-native
-  // (approved spend by category). Rows: [{code, title, value}].
+  // Total reimbursed spend donut: a multi-colour ring (one fixed palette colour per
+  // category via catColor), small inter-segment gaps, a per-category icon badge on
+  // each segment's mid-angle, a big center label = the TOTAL reimbursed spend for the
+  // period in the active currency, and a vertical category legend on the right.
+  // Currency-native (approved spend by category). Rows: [{code, title, value}].
   function donutChart(rows, cur) {
     var data = rows.filter(function (r) { return r.value > 0; })
       .sort(function (a, b) { return b.value - a.value; });
     if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
     var total = data.reduce(function (s, r) { return s + r.value; }, 0);
-    var top = data[0], topPct = total ? Math.round((top.value / total) * 100) : 0;
     var R = 76, C = 2 * Math.PI * R, GAP = data.length > 1 ? 2.4 : 0, acc = 0;
     var arcs = "", badges = "", legend = "";
-    data.forEach(function (r, i) {
+    data.forEach(function (r) {
       var seg = (r.value / total) * C;
-      var col = blueShade(i, data.length);
+      var col = catColor(r.code);
       var dashLen = Math.max(0.5, seg - GAP);
       arcs += "<circle cx='100' cy='100' r='" + R + "' fill='none' stroke='" + col +
         "' stroke-width='22' stroke-dasharray='" + dashLen.toFixed(2) + " " + (C - dashLen).toFixed(2) +
@@ -216,8 +219,8 @@ sap.ui.define([
       "<div class='bsxDonutRingWrap'>" +
         "<svg class='bsxDonutSvg' viewBox='0 0 200 200'><g transform='rotate(-90 100 100)'>" + arcs + "</g></svg>" +
         "<div class='bsxDonutHole'>" +
-          "<div class='bsxDonutNum'>" + topPct + "%</div>" +
-          "<div class='bsxDonutLbl'>" + esc(top.title) + "</div>" +
+          "<div class='bsxDonutNum'>" + esc(money(cur, total)) + "</div>" +
+          "<div class='bsxDonutLbl'>Total reimbursed</div>" +
         "</div>" +
         badges +
       "</div>" +
@@ -231,6 +234,57 @@ sap.ui.define([
     if (country !== "IN") { out += "<span class='bsxPill bsxPill--uk'>UK " + uk + "</span>"; }
     if (country !== "UK") { out += "<span class='bsxPill bsxPill--in'>India " + inn + "</span>"; }
     return "<div class='bsxPills'>" + out + "</div>";
+  }
+
+  // Tiny inline sparkline (monthly violation-rate %). Blue line + soft area fill,
+  // an emphasised end dot. Values are percentages (0..100); scaled to the max.
+  function sparkline(vals) {
+    var n = vals.length;
+    if (!n) { return ""; }
+    var W = 168, H = 42, PAD = 3;
+    var max = Math.max(1, Math.max.apply(null, vals));
+    var xAt = function (i) { return n === 1 ? W / 2 : PAD + (i / (n - 1)) * (W - 2 * PAD); };
+    var yAt = function (v) { return H - PAD - (Math.max(0, v) / max) * (H - 2 * PAD); };
+    var pts = vals.map(function (v, i) { return xAt(i).toFixed(1) + "," + yAt(v).toFixed(1); });
+    var line = "M" + pts.join(" L");
+    var area = line + " L" + xAt(n - 1).toFixed(1) + "," + (H - PAD) + " L" + xAt(0).toFixed(1) + "," + (H - PAD) + " Z";
+    var lx = xAt(n - 1).toFixed(1), ly = yAt(vals[n - 1]).toFixed(1);
+    return "<svg class='bsxViolSpark' width='" + W + "' height='" + H + "' viewBox='0 0 " + W + " " + H + "'>" +
+      "<defs><linearGradient id='bsxViolGrad' x1='0' y1='0' x2='0' y2='1'>" +
+        "<stop offset='0%' class='bsxViolG0'/><stop offset='100%' class='bsxViolG1'/></linearGradient></defs>" +
+      "<path d='" + area + "' class='bsxViolArea'/>" +
+      "<path d='" + line + "' class='bsxViolLine'/>" +
+      "<circle cx='" + lx + "' cy='" + ly + "' r='3' class='bsxViolEnd'/>" +
+    "</svg>";
+  }
+
+  // Policy Violation Rate KPI card (Option-1 layout): big rate %, delta vs the
+  // previous equal-length window, a monthly sparkline, and a meta row. `v` is the
+  // backend `violation` object; `spark` is the per-month rate series.
+  function violationCard(v, spark) {
+    v = v || { rate: 0, flagged: 0, total: 0, topBreach: "—", deltaPts: null };
+    var rate = Number(v.rate) || 0;
+    var dp = v.deltaPts;
+    var delta = "";
+    if (dp != null && Number(dp) !== 0) {
+      var down = Number(dp) < 0; // fewer violations = good
+      delta = "<span class='bsxViolDelta " + (down ? "bsxViolDelta--good" : "bsxViolDelta--bad") + "'>" +
+        (down ? "▼ " : "▲ ") + Math.abs(Number(dp)).toFixed(1) + " pts</span>";
+    }
+    return "<div class='bsxViol'>" +
+      "<div class='bsxViolTop'>" +
+        "<div class='bsxViolNumWrap'>" +
+          "<div class='bsxViolNum'>" + rate.toFixed(1) + "<span class='bsxViolPct'>%</span></div>" +
+          delta +
+        "</div>" +
+        sparkline(spark || []) +
+      "</div>" +
+      "<div class='bsxViolMeta'>" +
+        "<span>Violations <b>" + (v.flagged || 0) + "</b></span>" +
+        "<span>Claims <b>" + (v.total || 0) + "</b></span>" +
+        "<span>Top breach <b>" + esc(v.topBreach || "—") + "</b></span>" +
+      "</div>" +
+    "</div>";
   }
 
   return BaseController.extend("com.bluestonex.expense.approval.controller.Dashboard", {
@@ -314,7 +368,8 @@ sap.ui.define([
       m.setProperty("/catHtml", hBars(cat, cur));
 
       // Total reimbursed spend donut — APPROVED spend by category in the active
-      // currency: graduated-blue ring, ring icons, center = top category % + name.
+      // currency: multi-colour ring (catColor per category), ring icons, right-side
+      // legend, center = TOTAL reimbursed spend for the period in £/₹.
       m.setProperty("/donutHtml", donutChart(cat, cur));
 
       // Build a COMPLETE month-wise series spanning the selected range so the
@@ -341,7 +396,7 @@ sap.ui.define([
           // Stamp the year under the month only at range start and each year change,
           // so a multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without
           // repeating the year on every column.
-          tr.push({ label: MON[dCur.getMonth()], year: (yr !== prevYear ? String(yr) : ""), submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0, value: amt(rec) });
+          tr.push({ label: MON[dCur.getMonth()], year: (yr !== prevYear ? String(yr) : ""), submitted: rec.submitted || 0, approved: rec.approved || 0, rejected: rec.rejected || 0, flagged: rec.flagged || 0, value: amt(rec) });
           prevYear = yr;
           dCur.setMonth(dCur.getMonth() + 1);
         }
@@ -349,7 +404,7 @@ sap.ui.define([
         tr = (j.trend || []).map(function (t) {
           var parts = (t.month || "").split("-");
           var lbl = parts.length === 2 ? MON[(+parts[1]) - 1] : t.month;
-          return { label: lbl, year: parts.length === 2 ? parts[0] : "", submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0, value: amt(t) };
+          return { label: lbl, year: parts.length === 2 ? parts[0] : "", submitted: t.submitted || 0, approved: t.approved || 0, rejected: t.rejected || 0, flagged: t.flagged || 0, value: amt(t) };
         });
       }
       m.setProperty("/trendHtml", trendChart(tr));
@@ -367,6 +422,13 @@ sap.ui.define([
         "<div class='bsxCardFoot bsxTrendFoot'><span>" +
           "<b>" + tSub + "</b> submitted · <b>" + tApp + "</b> approved · <b>" + tRet + "</b> returned" +
         "</span></div>");
+
+      // Policy Violation Rate KPI — flagged claims ÷ all claims in the window, with
+      // a monthly-rate sparkline (flagged / claims that month) and a delta vs the
+      // preceding equal-length window. All values come from the filtered backend
+      // aggregation, so the card reacts to the country + date-range filters.
+      var spark = tr.map(function (t) { return t.submitted ? (t.flagged / t.submitted) * 100 : 0; });
+      m.setProperty("/violationHtml", violationCard(j.violation, spark));
 
       var has = ((ap.total || 0) + (rj.total || 0) + (aw.total || 0) + cat.length) > 0;
       m.setProperty("/hasData", has);
@@ -421,7 +483,7 @@ sap.ui.define([
       if (saved) { this._applyLayout(saved); }
     },
 
-    _rows: function () { return [this.byId("dashRow0"), this.byId("dashRow1"), this.byId("dashRow2")]; },
+    _rows: function () { return [this.byId("dashRow0"), this.byId("dashRow1"), this.byId("dashRow2"), this.byId("dashRow3"), this.byId("dashRow4"), this.byId("dashRow5")]; },
 
     // Current layout as an array (per row) of card keys.
     _readLayout: function () {

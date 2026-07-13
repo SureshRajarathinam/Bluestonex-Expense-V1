@@ -304,6 +304,50 @@ class NotificationService {
       })
     });
   }
+
+  // Fired when a claim reaches FINAL approval (status → Approved): India after the
+  // single level, UK after level 2. NOT fired on UK FirstApproved. Alerts the
+  // employee (the claim's creator) that their claim is approved. `approvedBy` is
+  // the approver who signed it off.
+  async notifyApproved(claim, approvedBy) {
+    await this._sendEvent({
+      eventType: 'ExpenseClaim.Approved',
+      resource: {
+        resourceName:     claim.claimNumber,
+        resourceType:     'ExpenseClaim',
+        resourceInstance: claim.ID,
+        tags: { approvedBy: approvedBy || '', amount: `${money(claim)}` }
+      },
+      severity: 'INFO',
+      category: 'NOTIFICATION',
+      subject:  `Expense Claim ${claim.claimNumber} Approved`,
+      body:     `Your expense claim ${claim.claimNumber} for ${money(claim)} has been approved` +
+                `${approvedBy ? ` by ${approvedBy}` : ''}. It will be processed for reimbursement.`
+    });
+
+    // Targeted email to the employee who owns the claim. Prefer the authoritative
+    // directory address (EXP_EMPLOYEES.Email, expanded by the approve handler) and
+    // fall back to createdBy (their login) when the association is unresolved.
+    const employeeEmail = (claim.employee && claim.employee.Email) || claim.createdBy;
+    await mailer.sendMail({
+      to:      employeeEmail,
+      subject: `Expense Claim ${claim.claimNumber} approved`,
+      text:    `Good news — your expense claim ${claim.claimNumber} for ${money(claim)} has been approved` +
+               `${approvedBy ? ` by ${approvedBy}` : ''}. It will be processed for reimbursement.`,
+      html:    emailShell({
+        accent:  '#2e7d52', // green — this is a success/approval
+        heading: `Expense claim ${claim.claimNumber} approved`,
+        intro:   `Good news — your expense claim has been <strong>approved</strong>${approvedBy ? ` by <strong>${approvedBy}</strong>` : ''} and will be processed for reimbursement.`,
+        rows:    [
+          ['Claim number', claim.claimNumber],
+          ['Approved by',  approvedBy],
+          ['Amount',       money(claim)],
+          ['Period',       claim.claimPeriod]
+        ],
+        closing: `No further action is needed. You can view the claim status in the <strong>My Expenses</strong> app.`
+      })
+    });
+  }
 }
 
 module.exports = new NotificationService();

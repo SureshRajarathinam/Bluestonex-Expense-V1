@@ -53,7 +53,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     this.on('approve', 'Approvals', async (req) => {
       const ID = idOf(req);
       const { comment } = req.data;
-      const claim = await SELECT.one.from(CLAIMS, ID);
+      // Expand the claimant's directory email so a final-approval notification can
+      // be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
+      // createdBy inside notifyApproved when the association is unresolved).
+      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => e('Email')); });
       if (!claim) return req.error(404, 'Expense claim not found.');
 
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
@@ -61,6 +64,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
       const me = req.user.id;
       const now = new Date().toISOString();
+      // Set true only when this action drives the claim to FINAL Approved (India
+      // single level, or UK level 2) — NOT on UK FirstApproved.
+      let finalApproved = false;
 
       // Authority to approve is governed SOLELY by Approval Workflow membership
       // (per requirement): whoever is configured as the country's approver may
@@ -85,6 +91,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
             status: 'Approved', level1ApprovedBy: me, level1ApprovedAt: now, level1Comment: comment || ''
           });
           await audit.record({ userId: me, action: 'Approved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Single-level (India) approval complete` });
+          finalApproved = true;
         }
       } else if (claim.status === 'FirstApproved') {
         if (!isConfiguredApprover(req, wf.secondApprover))
@@ -93,8 +100,16 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           status: 'Approved', level2ApprovedBy: me, level2ApprovedAt: now, level2Comment: comment || ''
         });
         await audit.record({ userId: me, action: 'Approved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 2 approval complete` });
+        finalApproved = true;
       } else {
         return req.error(409, `Claim ${claim.claimNumber} is not awaiting approval (status '${claim.status}').`);
+      }
+
+      // On final approval, email the employee who created the claim (fire-and-forget —
+      // email must not sit in the request's critical path; a dead SMTP would 504).
+      if (finalApproved) {
+        notification.notifyApproved(claim, me)
+          .catch((e) => LOG.warn('notifyApproved failed:', e.message));
       }
 
       LOG.info(`Claim ${claim.claimNumber} approved by ${me}`);
@@ -292,7 +307,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // Non-draft claims with claimant name + items (+ expense type) for grouping.
       let rows = await SELECT.from(CLAIMS).columns((c) => {
         c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
-        c('submittedAt'); c('claimPeriod'); c('createdBy');
+        c('submittedAt'); c('claimPeriod'); c('createdBy'); c('policyFlags');
         c.employee((e) => { e('FName'); e('LName'); });
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
@@ -314,7 +329,14 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         if (to && d > to) return false;
         return true;
       };
-      rows = rows.filter((r) => r.status !== 'Draft' && inCountry(r) && inWindow(r));
+      // Country-scoped, all-time set (kept so the Policy Violation Rate card can
+      // compare the selected window with the preceding equal-length window).
+      const scoped = rows.filter((r) => r.status !== 'Draft' && inCountry(r));
+      rows = scoped.filter(inWindow);
+
+      // A claim is a policy violation if it carries a soft policy flag (the only
+      // breach persisted on submitted claims — hard breaches block submission).
+      const isFlagged = (r) => !!(r.policyFlags && String(r.policyFlags).trim());
 
       const awaiting = { UK: 0, IN: 0, total: 0 };
       const approved = { UK: 0, IN: 0, total: 0 };
@@ -339,8 +361,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
-          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0, gbp: 0, inr: 0 };
+          const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0, flagged: 0, gbp: 0, inr: 0 };
           t.submitted += 1;
+          // Policy-flagged claims per month — feeds the Policy Violation Rate sparkline
+          // (monthly rate = flagged / submitted for that month).
+          if (isFlagged(r)) t.flagged += 1;
           // Approved GROSS spend per month, currency-separated — feeds the wave card.
           if (r.status === 'Approved') { t.approved += 1; if (isIN(r)) t.inr += g; else t.gbp += g; }
           else if (isDeclined(r)) t.rejected += 1;
@@ -377,7 +402,43 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         .map((x) => ({ ...x, gbp: round2(x.gbp), inr: round2(x.inr) }))
         .sort((a, b) => (b.gbp + b.inr) - (a.gbp + a.inr));
 
+      // ── Policy Violation Rate (flagged claims ÷ all claims in the window) ──
+      const violTotal = rows.length;
+      const violFlagged = rows.filter(isFlagged).length;
+      const rate = violTotal ? violFlagged / violTotal : 0;
+      // Top breach type, parsed from the flag text (meal vs hotel daily limit).
+      let mealB = 0, hotelB = 0;
+      for (const r of rows) {
+        if (!isFlagged(r)) continue;
+        const f = String(r.policyFlags);
+        if (/meal/i.test(f)) mealB += 1;
+        if (/hotel/i.test(f)) hotelB += 1;
+      }
+      const topBreach = (mealB === 0 && hotelB === 0) ? '—' : (hotelB > mealB ? 'Hotel daily limit' : 'Meal daily limit');
+      // Delta vs the preceding equal-length window (same country scope).
+      let deltaPts = null;
+      if (from && to) {
+        const dayMs = 86400000;
+        const fromD = new Date(from), toD = new Date(to);
+        const prevToD = new Date(fromD.getTime() - dayMs);
+        const prevFromD = new Date(prevToD.getTime() - (toD - fromD));
+        const pf = ymd(prevFromD), pt = ymd(prevToD);
+        const prevRows = scoped.filter((r) => { const d = dateOf(r); return d && d >= pf && d <= pt; });
+        if (prevRows.length) {
+          const prevRate = prevRows.filter(isFlagged).length / prevRows.length;
+          deltaPts = Math.round((rate - prevRate) * 1000) / 10; // percentage points, 1 dp
+        }
+      }
+      const violation = {
+        rate: Math.round(rate * 1000) / 10, // percentage, 1 dp
+        flagged: violFlagged,
+        total: violTotal,
+        topBreach,
+        deltaPts
+      };
+
       return {
+        violation,
         awaiting,
         approved,
         rejected,

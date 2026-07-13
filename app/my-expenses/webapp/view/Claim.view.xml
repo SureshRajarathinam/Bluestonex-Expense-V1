@@ -113,11 +113,12 @@
                   items="{ path: 'ui>/taxTypes', templateShareable: false }">
                   <core:Item key="{ui>code}" text="{ui>description}" />
                 </Select>
-                <!-- No type="Number": an HTML number input can't hold a grouped value
-                     (e.g. "9,891.00"), which capped amounts at 3 digits. A text input
-                     bound to the OData Decimal(15,2) type accepts large amounts and
-                     formats 2 decimals per the locale/currency. -->
-                <Input value="{grossAmount}" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <!-- No HTML type="Number" (that capped amounts at 3 digits). We
+                     DECLARE the OData Decimal(15,2) model type so the value stored/
+                     previewed is always canonical (no locale grouping) — an untyped
+                     binding leaked grouped strings like "10,000.00", which parsed to
+                     NaN and broke the net/tax preview + header totals for large amounts. -->
+                <Input value="{ path: 'grossAmount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 15, scale: 2 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center" justifyContent="Center">
@@ -168,8 +169,8 @@
                   <core:Item key="Hybrid" text="Hybrid" />
                   <core:Item key="Electric" text="Electric" />
                 </Select>
-                <Input value="{milesCount}" textAlign="End" editable="{ui>/editable}" width="100%" />
-                <Input value="{ratePerMile}" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'milesCount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 10, scale: 2 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'ratePerMile', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 8, scale: 4 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
               </cells>
             </ColumnListItem>

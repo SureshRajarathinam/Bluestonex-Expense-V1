@@ -12,7 +12,12 @@ type DashClaimant : { name : String; gbp : Decimal(15,2); inr : Decimal(15,2); }
 type DashGeo   : { code : String; country : String; claims : Integer;
                    approved : Integer; awaiting : Integer; rejected : Integer;
                    gbp : Decimal(15,2); inr : Decimal(15,2); }
-type DashTrend : { month : String; submitted : Integer; approved : Integer; rejected : Integer; }
+type DashTrend : { month : String; submitted : Integer; approved : Integer; rejected : Integer;
+                   flagged : Integer;                       // policy-flagged claims that month (violation sparkline)
+                   gbp : Decimal(15,2); inr : Decimal(15,2); } // approved gross per month (wave card)
+// Policy Violation Rate KPI: flagged claims ÷ all claims in the window.
+type DashViolation : { rate : Decimal(5,1); flagged : Integer; total : Integer;
+                       topBreach : String; deltaPts : Decimal(5,1); } // deltaPts vs preceding equal window (null if none)
 type DashStats : {
   awaiting        : DashCount;
   approved        : DashCount;
@@ -21,6 +26,7 @@ type DashStats : {
   topClaimants    : many DashClaimant;  // top 5 claimants by approved (reimbursed) amount
   spendByCountry  : many DashGeo;
   trend           : many DashTrend;
+  violation       : DashViolation;  // Policy Violation Rate KPI card
 }
 
 // ── Claim journey payload (History detail: timeline + assigned approvers) ────

@@ -5,8 +5,21 @@ sap.ui.define([], function () {
   // ".formatter.x" are invoked with `this` bound to the CONTROLLER (not this
   // module), so formatters must NOT rely on `this` to reach each other — they
   // call these closure helpers directly instead.
+  // Robust numeric coercion. A freestyle OData V4 amount binding can surface the
+  // value as a locale-GROUPED string (e.g. "10,000.00" or "₹10,00,000.00"); a
+  // plain Number() of that is NaN, which is what produced "£NaN" totals and a
+  // £0.00 net/tax preview for large amounts. Strip anything that isn't a digit,
+  // dot or minus (grouping separators, currency symbols, spaces) before parsing.
+  // The app is en-GB / en-IN (comma = thousands, dot = decimal), so this is safe.
+  function num(v) {
+    if (v == null) { return 0; }
+    if (typeof v === "number") { return isFinite(v) ? v : 0; }
+    var n = Number(String(v).replace(/[^0-9.\-]/g, ""));
+    return isFinite(n) ? n : 0;
+  }
+
   function moneyStr(vAmount, sCurrency) {
-    var n = Number(vAmount || 0);
+    var n = num(vAmount);
     var sym = sCurrency === "INR" ? "₹" : (sCurrency === "GBP" ? "£" : "");
     return sym + n.toFixed(2);
   }
@@ -15,8 +28,8 @@ sap.ui.define([], function () {
   // (round2 = parseFloat(n.toFixed(2))) so the live preview matches what
   // before('SAVE') will persist. Server stays authoritative.
   function split(vGross, sVatType, vRate) {
-    var g = Number(vGross) || 0;
-    var r = sVatType === "STD" ? (Number(vRate) || 0) : 0;
+    var g = num(vGross);
+    var r = sVatType === "STD" ? num(vRate) : 0;
     var net = parseFloat((g / (1 + r)).toFixed(2));
     var vat = parseFloat((g - net).toFixed(2));
     return { net: net, vat: vat };

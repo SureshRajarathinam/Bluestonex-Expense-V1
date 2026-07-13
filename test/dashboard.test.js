@@ -203,3 +203,32 @@ test('trend buckets by the EXPENSE period (claimPeriod), not the submission mont
   const r = await GET(stats('2020-01-01', '2030-12-31', 'UK'), { auth: MGR });
   assert.ok(r.data.trend.some((t) => t.month === '2026-01'), `trend should carry a 2026-01 bucket: ${JSON.stringify(r.data.trend.map((t) => t.month))}`);
 });
+
+test('Policy Violation Rate: flagged claims ÷ all claims, scoped by the filters', async () => {
+  // Seed a UK claim that trips a SOFT daily-limit flag: two same-day hotel lines
+  // (£130 + £130 = £260) over the UK £200 hotel daily limit. It still submits and
+  // carries a policyFlag → counts as a policy violation.
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-05-20' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-05-10', expenseType_code: 'HOTEL', reasonForTrip: 'N1', vatType: 'STD', grossAmount: 130, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-05-10', expenseType_code: 'HOTEL', reasonForTrip: 'N2', vatType: 'STD', grossAmount: 130, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `over-limit claim should still submit (soft flag): ${s.status}`);
+
+  const r = await GET(stats('2020-01-01', '2030-12-31', 'ALL'), { auth: MGR });
+  assert.equal(r.status, 200);
+  const v = r.data.violation;
+  assert.ok(v, 'dashboardStats returns a violation object');
+  assert.ok(v.total >= 1 && v.flagged >= 1, `flagged (${v.flagged}) and total (${v.total}) both counted`);
+  assert.ok(Number(v.rate) > 0 && Number(v.rate) <= 100, `rate is a sensible percentage: ${v.rate}`);
+  assert.equal(v.topBreach, 'Hotel daily limit', 'top breach parsed from the flag text');
+  // The per-month flagged count feeds the sparkline.
+  const may = r.data.trend.find((tt) => tt.month === '2026-05');
+  assert.ok(may && may.flagged >= 1, 'the flagged claim shows in its month bucket');
+
+  // A window with no claims → rate 0, nothing flagged (card degrades gracefully).
+  const empty = await GET(stats('2019-01-01', '2019-12-31', 'ALL'), { auth: MGR });
+  assert.equal(Number(empty.data.violation.rate), 0, 'empty window → 0% rate');
+  assert.equal(empty.data.violation.total, 0, 'empty window → no claims');
+});

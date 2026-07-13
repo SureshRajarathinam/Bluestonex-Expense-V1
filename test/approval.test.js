@@ -275,7 +275,7 @@ test('submitting an India claim emails the single configured approver', async ()
     'India single-level approver (suresh.rajarathinam@) should be emailed on submit');
 });
 
-test('India single-level approval sends no further approver email', async () => {
+test('India single-level approval sends no second-level approver email (but does notify the employee)', async () => {
   const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
   const id = c.data.ID;
   await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
@@ -284,8 +284,43 @@ test('India single-level approval sends no further approver email', async () => 
   const before = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
   assert.ok(ok.status < 400, `IN approve ${ok.status}`);
-  assert.equal(mailsSince(before).length, 0,
+  // There is no second level in India — no "second-level" approver email may be sent.
+  assert.ok(!mailsSince(before).some((mm) => /second-level/i.test(mm.subject || '')),
     'India (single-level) approval must not send a second-level email');
+});
+
+test('final approval emails the employee who created the claim (India single-level)', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 118, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  const before = MAILS.length;
+  const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
+  assert.ok(ok.status < 400, `IN approve ${ok.status}`);
+  const approvedMail = mailsSince(before).find((mm) => /\bapproved\b/i.test(mm.subject || ''));
+  assert.ok(approvedMail, 'India final approval emails the employee an "approved" notification');
+  // Recipient is the authoritative directory email or, unresolved, the createdBy login.
+  assert.ok(/bluestonex\.com$/i.test(String(approvedMail.to || '')),
+    `approved email addressed to the employee, got "${approvedMail.to}"`);
+});
+
+test('UK: only the SECOND (final) approval emails the employee — level 1 does not', async () => {
+  const id = await submitUK();
+  // Level 1 (manager) — claim goes to FirstApproved, NOT final. Employee must NOT be told "approved".
+  const m1 = MAILS.length;
+  const a1 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  assert.ok(a1.status < 400, `L1 approve ${a1.status}`);
+  assert.ok(!mailsSince(m1).some((mm) => /^Expense Claim .* approved$/i.test(mm.subject || '')),
+    'UK level-1 approval must NOT send the employee an "approved" email');
+  // Level 2 (Dan) — claim reaches final Approved → employee gets the "approved" email.
+  const m2 = MAILS.length;
+  const a2 = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: FIN });
+  assert.ok(a2.status < 400, `L2 approve ${a2.status}`);
+  const approvedMail = mailsSince(m2).find((mm) => /^Expense Claim .* approved$/i.test(mm.subject || ''));
+  assert.ok(approvedMail, 'UK level-2 (final) approval emails the employee an "approved" notification');
+  assert.ok(/bluestonex\.com$/i.test(String(approvedMail.to || '')),
+    `approved email addressed to the employee, got "${approvedMail.to}"`);
 });
 
 // Regression: HANA returns DECIMAL columns as STRINGS ("20.00"), so the email
