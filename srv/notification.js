@@ -151,9 +151,10 @@ class NotificationService {
     });
 
     // Targeted email to the configured first-level approver for this claim.
+    const who = (employee && employee.fullName) || '';
     await mailer.sendMail({
       to:      firstApprover,
-      subject: `Expense Claim ${claim.claimNumber} awaiting your approval`,
+      subject: `Expense Claim ${claim.claimNumber}${who ? ` from ${who}` : ''} awaiting your approval`,
       text:    `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
                `for ${money(claim)}. Please review and approve it in the Approvals app.`,
       html:    emailShell({
@@ -172,7 +173,10 @@ class NotificationService {
 
   // Fired when a two-level (UK) claim clears level 1 and now awaits level 2.
   // `nextApprover` is the configured second-level approver ANS should alert.
-  async notifyLevel1Approved(claim, nextApprover) {
+  // `requestedBy` is the original claimant's name, surfaced so the L2 approver
+  // sees who raised the claim (optional — omitted gracefully if not supplied).
+  async notifyLevel1Approved(claim, nextApprover, requestedBy) {
+    const who = requestedBy || '';
     await this._sendEvent({
       eventType:    'ExpenseClaim.Level1Approved',
       resource: {
@@ -195,14 +199,15 @@ class NotificationService {
     // Targeted email to the configured second-level (UK) approver.
     await mailer.sendMail({
       to:      nextApprover,
-      subject: `Expense Claim ${claim.claimNumber} awaiting your second-level approval`,
-      text:    `Claim ${claim.claimNumber} for ${money(claim)} has passed first-level ` +
+      subject: `Expense Claim ${claim.claimNumber}${who ? ` from ${who}` : ''} awaiting your second-level approval`,
+      text:    `Claim ${claim.claimNumber}${who ? ` from ${who}` : ''} for ${money(claim)} has passed first-level ` +
                `approval and now awaits your second-level approval in the Approvals app.`,
       html:    emailShell({
         heading: `Expense claim ${claim.claimNumber} awaiting your second-level approval`,
-        intro:   `This claim has cleared first-level approval and now needs your <strong>second-level</strong> sign-off.`,
+        intro:   `This claim${who ? ` from <strong>${who}</strong>` : ''} has cleared first-level approval and now needs your <strong>second-level</strong> sign-off.`,
         rows:    [
           ['Claim number', claim.claimNumber],
+          ['Requested by', who],
           ['Amount',       money(claim)]
         ],
         closing: `Please review and approve it in the <strong>Approvals</strong> app.`

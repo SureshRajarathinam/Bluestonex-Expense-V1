@@ -1,9 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { validateClaim } = require('../srv/lib/validate');
+const { readPolicy } = require('./lib/config');
 
 const TODAY = '2026-06-20';
-const POLICY = { receiptThreshold: 25, mealDailyLimit: 40, hotelDailyLimit: 200, mileageRate: 0.25 };
+// Thresholds/limits/rate come from the seeded UK POLICY config, not hardcoded —
+// if the config changes, these tests follow it.
+const POLICY = readPolicy('UK');
 const TYPES = {
   HOTEL: { requiresReceipt: true }, FOOD: { requiresReceipt: true },
   TRAIN: { requiresReceipt: true }, TOLLS: { requiresReceipt: false }, TAXI: { requiresReceipt: true }
@@ -43,20 +46,22 @@ test('rule 3: claim total must equal sum of line items', () => {
 
 test('rule 4: receipt mandatory at/above threshold', () => {
   const o = base();
-  o.items[0] = { expenseDate: '2026-02-16', expenseType_code: 'TAXI', reasonForTrip: 'Office', grossAmount: 30, receiptAttached: false };
-  o.claim.totalGross = 30;
-  assert.ok(hasErr(run(o), 'receipt is required'), 'should require receipt for £30 > £25');
+  const above = POLICY.receiptThreshold + 5; // just over the configured threshold
+  o.items[0] = { expenseDate: '2026-02-16', expenseType_code: 'TAXI', reasonForTrip: 'Office', grossAmount: above, receiptAttached: false };
+  o.claim.totalGross = above;
+  assert.ok(hasErr(run(o), 'receipt is required'), `should require receipt above the £${POLICY.receiptThreshold} threshold`);
   o.items[0].receiptAttached = true;
   assert.ok(!hasErr(run(o), 'receipt is required'), 'receipt attached should clear it');
 });
 
 test('rule 5: meal daily limit is a SOFT flag (warns + flags, does not block)', () => {
   const o = base();
+  const meal = POLICY.mealDailyLimit;
   o.items = [
-    { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Lunch', grossAmount: 30, receiptAttached: true },
-    { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Dinner', grossAmount: 25, receiptAttached: true }
+    { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Lunch', grossAmount: meal, receiptAttached: true },
+    { expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Dinner', grossAmount: 15, receiptAttached: true }
   ];
-  o.claim.totalGross = 55; // 55 > 40 meal limit for that day
+  o.claim.totalGross = meal + 15; // one day's FOOD total exceeds the configured meal limit
   const r = run(o);
   assert.ok(!hasErr(r, 'daily limit'), 'a daily-limit breach must NOT block submission');
   assert.ok(r.flags.some((f) => f.toLowerCase().includes('daily limit')), 'it is raised as a policy flag for the approver');
@@ -65,8 +70,10 @@ test('rule 5: meal daily limit is a SOFT flag (warns + flags, does not block)', 
 
 test('rule 5: mileage rate cannot exceed policy rate', () => {
   const o = base();
-  o.mileage = [{ tripDate: '2026-02-16', destination: 'X', reasonForTrip: 'Y', milesCount: 10, ratePerMile: 0.99, totalAmount: 9.9 }];
-  o.claim.totalGross = 24 + 9.9;
+  const overRate = POLICY.mileageRate + 0.5; // above the configured cap
+  const total = Math.round(10 * overRate * 100) / 100;
+  o.mileage = [{ tripDate: '2026-02-16', destination: 'X', reasonForTrip: 'Y', milesCount: 10, ratePerMile: overRate, totalAmount: total }];
+  o.claim.totalGross = 24 + total;
   assert.ok(hasErr(run(o), 'exceeds the policy rate'));
 });
 

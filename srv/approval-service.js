@@ -56,8 +56,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // Expand the claimant's directory email so a final-approval notification can
       // be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
       // createdBy inside notifyApproved when the association is unresolved).
-      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => e('Email')); });
+      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });
       if (!claim) return req.error(404, 'Expense claim not found.');
+      // Original claimant's display name for the L2 escalation email (falls back to
+      // the login when the directory row is unresolved).
+      const requestedBy = [claim.employee?.FName, claim.employee?.LName].filter(Boolean).join(' ') || claim.createdBy;
 
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
       if (!wf) return req.error(422, `No approval workflow is configured for ${claim.country}.`);
@@ -84,7 +87,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           await audit.record({ userId: me, action: 'FirstApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 1 approved; awaiting level 2 (${wf.secondApprover || 'n/a'})` });
           // Alert the configured second-level approver (fire-and-forget — email must
           // not sit in the request's critical path; a dead SMTP would 504 the approve).
-          notification.notifyLevel1Approved(claim, wf.secondApprover)
+          notification.notifyLevel1Approved(claim, wf.secondApprover, requestedBy)
             .catch((e) => LOG.warn('notifyLevel1Approved failed:', e.message));
         } else {
           await UPDATE(CLAIMS, ID).with({

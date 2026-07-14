@@ -17,6 +17,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { round2, taxRateFor, splitVAT, mileageTotal, claimTotals } = require('../srv/lib/calc');
 const { validateClaim } = require('../srv/lib/validate');
+const { readPolicy, readStdRate } = require('./lib/config');
 
 // ═══ PART A — UNIT: tax split decision table (calc.splitVAT) ═══════════════════
 // Decision table — condition inputs → expected (net, vat):
@@ -70,10 +71,12 @@ test('splitVAT: DEFECT D5 — negative gross produces negative net/vat (no guard
 
 // ═══ PART B — UNIT: taxRateFor country resolution ═════════════════════════════
 test('taxRateFor: IN uses gstRate, UK/other uses vatRate, with documented defaults', () => {
-  assert.equal(taxRateFor('IN', { gstRate: 0.18 }), 0.18);
-  assert.equal(taxRateFor('IN', {}), 0.18, 'IN default');
-  assert.equal(taxRateFor('UK', { vatRate: 0.20 }), 0.20);
-  assert.equal(taxRateFor('UK', {}), 0.20, 'UK default');
+  // "reads from policy" cases use the SEEDED config rates; the {} cases assert
+  // calc.js's own documented code defaults (not config).
+  assert.equal(taxRateFor('IN', readPolicy('IN')), readStdRate('IN'));
+  assert.equal(taxRateFor('IN', {}), 0.18, 'IN default (code fallback)');
+  assert.equal(taxRateFor('UK', readPolicy('UK')), readStdRate('UK'));
+  assert.equal(taxRateFor('UK', {}), 0.20, 'UK default (code fallback)');
   assert.equal(taxRateFor(null, {}), 0.20, 'null country → UK default');
 });
 test('taxRateFor: explicit 0 rate is honoured (?? not ||)', () => {

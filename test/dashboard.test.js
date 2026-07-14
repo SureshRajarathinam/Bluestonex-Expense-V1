@@ -9,11 +9,15 @@
 const cds = require('@sap/cds');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { readApprovers } = require('./lib/config');
 
+// Approver identities come from the seeded WORKFLOW config (passwords are mock-auth
+// fixtures, not config, so they stay literal).
+const UK = readApprovers('UK'), IN = readApprovers('IN');
 const EMP   = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' }; // seeded emp, dept Operations
-const MGR   = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1
-const FIN   = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };                // UK L2
-const IN1   = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' };     // IN L1
+const MGR   = { username: UK.first,  password: 'mgr' };                                  // UK L1
+const FIN   = { username: UK.second, password: 'dan' };                                  // UK L2
+const IN1   = { username: IN.first,  password: 'suresh' };                                // IN L1
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' };                   // Employee only, NOT seeded emp
 const PRIYA = { username: 'priya.sharma@bluestonex.com', password: 'priya' };            // Employee only
 

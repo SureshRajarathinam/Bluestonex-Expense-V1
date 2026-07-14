@@ -1,11 +1,16 @@
 const cds = require('@sap/cds');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { readApprovers } = require('./lib/config');
 
+// Approver identities are read from the seeded WORKFLOW config so both the mock
+// logins and the "who was emailed" assertions track the config (passwords are
+// mock-auth fixtures, not config → literal).
+const UK = readApprovers('UK'), IN = readApprovers('IN');
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' };
-const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };
-const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };
-const IN1 = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' }; // India L1 (from EXP-WORKFLOW config)
+const MGR = { username: UK.first,  password: 'mgr' };
+const FIN = { username: UK.second, password: 'dan' };
+const IN1 = { username: IN.first,  password: 'suresh' }; // India L1 (from EXP-WORKFLOW config)
 const CLERK = { username: 'clerk@bluestonex.com', password: 'clerk' }; // Employee only
 
 // Spy on the notification singleton's low-level sender to capture every ANS
@@ -73,7 +78,7 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   // A decline now returns the claim to the employee (reworkable), not a terminal Rejected.
   const claim = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data;
   assert.equal(claim.status, 'Returned');
-  assert.equal(claim.rejectedBy, 'manager@bluestonex.com', 'records who returned it');
+  assert.equal(claim.rejectedBy, UK.first, 'records who returned it');
   assert.equal(claim.rejectionReason, 'Missing detail', 'records the reason');
   // Rejection MUST email the employee who created the claim (requirement). The
   // recipient is the authoritative directory email or, unresolved, the createdBy login.
@@ -193,7 +198,7 @@ test('UK level-1 approval fires a notification to the second-level approver', as
   const id = await submitUK();
   const l1mail = mailsSince(mSubmit).find((mm) => /awaiting your approval/i.test(mm.subject || ''));
   assert.ok(l1mail, 'submit emails the L1 approver');
-  assert.equal(String(l1mail.to || '').toLowerCase(), 'manager@bluestonex.com', 'L1 email addressed to the configured first approver');
+  assert.equal(String(l1mail.to || '').toLowerCase(), UK.first, 'L1 email addressed to the configured first approver');
 
   const before = NOTIFS.length;
   const mApprove = MAILS.length;
@@ -202,13 +207,13 @@ test('UK level-1 approval fires a notification to the second-level approver', as
   const evts = eventsFor(id, 'ExpenseClaim.Level1Approved');
   assert.equal(evts.length, 1, 'exactly one Level1Approved event should fire for a UK claim');
   // The payload must carry the configured second-level approver so ANS can route it.
-  assert.ok(JSON.stringify(evts[0]).includes('Dan.Barton@bluestonex.com'),
+  assert.ok(JSON.stringify(evts[0]).includes(UK.second),
     'the event should reference the UK second-level approver');
   assert.ok(NOTIFS.length > before, 'a notification was recorded');
   // UK L1 approval MUST email the configured second-level approver (L2 mail mechanism).
   const l2mail = mailsSince(mApprove).find((mm) => /second-level approval/i.test(mm.subject || ''));
   assert.ok(l2mail, 'UK L1 approval emails the L2 approver');
-  assert.equal(String(l2mail.to || '').toLowerCase(), 'dan.barton@bluestonex.com', 'L2 email addressed to the configured second approver');
+  assert.equal(String(l2mail.to || '').toLowerCase(), UK.second.toLowerCase(), 'L2 email addressed to the configured second approver');
 });
 
 test('India single-level approval does NOT fire a second-approver notification', async () => {
@@ -249,7 +254,7 @@ test('submitting a UK claim emails the configured first-level approver', async (
   const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   assert.ok(s.status < 400, `submit ${s.status}`);
   const mails = mailsSince(before);
-  assert.ok(mails.some((m) => m.to === 'manager@bluestonex.com'),
+  assert.ok(mails.some((m) => m.to === UK.first),
     'UK first-level approver (manager@) should be emailed on submit');
 });
 
@@ -259,7 +264,7 @@ test('UK level-1 approval emails the configured second-level approver', async ()
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
   assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
   const mails = mailsSince(before);
-  assert.ok(mails.some((m) => m.to === 'Dan.Barton@bluestonex.com'),
+  assert.ok(mails.some((m) => m.to === UK.second),
     'UK second-level approver (Dan.Barton@) should be emailed on level-1 approval');
 });
 
@@ -271,7 +276,7 @@ test('submitting an India claim emails the single configured approver', async ()
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   const mails = mailsSince(before);
-  assert.ok(mails.some((m) => m.to === 'suresh.rajarathinam@bluestonex.com'),
+  assert.ok(mails.some((m) => m.to === IN.first),
     'India single-level approver (suresh.rajarathinam@) should be emailed on submit');
 });
 
@@ -334,10 +339,10 @@ test('approver email survives a string totalGross (HANA DECIMAL shape)', async (
   await notification.notifyClaimSubmitted(
     { ID: 'regr-1', claimNumber: 'EXP-REGR-1', totalGross: '20.00', currency: 'INR', claimPeriod: '2026-02-28' },
     { fullName: 'Test User' },
-    'suresh.rajarathinam@bluestonex.com'
+    IN.first
   );
   const mails = mailsSince(before);
-  assert.ok(mails.some((m) => m.to === 'suresh.rajarathinam@bluestonex.com' && /₹20\.00/.test(m.text)),
+  assert.ok(mails.some((m) => m.to === IN.first && /₹20\.00/.test(m.text)),
     'approver is emailed with a correctly formatted ₹ amount despite a string totalGross');
 });
 
@@ -378,10 +383,10 @@ test('claimJourney returns the ordered trail, assigned approvers and resubmit co
   const j = await GET(`/approval/claimJourney(claimNumber='${no}')`, { auth: MGR });
   assert.equal(j.status, 200, `journey ${j.status}: ${JSON.stringify(j.data?.error)}`);
   const d = j.data;
-  assert.equal(d.assignedL1, 'manager@bluestonex.com', 'assigned L1 from workflow');
-  assert.equal(d.assignedL2, 'Dan.Barton@bluestonex.com', 'assigned L2 from workflow');
-  assert.equal(d.approvedL1By, 'manager@bluestonex.com');
-  assert.equal(d.approvedL2By, 'Dan.Barton@bluestonex.com');
+  assert.equal(d.assignedL1, UK.first, 'assigned L1 from workflow');
+  assert.equal(d.assignedL2, UK.second, 'assigned L2 from workflow');
+  assert.equal(d.approvedL1By, UK.first);
+  assert.equal(d.approvedL2By, UK.second);
   assert.equal(d.resubmitCount, 1);
   assert.deepEqual(d.events.map((e) => e.action),
     ['Submitted', 'Returned', 'Resubmitted', 'FirstApproved', 'Approved'],

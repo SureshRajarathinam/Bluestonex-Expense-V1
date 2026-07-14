@@ -56,6 +56,10 @@ class Mailer {
   }
 
   async sendMail({ to, subject, text, html }) {
+    // Hard kill-switch: the automated test suite sets MAIL_DISABLED=true so it can
+    // never deliver real mail (cds auto-loads .env, incl. any SMTP_* creds). Local
+    // `cds watch` and BTP leave it unset, so real sending still works there.
+    if (process.env.MAIL_DISABLED === 'true') { LOG.info(`mail disabled (MAIL_DISABLED) — skipped: "${subject}"`); return false; }
     if (!to) { LOG.info(`mail skipped — no recipient for "${subject}"`); return false; }
 
     let nodemailer;
