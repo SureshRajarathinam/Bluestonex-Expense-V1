@@ -514,54 +514,10 @@ sap.ui.define([
       if (this._validateMileageRows().length) { aProblems.push(this.getText("msgMileageIncomplete")); }
       if (aProblems.length) { this._showFieldProblems(aProblems); return; }
 
-      // Confirm before applying — and name the approver the claim will be sent to
-      // (resolved per country via the ExpenseService function import). On OK the
-      // submit runs; the backend then emails that approver (fire-and-forget).
-      var that2 = this;
-      var sCountry = oCtx.getProperty("country");
-      this._resolveApprover(sCountry).then(function (sApprover) {
-        var sMsg = sApprover
-          ? that2.getText("confirmSubmitNamed", [sApprover, that2._approverRole(sCountry)])
-          : that2.getText("confirmSubmitGeneric");
-        MessageBox.confirm(sMsg, {
-          title: that2.getText("confirmSubmitTitle"),
-          actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
-          emphasizedAction: MessageBox.Action.OK,
-          onClose: function (sAction) {
-            if (sAction === MessageBox.Action.OK) { that2._doSubmit(oCtx, sId); }
-          }
-        });
-      });
-    },
-
-    // Resolve the country's first-level approver email via the OData function
-    // import (NOT a raw fetch — that would 404 under the Work Zone approuter).
-    // Never rejects: resolves to "" on any failure so the lookup can never block
-    // submit — the confirmation then falls back to a generic message.
-    _resolveApprover: function (sCountry) {
-      if (!sCountry) { return Promise.resolve(""); }
-      try {
-        // V4 operation binding MUST be deferred: the path ends with the literal
-        // "(...)" and parameters are supplied via setParameter — NOT inlined in
-        // the path (that form is not a deferred binding, so execute() throws
-        // "The binding must be deferred" synchronously and breaks onSubmit).
-        var oOp = this.getModel().bindContext("/approverFor(...)");
-        oOp.setParameter("country", sCountry);
-        return oOp.execute().then(function () {
-          var oBound = oOp.getBoundContext();
-          return (oBound && oBound.getProperty("value")) || "";
-        }).catch(function () { return ""; });
-      } catch (e) {
-        // Never let the approver lookup block submit — fall back to the generic
-        // confirmation message.
-        return Promise.resolve("");
-      }
-    },
-
-    // Human label for the approver level (UK routes through a 1st-level approver;
-    // India is single-level).
-    _approverRole: function (sCountry) {
-      return this.getText(sCountry === "UK" ? "approverRoleUK" : "approverRoleGeneric");
+      // No confirmation dialog — apply immediately. The submit chain shows a
+      // meaningful toast on success; the backend then emails the country's
+      // approver (fire-and-forget), so the toast can safely say so.
+      this._doSubmit(oCtx, sId);
     },
 
     // The actual submit chain (was inline in onSubmit). Activates a stale sibling

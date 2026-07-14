@@ -78,6 +78,11 @@ class Mailer {
         host:   cfg.host,
         port:   cfg.port || 587,
         secure: !!cfg.secure,
+        // On the STARTTLS port (587, secure:false) force the TLS upgrade so we never
+        // fall back to a plaintext session — required by Office 365. A bound service
+        // may still pass its own `tls` block (e.g. legacy ciphers) which wins.
+        requireTLS: !cfg.secure,
+        tls:    cfg.tls || undefined,
         auth:   cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined,
         // Fail FAST on an unreachable/misconfigured SMTP. Without these, nodemailer's
         // defaults let a dead host hang the awaited caller (submit/approve) long enough
