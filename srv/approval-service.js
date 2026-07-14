@@ -425,7 +425,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         const fromD = new Date(from), toD = new Date(to);
         const prevToD = new Date(fromD.getTime() - dayMs);
         const prevFromD = new Date(prevToD.getTime() - (toD - fromD));
-        const pf = ymd(prevFromD), pt = ymd(prevToD);
+        // Format the preceding-window bounds as ISO YYYY-MM-DD. ymd() (String(d).slice)
+        // only works on ISO strings; on a Date it yields "Tue Jun 09", which would never
+        // match dateOf(r) — so use toISOString(), keeping the UTC basis the arithmetic used.
+        const pf = prevFromD.toISOString().slice(0, 10), pt = prevToD.toISOString().slice(0, 10);
         const prevRows = scoped.filter((r) => { const d = dateOf(r); return d && d >= pf && d <= pt; });
         if (prevRows.length) {
           const prevRate = prevRows.filter(isFlagged).length / prevRows.length;
