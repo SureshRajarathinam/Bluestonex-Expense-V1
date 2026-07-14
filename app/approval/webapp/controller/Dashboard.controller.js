@@ -9,18 +9,17 @@ sap.ui.define([
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v6"; // localStorage key; bumped (reordered rows: donut+category, wave, trend, claimants+violation)
 
-  // The ONLY colours used on the dashboard cards (per requirement): blue, teal,
-  // orange, light-blue, light-yellow, light-green, light-red, black/navy, grey.
-  // Each expense category gets one fixed colour from this palette, so a category
-  // reads the SAME colour in the donut ring, the donut legend, and the category
-  // bars. Unknown codes fall through to the palette by a stable hash.
+  // 5-colour scheme only — every category colour is a tint/shade of light blue,
+  // light green, light orange, grey or black (no other hues). Each expense
+  // category gets one fixed colour so it reads the SAME in the donut ring, the
+  // donut legend and the category bars. Unknown codes fall through by stable hash.
   var CAT_PALETTE = [
-    "#4c8bf5", "#12a4b8", "#f0ab00", "#a9c7f7", "#f2d16b", "#9bd3a0", "#f0a0a0", "#2f3345", "#9aa0a8"
+    "#5b9bd5", "#3a6fa5", "#aecbe8", "#82c48f", "#4f9e6a", "#efb366", "#d9902f", "#9aa0a8", "#5a5e63", "#1d1d1f"
   ];
   var CAT_COLOR = {
-    TRAIN: "#4c8bf5", TAXI: "#12a4b8", FLIGHT: "#f0ab00", CAR_HIRE: "#a9c7f7",
-    FOOD: "#f2d16b", HOTEL: "#9bd3a0", PARKING: "#f0a0a0", TOLLS: "#2f3345",
-    PHONE: "#9aa0a8", OTHER: "#6a6d70"
+    TRAIN: "#5b9bd5", TAXI: "#3a6fa5", FLIGHT: "#aecbe8", CAR_HIRE: "#82c48f",
+    FOOD: "#4f9e6a", HOTEL: "#efb366", PARKING: "#d9902f", TOLLS: "#9aa0a8",
+    PHONE: "#5a5e63", OTHER: "#1d1d1f"
   };
   function catColor(code) {
     if (code && CAT_COLOR[code]) { return CAT_COLOR[code]; }
@@ -120,11 +119,11 @@ sap.ui.define([
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
-  // Rich-blue shade by rank (hue ~ the reference "Created" blue #4c8bf5): darkest
-  // for the top claimant, lightening down the list (lightness ramps 44% → 74%).
+  // Light-blue shade by rank (same family as #5b9bd5 ≈ hsl(207,55%,60%)): deepest
+  // for the top claimant, lightening down the list (lightness ramps 45% → 75%).
   function blueShade(rank, total) {
     var ratio = total > 1 ? rank / (total - 1) : 0;
-    return "hsl(219, 88%, " + Math.round(44 + ratio * 30) + "%)";
+    return "hsl(207, 55%, " + Math.round(45 + ratio * 30) + "%)";
   }
 
   // Top 5 claimants: horizontal bars — name (left) · blue-shaded bar · amount

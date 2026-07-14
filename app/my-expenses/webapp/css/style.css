@@ -15,6 +15,8 @@
   --bsx-text:   #32363a;
   --bsx-muted:  #6a6d70;
   --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
+  --bsx-lblue:  #5b9bd5;   /* light blue (brand "X") */
+  --bsx-black:  #1d1d1f;   /* near-black text/brand */
   --bsx-radius: 8px;
 }
 
@@ -23,15 +25,16 @@ html, body, .sapUiBody, .bsxBody,
 
 /* ---- Header (minimal: menu + blue brand) --------------------------------- */
 .bsxHeader.sapTntToolHeader {
-  background: var(--bsx-card);
+  background: var(--bsx-sidenav);
   border-bottom: 1px solid var(--bsx-line);
   height: 3rem;
 }
-.bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
-.bsxBrand .bsxBrandX { color: var(--bsx-blue); }
+/* Brand: "Bluestone" black + trailing "X" blue (two sibling Texts in an HBox). */
+.bsxBrand  { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-black); padding: 0 0 0 .15rem; }
+.bsxBrandX { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-lblue); padding: 0 .15rem 0 0; }
 /* Logged-in employee greeting (right side of the header) */
-.bsxGreeting { font-weight: 600; color: var(--bsx-text); padding: 0 .5rem 0 0; }
-.bsxGreetIcon { color: var(--bsx-blue); padding-right: .25rem; }
+.bsxGreeting { font-weight: 600; color: var(--bsx-black); padding: 0 .5rem 0 0; }
+.bsxGreetIcon { color: var(--bsx-black); padding-right: .25rem; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }

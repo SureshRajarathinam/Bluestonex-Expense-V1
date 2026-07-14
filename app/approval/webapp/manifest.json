@@ -22,7 +22,13 @@
           "semanticObject": "ExpenseApproval",
           "action": "display",
           "title": "{{appTitle}}",
+          "subTitle": "{{tileSubtitle}}",
           "icon": "sap-icon://approvals",
+          "indicatorDataSource": {
+            "dataSource": "mainService",
+            "path": "Approvals/$count",
+            "refresh": 300
+          },
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"

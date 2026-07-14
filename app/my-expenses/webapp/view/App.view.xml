@@ -12,7 +12,10 @@
     <tnt:header>
       <tnt:ToolHeader class="bsxHeader">
         <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
-        <Text text="BluestoneX" class="bsxBrand" />
+        <HBox alignItems="Center">
+          <Text text="Bluestone" class="bsxBrand" />
+          <Text text="X" class="bsxBrandX" />
+        </HBox>
         <ToolbarSpacer />
         <Text text="{app>/greeting}" visible="{= !!${app>/greeting} }" class="bsxGreeting" />
         <core:Icon src="sap-icon://person-placeholder" class="bsxGreetIcon" visible="{= !!${app>/greeting} }" />

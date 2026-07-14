@@ -16,17 +16,26 @@
   --bsx-muted:  #6a6d70;
   --bsx-radius: 8px;
   --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
-  /* Analytics palette (rich, from the Outbound-Processing dashboard reference):
-     emerald = positive/approved · coral = negative/rejected · amber = warning/returned
-     · rich blue = neutral/created · navy + teal round out the categorical set. */
-  --bsx-green:  #2e9e6b;   /* emerald "Released"  */
-  --bsx-red:    #e0574f;   /* coral   "Suspended" */
-  --bsx-amber:  #f0ab00;
-  --bsx-navy:   #2f3345;   /* charcoal-navy "Short" */
-  --bsx-teal:   #12a4b8;   /* categorical teal      */
-  --bsx-blue-l: #a9c7f7;   /* light series blue  */
-  --bsx-blue-m: #4c8bf5;   /* rich "Created" blue */
-  --bsx-blue-d: #2f6fd6;   /* dark series blue   */
+  /* ── 5-colour scheme (the ONLY hues used app-wide): light blue · light green ·
+     light orange · grey · black. Semantic mapping: approved/positive = green,
+     awaiting/pending/info = blue, returned/rejected/negative/warning = orange,
+     headings/primary text = black, secondary/borders/tracks = grey. All the
+     legacy token names below are repointed into this family so the whole app
+     cascades automatically. ── */
+  --bsx-lblue:  #5b9bd5;   /* light blue accent  */
+  --bsx-lgreen: #82c48f;   /* light green accent */
+  --bsx-lorange:#efb366;   /* light orange accent */
+  --bsx-black:  #1d1d1f;   /* near-black text/brand */
+  --bsx-blue:   #5b9bd5;   /* was Fiori blue → light blue */
+  --bsx-danger: #efb366;   /* was red → light orange */
+  --bsx-green:  #82c48f;   /* → light green   */
+  --bsx-red:    #efb366;   /* → light orange  */
+  --bsx-amber:  #efb366;   /* → light orange  */
+  --bsx-navy:   #1d1d1f;   /* → black         */
+  --bsx-teal:   #5b9bd5;   /* → light blue    */
+  --bsx-blue-l: #aecbe8;   /* light-blue tint */
+  --bsx-blue-m: #5b9bd5;   /* light blue      */
+  --bsx-blue-d: #3a6fa5;   /* dark light-blue */
 }
 
 html, body, .sapUiBody, .bsxBody,
@@ -34,13 +43,14 @@ html, body, .sapUiBody, .bsxBody,
 
 /* ---- Header (minimal: menu + blue brand) --------------------------------- */
 .bsxHeader.sapTntToolHeader {
-  background: var(--bsx-card);
+  background: var(--bsx-sidenav);
   border-bottom: 1px solid var(--bsx-line);
   height: 3rem;
 }
-.bsxBrand { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-blue); padding: 0 .15rem; }
-.bsxBrand .bsxBrandX { color: var(--bsx-blue); }
-.bsxGreeting { font-weight: 600; color: var(--bsx-navy); padding: 0 .5rem 0 0; }
+/* Brand: "Bluestone" black + trailing "X" blue (two sibling Texts in an HBox). */
+.bsxBrand  { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-black); padding: 0 0 0 .15rem; }
+.bsxBrandX { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-lblue); padding: 0 .15rem 0 0; }
+.bsxGreeting { font-weight: 600; color: var(--bsx-black); padding: 0 .5rem 0 0; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }
@@ -108,20 +118,20 @@ html, body, .sapUiBody, .bsxBody,
 .bsxPremiumCard {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 2px 10px rgba(10, 110, 209, .05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 2px 10px rgba(0, 0, 0, .05);
   transition: box-shadow .2s ease, transform .2s ease;
 }
 .bsxPremiumCard::before {
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
   background: var(--bsx-blue);
 }
-.bsxPremiumCard:hover { box-shadow: 0 6px 18px rgba(10, 110, 209, .14); transform: translateY(-1px); }
+.bsxPremiumCard:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .12); transform: translateY(-1px); }
 .bsxChoiceCard { cursor: pointer; }
 
 /* Category tag chip — blue text on a light-blue tint (reference style, in blue) */
 .bsxCardTag.sapMText, .bsxCardTag {
   display: inline-block; padding: .15rem .55rem; border-radius: 1rem;
-  background: rgba(10, 110, 209, .1); color: var(--bsx-blue);
+  background: rgba(91, 155, 213, .14); color: var(--bsx-blue);
   font-size: .75rem; font-weight: 600; line-height: 1.25rem;
 }
 /* Small outlined pill */
@@ -171,9 +181,9 @@ html, body, .sapUiBody, .bsxBody,
 /* Trend palette — semantic (within the allowed set): Submitted = blue,
    Approved = light-green, Returned = light-red. Shared by the legend dots and
    the bars below. */
-.bsxDot--sub { background: #4c8bf5; }
-.bsxDot--ok  { background: #9bd3a0; }
-.bsxDot--no  { background: #f0a0a0; }
+.bsxDot--sub { background: #5b9bd5; }
+.bsxDot--ok  { background: #82c48f; }
+.bsxDot--no  { background: #efb366; }
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
@@ -189,9 +199,9 @@ html, body, .sapUiBody, .bsxBody,
 .bsxVChart--trend .bsxVCol { width: 1.1rem; }
 .bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
 .bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
-.bsxVBar--sub { background: #4c8bf5; }
-.bsxVBar--ok  { background: #9bd3a0; }
-.bsxVBar--no  { background: #f0a0a0; }
+.bsxVBar--sub { background: #5b9bd5; }
+.bsxVBar--ok  { background: #82c48f; }
+.bsxVBar--no  { background: #efb366; }
 .bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); text-align: center; }
 /* Year stamp under the month, shown only at range start + each year change so a
    multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without clutter. */
@@ -257,10 +267,10 @@ html, body, .sapUiBody, .bsxBody,
 .bsxWaveXlab  { fill: var(--bsx-muted); font-size: 11px; font-weight: 600; text-anchor: middle; }
 .bsxWaveXyear { fill: var(--bsx-muted); font-size: 9px; font-weight: 500; }
 .bsxWaveArea  { fill: url(#bsxWaveGrad); }
-.bsxWaveLine  { fill: none; stroke: #4c8bf5; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.bsxWaveDot   { fill: #ffffff; stroke: #4c8bf5; stroke-width: 2.5; cursor: pointer; }
-.bsxWaveG0 { stop-color: #4c8bf5; stop-opacity: .28; }
-.bsxWaveG1 { stop-color: #4c8bf5; stop-opacity: .02; }
+.bsxWaveLine  { fill: none; stroke: #5b9bd5; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.bsxWaveDot   { fill: #ffffff; stroke: #5b9bd5; stroke-width: 2.5; cursor: pointer; }
+.bsxWaveG0 { stop-color: #5b9bd5; stop-opacity: .28; }
+.bsxWaveG1 { stop-color: #5b9bd5; stop-opacity: .02; }
 
 /* ---- Policy Violation Rate KPI card (compact tile: rate % + sparkline) ----- */
 .bsxViolCard { flex: 0 1 32rem; max-width: 36rem; }
@@ -270,17 +280,17 @@ html, body, .sapUiBody, .bsxBody,
 .bsxViolNum { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--bsx-text); letter-spacing: -.02em; }
 .bsxViolPct { font-size: 1.3rem; font-weight: 700; color: var(--bsx-muted); margin-left: 2px; }
 .bsxViolDelta { font-size: .8125rem; font-weight: 700; }
-.bsxViolDelta--good { color: #9bd3a0; }   /* fewer violations = good (light green, matches trend) */
-.bsxViolDelta--bad  { color: #f0a0a0; }   /* more violations = bad (light red, matches trend) */
+.bsxViolDelta--good { color: #82c48f; }   /* fewer violations = good (light green, matches trend) */
+.bsxViolDelta--bad  { color: #efb366; }   /* more violations = bad (light red, matches trend) */
 .bsxViolMeta { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin-top: .9rem; padding-top: .75rem;
   border-top: 1px solid var(--bsx-line); font-size: .8125rem; color: var(--bsx-muted); }
 .bsxViolMeta b { color: var(--bsx-text); font-weight: 700; margin-left: .25rem; }
 .bsxViolSpark { display: block; }
-.bsxViolLine { fill: none; stroke: #4c8bf5; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bsxViolLine { fill: none; stroke: #5b9bd5; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .bsxViolArea { fill: url(#bsxViolGrad); }
-.bsxViolEnd  { fill: #0a3d91; }
-.bsxViolG0 { stop-color: #4c8bf5; stop-opacity: .26; }
-.bsxViolG1 { stop-color: #4c8bf5; stop-opacity: .02; }
+.bsxViolEnd  { fill: #3a6fa5; }
+.bsxViolG0 { stop-color: #5b9bd5; stop-opacity: .26; }
+.bsxViolG1 { stop-color: #5b9bd5; stop-opacity: .02; }
 
 /* Horizontal tracked bars (Spend by category / team) */
 .bsxHBars { padding: .5rem 1rem 1rem; }
@@ -289,6 +299,71 @@ html, body, .sapUiBody, .bsxBody,
 .bsxHTrack { flex: 1 1 auto; height: .85rem; background: #eef0f2; border-radius: 1rem; overflow: hidden; }
 .bsxHFill { display: block; height: 100%; border-radius: 1rem; min-width: 2px; transition: width .3s ease; }
 .bsxHFill--blue   { background: var(--bsx-blue); }
-.bsxHFill--violet { background: #4c8bf5; }
-.bsxHFill--muted  { background: #a9c7f7; }
+.bsxHFill--violet { background: #5b9bd5; }
+.bsxHFill--muted  { background: #aecbe8; }
 .bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }
+
+/* ============================================================================
+   SAP Horizon semantic override — force the built-in status/button/strip
+   colours into the 5-colour scheme. Horizon's CSS-variables theme reads these
+   `--sap*` params at runtime, so repointing them here recolours ObjectStatus
+   (Success/Warning/Error/Information), Accept/Reject/Emphasized buttons and
+   MessageStrip WITHOUT fighting per-control DOM classes.
+   Mapping: positive → light green · negative + critical → light orange ·
+   informative → light blue. Text/border shades are slightly deeper for
+   legibility but stay in the same colour family.
+   ========================================================================== */
+:root, .sapUiBody, .sapUiTheme-sap_horizon {
+  /* Positive (approved / accept) → light green */
+  --sapPositiveColor: #4f9e6a;
+  --sapPositiveTextColor: #4f9e6a;
+  --sapPositiveElementColor: #82c48f;
+  --sapPositiveBackgroundColor: #eef7f1;
+  /* Negative (rejected / error / reject) → light orange */
+  --sapNegativeColor: #b9772a;
+  --sapNegativeTextColor: #b9772a;
+  --sapNegativeElementColor: #efb366;
+  --sapNegativeBackgroundColor: #fbf1e4;
+  /* Critical (warning / returned) → light orange */
+  --sapCriticalColor: #b9772a;
+  --sapCriticalTextColor: #b9772a;
+  --sapCriticalElementColor: #efb366;
+  --sapCriticalBackgroundColor: #fbf1e4;
+  /* Informative (info / pending) → light blue */
+  --sapInformativeColor: #3a6fa5;
+  --sapInformativeTextColor: #3a6fa5;
+  --sapInformativeElementColor: #5b9bd5;
+  --sapInformationColor: #5b9bd5;
+  --sapInformativeBackgroundColor: #eef4fa;
+  /* Emphasized button → light blue */
+  --sapButton_Emphasized_Background: #5b9bd5;
+  --sapButton_Emphasized_BorderColor: #5b9bd5;
+  --sapButton_Emphasized_TextColor: #ffffff;
+  --sapButton_Emphasized_Hover_Background: #4a89c2;
+  --sapButton_Emphasized_Hover_BorderColor: #4a89c2;
+  --sapButton_Emphasized_Active_Background: #3a6fa5;
+  /* Accept button → light green */
+  --sapButton_Accept_Background: #82c48f;
+  --sapButton_Accept_BorderColor: #82c48f;
+  --sapButton_Accept_TextColor: #1d1d1f;
+  --sapButton_Accept_Hover_Background: #6fb47d;
+  --sapButton_Accept_Hover_BorderColor: #6fb47d;
+  /* Reject button → light orange */
+  --sapButton_Reject_Background: #efb366;
+  --sapButton_Reject_BorderColor: #efb366;
+  --sapButton_Reject_TextColor: #1d1d1f;
+  --sapButton_Reject_Hover_Background: #e5a24c;
+  --sapButton_Reject_Hover_BorderColor: #e5a24c;
+}
+
+/* Belt-and-braces for ObjectStatus text+icon (both Horizon class spellings),
+   incl. the inverted (filled) chips used on the Workflow tab. */
+.sapMObjStatusSuccess, .sapMObjectStatusSuccess,
+.sapMObjStatusSuccess .sapMObjStatusIcon, .sapMObjectStatusSuccess .sapMObjStatusIcon { color: #4f9e6a !important; }
+.sapMObjStatusWarning, .sapMObjectStatusWarning, .sapMObjStatusError, .sapMObjectStatusError,
+.sapMObjStatusWarning .sapMObjStatusIcon, .sapMObjStatusError .sapMObjStatusIcon { color: #b9772a !important; }
+.sapMObjStatusInformation, .sapMObjectStatusInformation,
+.sapMObjStatusInformation .sapMObjStatusIcon { color: #3a6fa5 !important; }
+.sapMObjStatusInvertedSuccess { background-color: #82c48f !important; border-color: #82c48f !important; color: #1d1d1f !important; }
+.sapMObjStatusInvertedWarning, .sapMObjStatusInvertedError { background-color: #efb366 !important; border-color: #efb366 !important; color: #1d1d1f !important; }
+.sapMObjStatusInvertedInformation { background-color: #5b9bd5 !important; border-color: #5b9bd5 !important; color: #ffffff !important; }
