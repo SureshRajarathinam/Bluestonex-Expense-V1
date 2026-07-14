@@ -14,7 +14,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {} }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {}, live: { net: 0, tax: 0, total: 0 } }), "ui");
       // Which expense types always require a receipt (code → true). Loaded once so
       // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
       this._receiptTypes = {};
@@ -59,10 +59,54 @@ sap.ui.define([
 
     onItemsUpdated: function (oEvent) {
       this.getView().getModel("ui").setProperty("/itemCount", oEvent.getParameter("total") || 0);
+      this._recalcTotals();
     },
 
     onMileageUpdated: function (oEvent) {
       this.getView().getModel("ui").setProperty("/mileageCount", oEvent.getParameter("total") || 0);
+      this._recalcTotals();
+    },
+
+    // Fired on every item/mileage line edit (gross, tax type, miles, rate) so the
+    // corner Net/Tax/Total refresh in real time as the user types/commits.
+    onLineChange: function () {
+      this._recalcTotals();
+    },
+
+    // Recompute the header Net / Tax / Total into the ui model (/live) from the
+    // current item + mileage rows. Mirrors srv/lib/calc.js claimTotals EXACTLY
+    // (net incl. mileage, tax = items only, total incl. mileage) using the shared
+    // formatter.split/num so rounding matches what before('SAVE') will persist.
+    // While editing a draft it derives net/tax live from gross + tax type + the
+    // country rate; for a saved (read-only) claim it uses the persisted amounts.
+    _recalcTotals: function () {
+      var oUi = this.getView().getModel("ui");
+      var bEdit = !!oUi.getProperty("/editable");
+      var nRate = oUi.getProperty("/stdRate") || 0;
+      var itemsNet = 0, itemsVat = 0, itemsGross = 0, miles = 0;
+
+      var oItems = this.byId("itemsTable").getBinding("items");
+      (oItems ? oItems.getCurrentContexts() : []).forEach(function (c) {
+        if (!c) { return; }
+        var o = c.getObject();
+        var g = formatter.num(o.grossAmount);
+        var p = bEdit ? formatter.split(g, o.vatType, nRate)
+                      : { net: formatter.num(o.netAmount), vat: formatter.num(o.vatAmount) };
+        itemsNet += p.net; itemsVat += p.vat; itemsGross += g;
+      });
+
+      var oMile = this.byId("mileageTable").getBinding("items");
+      (oMile ? oMile.getCurrentContexts() : []).forEach(function (c) {
+        if (!c) { return; }
+        var o = c.getObject();
+        miles += bEdit ? (formatter.num(o.milesCount) * formatter.num(o.ratePerMile))
+                       : formatter.num(o.totalAmount);
+      });
+
+      var r2 = function (n) { return parseFloat((Number(n) || 0).toFixed(2)); };
+      oUi.setProperty("/live/net", r2(itemsNet + miles));
+      oUi.setProperty("/live/tax", r2(itemsVat));
+      oUi.setProperty("/live/total", r2(itemsGross + miles));
     },
 
     _predicateOf: function (sPath) {
@@ -113,6 +157,7 @@ sap.ui.define([
     // India -> gstRate) so the items table can preview the net/VAT split as the
     // user types the gross. The server before('SAVE') remains authoritative.
     _loadTaxRate: function (sCountry) {
+      var that = this;
       var oUi = this.getView().getModel("ui");
       if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); oUi.setProperty("/taxTypes", []); return; }
       // Country-aware tax types (VAT for UK, GST for India) for the item dropdown.
@@ -142,6 +187,9 @@ sap.ui.define([
         oUi.setProperty("/stdRate", rate);
         oUi.setProperty("/mileageRate", mileageRate);
         oUi.setProperty("/receiptThreshold", threshold);
+        // Rate is now known — recompute so the corner totals are correct even if
+        // the item/mileage tables rendered before the policy resolved.
+        that._recalcTotals();
       }).catch(function () { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); });
     },
 

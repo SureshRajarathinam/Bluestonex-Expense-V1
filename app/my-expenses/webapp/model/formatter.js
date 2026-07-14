@@ -36,6 +36,12 @@ sap.ui.define([], function () {
   }
 
   return {
+    // Exposed so a controller can reuse the EXACT same numeric coercion +
+    // net/VAT split (same rounding as srv/lib/calc.js) when aggregating the
+    // live header totals — one source of truth for the money math.
+    num: num,
+    split: split,
+
     /** Map statusCriticality (0..3) to a sap.ui.core.ValueState. */
     statusState: function (iCrit) {
       switch (iCrit) {

@@ -118,7 +118,47 @@ sap.ui.define([
     },
 
     // ---- Create flow --------------------------------------------------------
+    // Country is derived automatically from the logged-in user's site code
+    // (EXP_EMPLOYEES.BaseSiteKey via whoami): UK* → UK, IN* → IN. Only when the
+    // site matches neither (e.g. PLRMT, Apphaus) do we fall back to the country
+    // picker popup — so most users never see a dialog.
     onCreate: function () {
+      var that = this;
+      this._resolveSite().then(function (sSite) {
+        var sCountry = that._countryFromSite(sSite);
+        if (sCountry) {
+          that._createClaim(sCountry);
+        } else {
+          that._openCountryDialog();
+        }
+      });
+    },
+
+    // Prefix-map a site code to a claim country. Case-insensitive and
+    // prefix-based (UKOSW → UK, inaug → IN); returns "" for sites that match
+    // neither so the caller falls back to the country picker.
+    _countryFromSite: function (sSite) {
+      var s = (sSite || "").trim().toUpperCase();
+      if (s.indexOf("UK") === 0) { return "UK"; }
+      if (s.indexOf("IN") === 0) { return "IN"; }
+      return "";
+    },
+
+    // Fetch the logged-in user's site code (BaseSiteKey) via whoami(), cached.
+    // Resolved against the service URL so it works under the Work Zone managed
+    // approuter (never a literal relative path). Never rejects — resolves to ""
+    // on any failure so Create still works (falls back to the country popup).
+    _resolveSite: function () {
+      if (this._pSite) { return this._pSite; }
+      this._pSite = fetch(this._serviceUrl() + "whoami()", { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return (j && j.site) || ""; })
+        .catch(function () { return ""; });
+      return this._pSite;
+    },
+
+    // Lazily load + open the country picker (fallback for non-UK/IN sites).
+    _openCountryDialog: function () {
       var that = this;
       if (this._pCountryDialog) {
         this._pCountryDialog.then(function (oDialog) {
@@ -153,13 +193,19 @@ sap.ui.define([
         sap.m.MessageToast.show(this.getText("countryRequired"));
         return;
       }
-      var sToday = new Date().toISOString().slice(0, 10);
+      this.byId("countryDialog").close();
+      this._createClaim(sCountry);
+    },
+
+    // Create a draft claim for the given country and open it. Shared by the auto
+    // site-code path (onCreate) and the country-picker fallback (onCountryContinue).
+    _createClaim: function (sCountry) {
       var that = this;
+      var sToday = new Date().toISOString().slice(0, 10);
       var oList = this.byId("claimsTable").getBinding("items");
 
       // create(initialData, bSkipRefresh) — skip refresh since we navigate away.
       var oCtx = oList.create({ country: sCountry, claimPeriod: sToday }, true);
-      this.byId("countryDialog").close();
       this.getView().setBusy(true);
 
       oCtx.created().then(function () {

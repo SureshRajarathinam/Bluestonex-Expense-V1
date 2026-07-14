@@ -26,10 +26,17 @@
 
       <!-- General information -->
       <Panel class="bsxCard" headerText="{i18n>sectionGeneral}" expandable="false">
+        <!-- Only these five fields, in a 2-column responsive grid so they lay out
+             side-by-side over three rows:
+               Row 1: Country          | Claim Period
+               Row 2: Employee         | Employee Number
+               Row 3: Site Currency    |
+             Country is auto-derived from the user's site code and always
+             read-only (rendered as Text, never an editable input). -->
         <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2">
           <f:content>
             <Label text="{i18n>lblCountry}" />
-            <ObjectStatus text="{path: 'country', formatter: '.formatter.countryText'}" state="Information" inverted="true" />
+            <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
             <Label text="{i18n>lblPeriod}" required="true" />
             <DateRangeSelection
               dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
@@ -45,30 +52,26 @@
             <Text text="{ui>/emp/fullName}" />
             <Label text="{i18n>lblEmpNo}" />
             <Text text="{ui>/emp/employeeNumber}" />
-            <Label text="{i18n>lblSite}" />
-            <Text text="{ui>/emp/site}" />
-            <Label text="{i18n>lblPayroll}" />
-            <Text text="{ui>/emp/payrollArea}" />
-            <Label text="{i18n>lblStatus}" />
-            <ObjectStatus
-              inverted="true"
-              icon="{path: 'status', formatter: '.formatter.statusIcon'}"
-              text="{path: 'status', formatter: '.formatter.statusText'}"
-              state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
-            <Label text="{i18n>lblCurrency}" />
+            <!-- Site Currency = the claim's country currency (GBP for UK, INR for
+                 India); reuses the existing currency field, just relabelled. -->
+            <Label text="{i18n>lblSiteCurrency}" />
             <Text text="{currency}" />
           </f:content>
         </f:SimpleForm>
 
+        <!-- Corner totals. Net / Tax / Total are recomputed CLIENT-SIDE into the
+             ui model (/live) as items + mileage change, mirroring calc.js
+             claimTotals so they match the server total after Save. Preview only —
+             before('SAVE') stays authoritative. -->
         <HBox justifyContent="End" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" wrap="Wrap">
           <VBox class="sapUiSmallMarginEnd" alignItems="End">
-            <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
+            <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['ui>/live/net','ui>/currency'], formatter: '.formatter.money' }" />
           </VBox>
           <VBox class="sapUiSmallMarginEnd" alignItems="End">
-            <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
+            <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['ui>/live/tax','ui>/currency'], formatter: '.formatter.money' }" />
           </VBox>
           <VBox alignItems="End">
-            <Label text="{i18n>lblGross}" /><ObjectNumber emphasized="true" number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+            <Label text="{i18n>lblTotal}" /><ObjectNumber emphasized="true" number="{ parts: ['ui>/live/total','ui>/currency'], formatter: '.formatter.money' }" />
           </VBox>
         </HBox>
       </Panel>
@@ -110,6 +113,7 @@
                 <!-- Country-aware tax types (VAT for UK, GST for India): the list is
                      loaded for the claim's country into the ui model by _loadTaxRate. -->
                 <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false" width="100%"
+                  change=".onLineChange"
                   items="{ path: 'ui>/taxTypes', templateShareable: false }">
                   <core:Item key="{ui>code}" text="{ui>description}" />
                 </Select>
@@ -118,7 +122,7 @@
                      previewed is always canonical (no locale grouping) — an untyped
                      binding leaked grouped strings like "10,000.00", which parsed to
                      NaN and broke the net/tax preview + header totals for large amounts. -->
-                <Input value="{ path: 'grossAmount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 15, scale: 2 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'grossAmount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 15, scale: 2 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
                 <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
                 <HBox alignItems="Center" justifyContent="Center">
@@ -169,8 +173,8 @@
                   <core:Item key="Hybrid" text="Hybrid" />
                   <core:Item key="Electric" text="Electric" />
                 </Select>
-                <Input value="{ path: 'milesCount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 10, scale: 2 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
-                <Input value="{ path: 'ratePerMile', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 8, scale: 4 } }" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'milesCount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 10, scale: 2 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'ratePerMile', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 8, scale: 4 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
                 <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
               </cells>
             </ColumnListItem>
