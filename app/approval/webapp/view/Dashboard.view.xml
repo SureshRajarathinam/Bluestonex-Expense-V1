@@ -65,12 +65,21 @@
       </VBox>
     </FlexBox>
 
-    <!-- ── Layer 2 · Spend by category (team card removed; slot reserved) ───── -->
+    <!-- ── Row 1 · Total reimbursed spend (donut, left) + Spend by category (right) ── -->
+    <!-- alignItems="Stretch": cards in the row share one (even) height. -->
     <FlexBox id="dashRow1" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
       </dragDropConfig>
+      <!-- Total reimbursed spend — donut: multi-colour ring, center = TOTAL
+           reimbursed spend (£/₹), right-side category legend. -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="totalExp" /></customData>
+        <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/donutHtml}" />
+      </VBox>
+      <!-- Spend by expense category — horizontal bars, category colours. -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
         <customData><core:CustomData key="card" value="spendCat" /></customData>
         <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
@@ -78,14 +87,14 @@
       </VBox>
     </FlexBox>
 
-    <!-- ── Layer 3 · Approved spend trend (wave) — full width ──────────────── -->
+    <!-- ── Row 2 · Approved spend trend (wave) — full width ──────────────── -->
     <FlexBox id="dashRow2" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
       </dragDropConfig>
       <!-- Approved spend trend — smooth wave of monthly APPROVED gross total in the
-           active currency (£ UK / ₹ IN). Full-width, alone in its row. -->
+           active currency (£ UK / ₹ IN). Full-width, scales to fit the card. -->
       <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
         <customData><core:CustomData key="card" value="spendWave" /></customData>
         <Title text="{= ${i18n>dashSpendWave} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
@@ -93,31 +102,8 @@
       </VBox>
     </FlexBox>
 
-    <!-- ── Layer 4 · Top 5 claimants + Total reimbursed spend — share one row ── -->
-    <!-- alignItems="Stretch": cards in the row share one (even) height. -->
+    <!-- ── Row 3 · Trend · submitted · approved · returned — full width ──── -->
     <FlexBox id="dashRow3" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
-      <dragDropConfig>
-        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
-        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
-      </dragDropConfig>
-      <!-- Top 5 claimants — name (left) + blue-shaded amount bar (right). -->
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
-        <customData><core:CustomData key="card" value="claimants" /></customData>
-        <Title text="{i18n>dashTopClaimants}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/claimantsHtml}" />
-      </VBox>
-
-      <!-- Total reimbursed spend — approved spend by category donut: multi-colour
-           ring, center = TOTAL reimbursed spend (£/₹), right-side category legend. -->
-      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
-        <customData><core:CustomData key="card" value="totalExp" /></customData>
-        <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <core:HTML content="{dash>/donutHtml}" />
-      </VBox>
-    </FlexBox>
-
-    <!-- ── Layer 5 · Trend · submitted · approved · returned — full width, LAST ── -->
-    <FlexBox id="dashRow4" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
@@ -130,14 +116,19 @@
       </VBox>
     </FlexBox>
 
-    <!-- ── Layer 6 · Policy Violation Rate — compact KPI-style tile, LAST ────── -->
-    <!-- Rate = flagged claims ÷ all claims in the window (soft daily-limit flags,
-         the only breach persisted on submitted claims). Reacts to all filters. -->
-    <FlexBox id="dashRow5" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+    <!-- ── Row 4 · Top 5 claimants (left) + Policy Violation (right) — share one row ── -->
+    <FlexBox id="dashRow4" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
       <dragDropConfig>
         <dnd:DragInfo groupName="cards" sourceAggregation="items" />
         <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
       </dragDropConfig>
+      <!-- Top 5 claimants — name (left) + blue-shaded amount bar (right). -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="claimants" /></customData>
+        <Title text="{i18n>dashTopClaimants}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/claimantsHtml}" />
+      </VBox>
+      <!-- Policy Violation Rate — flagged claims ÷ all claims in the window. -->
       <VBox class="bsxCard bsxPremiumCard bsxKpi bsxViolCard bsxDragCard">
         <customData><core:CustomData key="card" value="violation" /></customData>
         <Title text="{i18n>dashViolationRate}" class="bsxCardTitle bsxCardPad" level="H3" />

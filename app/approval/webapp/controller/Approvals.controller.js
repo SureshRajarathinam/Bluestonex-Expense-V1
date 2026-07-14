@@ -15,9 +15,9 @@ sap.ui.define([
 
     onInit: function () {
       this.getView().setModel(new JSONModel({ count: 0, pendUK: 0, pendIN: 0 }), "view");
-      // Landing → detail state, mirroring the Policy / Workflow tabs.
+      // Open directly on UK (no country landing); the corner Select switches country.
       this.getView().setModel(new JSONModel({
-        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+        choose: false, detail: true, country: "UK", isUK: true, isIN: false, title: this.getText("apvTitleUK")
       }), "ui");
       this._loadCounts();
     },
@@ -37,8 +37,8 @@ sap.ui.define([
       });
     },
 
-    onChooseUK: function () { this._open("UK"); },
-    onChooseIN: function () { this._open("IN"); },
+    // Corner country switch — funnels through the existing _open (same data logic).
+    onSwitchCountry: function (oEvent) { this._open(oEvent.getParameter("selectedItem").getKey()); },
 
     // Drill into the chosen country's pending claims (scope the table by country).
     _open: function (sCountry) {
@@ -49,13 +49,6 @@ sap.ui.define([
       });
       this.byId("fSearch").setValue("");
       this.onGo();
-    },
-
-    onBack: function () {
-      this.getView().getModel("ui").setData({
-        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
-      });
-      this._loadCounts();
     },
 
     onUpdateFinished: function (oEvent) {
@@ -110,9 +103,8 @@ sap.ui.define([
       });
     },
 
-    // Reset to the country-choice landing state whenever the tab is (re)entered,
-    // so a previously drilled-in country doesn't persist across tab switches.
-    onTabEnter: function () { this.onBack(); },
+    // Open on UK each time the tab is (re)entered; the corner Select switches country.
+    onTabEnter: function () { this._open("UK"); },
 
     onReview: function (oEvent) {
       var oCtx = oEvent.getSource().getBindingContext();

@@ -15,23 +15,21 @@ sap.ui.define([
 
     onInit: function () {
       this.getView().setModel(new JSONModel({ rows: [], employees: [] }), "wf");
-      // Landing → detail state, mirroring the Policy tab.
+      // Open directly on UK (no country landing); the corner Select switches country.
       this.getView().setModel(new JSONModel({
-        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
+        choose: false, detail: true, country: "UK", isUK: true, isIN: false, title: this.getText("wfTitleUK")
       }), "ui");
       this._snap = {};
-      this._load();
+      this._open("UK");
     },
 
     onRefresh: function () { this._load(); },
 
-    // Return to the country-choice landing state on tab (re)entry (also reloads,
-    // which rebuilds rows with editing:false), so a drilled-in / mid-edit card
-    // doesn't persist across tab switches.
-    onTabEnter: function () { this.onBack(); this._load(); },
+    // Reload then open UK each time the tab is (re)entered; the corner Select switches country.
+    onTabEnter: function () { var that = this; this._load().then(function () { that._open("UK"); }); },
 
-    onChooseUK: function () { this._open("UK"); },
-    onChooseIN: function () { this._open("IN"); },
+    // Corner country switch — funnels through the existing _open (same data logic).
+    onSwitchCountry: function (oEvent) { this._open(oEvent.getParameter("selectedItem").getKey()); },
 
     // Drill into the chosen country's approver detail (bind the detail box to its row).
     _open: function (sCountry) {
@@ -49,13 +47,6 @@ sap.ui.define([
       };
       var aRows = this.getView().getModel("wf").getProperty("/rows") || [];
       if (aRows.length) { show(); } else { this._load().then(show); }
-    },
-
-    onBack: function () {
-      this.byId("wfDetail").unbindElement("wf");
-      this.getView().getModel("ui").setData({
-        choose: true, detail: false, country: "", isUK: false, isIN: false, title: ""
-      });
     },
 
     _freshCtx: function (sCountry, bActive) {

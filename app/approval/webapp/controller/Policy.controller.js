@@ -10,19 +10,18 @@ sap.ui.define([
   return BaseController.extend("com.bluestonex.expense.approval.controller.Policy", {
 
     onInit: function () {
-      // Start on the country-choice landing screen.
+      // Open directly on UK (no country landing); the corner Select switches country.
       this.getView().setModel(new JSONModel({
-        choose: true, detail: false, display: true, editing: false,
-        isUK: false, isIN: false, country: "", title: ""
+        choose: false, detail: true, display: true, editing: false,
+        isUK: true, isIN: false, country: "UK", title: this.getText("policyTitleUK")
       }), "ui");
     },
 
-    // Return to the country-choice landing state on tab (re)entry, so a
-    // previously opened/edited policy doesn't persist across tab switches.
-    onTabEnter: function () { this.onBack(); },
+    // Open on UK each time the tab is (re)entered; the corner Select switches country.
+    onTabEnter: function () { this._open("UK"); },
 
-    onChooseUK: function () { this._open("UK"); },
-    onChooseIN: function () { this._open("IN"); },
+    // Corner country switch — funnels through the existing _open (same data logic).
+    onSwitchCountry: function (oEvent) { this._open(oEvent.getParameter("selectedItem").getKey()); },
 
     // Resolve the chosen country's policy row, then bind the detail form to it.
     _open: function (sCountry) {
@@ -46,14 +45,6 @@ sap.ui.define([
 
     _bind: function (bActive) {
       this.getView().bindElement({ path: "/Policies(ID=" + this._sId + ",IsActiveEntity=" + bActive + ")" });
-    },
-
-    onBack: function () {
-      this.getView().unbindElement();
-      this.getView().getModel("ui").setData({
-        choose: true, detail: false, display: true, editing: false,
-        isUK: false, isIN: false, country: "", title: ""
-      });
     },
 
     onEdit: function () {

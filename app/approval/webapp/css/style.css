@@ -176,8 +176,9 @@ html, body, .sapUiBody, .bsxBody,
 
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
-.bsxVChart--trend { gap: 1rem; justify-content: flex-start; overflow-x: auto; padding-bottom: .25rem; }
-.bsxVChart--trend .bsxVGroup { flex: 0 0 auto; min-width: 2.5rem; }
+/* Trend groups grow to fill the card width evenly — no trailing empty space, no scroll. */
+.bsxVChart--trend { gap: .5rem; justify-content: space-between; padding-bottom: .25rem; }
+.bsxVChart--trend .bsxVGroup { flex: 1 1 0; min-width: 0; }
 .bsxVGroup { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; height: 100%; }
 .bsxVBars { display: flex; align-items: flex-end; gap: .5rem; flex: 1 1 auto; width: 100%; justify-content: center; }
 .bsxVChart--trend .bsxVBars { gap: .25rem; }
@@ -244,8 +245,9 @@ html, body, .sapUiBody, .bsxBody,
 }
 
 /* ---- Approved-spend wave (smooth SVG area + line, replaces the Geo card) --- */
-.bsxWaveScroll { overflow-x: auto; padding: .5rem .5rem 1rem; }
-.bsxWave { display: block; }
+/* Wave is rendered at width:100% (preserveAspectRatio='none') so it always fits
+   the card for the selected window — no horizontal scroll. */
+.bsxWave { display: block; width: 100%; height: 220px; box-sizing: border-box; padding: .5rem .5rem 1rem; }
 .bsxWaveGridH { stroke: var(--bsx-line); stroke-width: 1; }
 .bsxWaveGridV { stroke: #eef1f6; stroke-width: 1; stroke-dasharray: 2 4; }
 .bsxWaveYlab  { fill: var(--bsx-muted); font-size: 10px; text-anchor: end; }

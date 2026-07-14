@@ -7,7 +7,7 @@ sap.ui.define([
   "use strict";
 
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  var LKEY = "bsx.dash.layout.v5"; // localStorage key; bumped (added Policy Violation Rate card as last row)
+  var LKEY = "bsx.dash.layout.v6"; // localStorage key; bumped (reordered rows: donut+category, wave, trend, claimants+violation)
 
   // The ONLY colours used on the dashboard cards (per requirement): blue, purple,
   // orange, light-blue, light-yellow, light-green, light-red, black/navy, grey.
@@ -65,8 +65,11 @@ sap.ui.define([
     var n = rows.length;
     var maxV = rows.reduce(function (mx, r) { return Math.max(mx, Number(r.value) || 0); }, 0);
     var nm = niceNum(maxV || 1);
-    var PL = 54, PR = 16, PT = 16, PB = 34, H = 220, step = 104; // wider step — the wave is now a full-width card
-    var innerW = Math.max(step, (n - 1) * step);
+    var PL = 54, PR = 16, PT = 16, PB = 34, H = 220;
+    // Fixed plot width → constant viewBox; the SVG is rendered at width:100% with
+    // preserveAspectRatio='none' so the whole wave always scales to fit the card
+    // for the selected window (no horizontal scroll / slide), regardless of n.
+    var innerW = 1000;
     var W = PL + PR + innerW, plotB = H - PB, plotT = PT, plotH = plotB - plotT;
     var xAt = function (i) { return n === 1 ? PL + innerW / 2 : PL + (i / (n - 1)) * innerW; };
     var yAt = function (v) { return plotB - (Math.max(0, Number(v) || 0) / nm) * plotH; };
@@ -94,14 +97,14 @@ sap.ui.define([
       xlab += "<text x='" + p.x.toFixed(1) + "' y='" + (plotB + 16) + "' class='bsxWaveXlab'>" + esc(rows[i].label) +
         (rows[i].year ? "<tspan x='" + p.x.toFixed(1) + "' dy='11' class='bsxWaveXyear'>" + esc(rows[i].year) + "</tspan>" : "") + "</text>";
     });
-    return "<div class='bsxWaveScroll'><svg class='bsxWave' width='" + W + "' height='" + H + "' viewBox='0 0 " + W + " " + H + "'>" +
+    return "<svg class='bsxWave' width='100%' height='" + H + "' viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none'>" +
       "<defs><linearGradient id='bsxWaveGrad' x1='0' y1='0' x2='0' y2='1'>" +
         "<stop offset='0%' class='bsxWaveG0'/><stop offset='100%' class='bsxWaveG1'/></linearGradient></defs>" +
       grid + vgrid +
       "<path d='" + area + "' class='bsxWaveArea'/>" +
       "<path d='" + d + "' class='bsxWaveLine'/>" +
       marks + ylab + xlab +
-    "</svg></div>";
+    "</svg>";
   }
 
   // ── Donut category icons ────────────────────────────────────────────────────
@@ -198,7 +201,7 @@ sap.ui.define([
     if (!data.length) { return "<div class='bsxTlEmpty bsxCardPad'>No expense items for the selected filters.</div>"; }
     var total = data.reduce(function (s, r) { return s + r.value; }, 0);
     var R = 76, C = 2 * Math.PI * R, GAP = data.length > 1 ? 2.4 : 0, acc = 0;
-    var arcs = "", badges = "", legend = "";
+    var arcs = "", legend = "";
     data.forEach(function (r) {
       var seg = (r.value / total) * C;
       var col = catColor(r.code);
@@ -206,12 +209,6 @@ sap.ui.define([
       arcs += "<circle cx='100' cy='100' r='" + R + "' fill='none' stroke='" + col +
         "' stroke-width='22' stroke-dasharray='" + dashLen.toFixed(2) + " " + (C - dashLen).toFixed(2) +
         "' stroke-dashoffset='" + (-acc).toFixed(2) + "'></circle>";
-      // Icon badge at the segment's mid-angle (clockwise from top, screen coords).
-      var th = 2 * Math.PI * ((acc + seg / 2) / C);
-      var x = 100 + R * Math.sin(th), y = 100 - R * Math.cos(th);
-      var g = iconGlyph(r.code);
-      badges += "<div class='bsxDonutIcon' style='left:" + (x / 2).toFixed(1) + "%;top:" + (y / 2).toFixed(1) + "%'>" +
-        "<span style=\"font-family:'" + g.ff + "'\">" + g.ch + "</span></div>";
       legend += "<span class='bsxDonutLeg'><i class='bsxDonutDot' style='background:" + col + "'></i>" + esc(r.title) + "</span>";
       acc += seg;
     });
@@ -222,7 +219,6 @@ sap.ui.define([
           "<div class='bsxDonutNum'>" + esc(money(cur, total)) + "</div>" +
           "<div class='bsxDonutLbl'>Total reimbursed</div>" +
         "</div>" +
-        badges +
       "</div>" +
       "<div class='bsxDonutLegend'>" + legend + "</div>" +
     "</div>";
@@ -483,7 +479,7 @@ sap.ui.define([
       if (saved) { this._applyLayout(saved); }
     },
 
-    _rows: function () { return [this.byId("dashRow0"), this.byId("dashRow1"), this.byId("dashRow2"), this.byId("dashRow3"), this.byId("dashRow4"), this.byId("dashRow5")]; },
+    _rows: function () { return [this.byId("dashRow0"), this.byId("dashRow1"), this.byId("dashRow2"), this.byId("dashRow3"), this.byId("dashRow4")]; },
 
     // Current layout as an array (per row) of card keys.
     _readLayout: function () {
