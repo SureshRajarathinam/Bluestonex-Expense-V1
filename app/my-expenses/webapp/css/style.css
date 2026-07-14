@@ -14,6 +14,7 @@
   --bsx-line:   #e5e5e5;
   --bsx-text:   #32363a;
   --bsx-muted:  #6a6d70;
+  --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
   --bsx-radius: 8px;
 }
 
@@ -33,7 +34,7 @@ html, body, .sapUiBody, .bsxBody,
 .bsxGreetIcon { color: var(--bsx-blue); padding-right: .25rem; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
-.bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }
 .bsxSideNav .sapTntNLI:hover,
 .bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
 .bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
@@ -62,6 +63,11 @@ html, body, .sapUiBody, .bsxBody,
 .bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
 .bsxCardPad { padding: 0.5rem 1rem; }
 .bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
+
+/* General Information: two fields per row (ColumnLayout), with tightened vertical
+   row spacing so it reads as compact as the old single-column layout. */
+.bsxGenForm .sapUiFormCLElement { padding-top: 0.15rem; padding-bottom: 0.15rem; }
+.bsxGenForm .sapUiFormElement { margin-top: 0.1rem; margin-bottom: 0.1rem; }
 
 /* ---- Destructive icon button (row delete) -------------------------------- */
 .bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }

@@ -33,7 +33,7 @@
                Row 3: Site Currency    |
              Country is auto-derived from the user's site code and always
              read-only (rendered as Text, never an editable input). -->
-        <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2">
+        <f:SimpleForm editable="false" layout="ColumnLayout" columnsM="2" columnsL="2" columnsXL="2" class="bsxGenForm">
           <f:content>
             <Label text="{i18n>lblCountry}" />
             <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
@@ -42,7 +42,7 @@
               dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
               secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
               displayFormat="medium"
-              width="18rem"
+              width="100%"
               editable="{ui>/editable}" />
             <!-- Employee identity for the current (logged-in) user, resolved from
                  EXP_EMPLOYEES via whoami(). Shown from the ui model so it appears

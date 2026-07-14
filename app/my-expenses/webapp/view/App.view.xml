@@ -7,7 +7,7 @@
   displayBlock="true"
   height="100%">
 
-  <tnt:ToolPage id="toolPage" class="bsxToolPage">
+  <tnt:ToolPage id="toolPage" class="bsxToolPage" sideExpanded="false">
 
     <tnt:header>
       <tnt:ToolHeader class="bsxHeader">

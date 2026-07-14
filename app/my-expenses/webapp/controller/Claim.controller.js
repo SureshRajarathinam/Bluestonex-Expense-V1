@@ -626,6 +626,22 @@ sap.ui.define([
     },
 
     onBack: function () {
+      var that = this;
+      var oUi = this.getView().getModel("ui");
+      var oCtx = this._claimCtx();
+      // Auto-discard a PRISTINE draft (editable draft with no items and no mileage)
+      // on Back, so opening Create and backing straight out never leaves an orphan
+      // empty Draft in the list. Adding even one row makes the count non-zero, so a
+      // claim the user actually started is preserved. Best-effort: navigate whether
+      // or not the delete resolves — Back must never be blocked. Never touches a
+      // submitted/approved/populated claim (mirrors the existing delete guards).
+      var bPristineDraft = oCtx && !!oUi.getProperty("/editable") &&
+        (oUi.getProperty("/itemCount") || 0) === 0 &&
+        (oUi.getProperty("/mileageCount") || 0) === 0;
+      if (bPristineDraft) {
+        oCtx.delete().then(function () { that.navTo("list"); }, function () { that.navTo("list"); });
+        return;
+      }
       this.navTo("list");
     }
   });
