@@ -16,33 +16,55 @@ const money = (claim) => `${claim.currency === 'INR' ? '₹' : '£'}${Number(cla
 // Email clients strip <style>/external CSS, so everything is INLINE. Kept small
 // and table-free where possible for broad client support. `text` (plain) is
 // always sent alongside as the fallback.
-const BRAND = '#2a4b8d'; // BluestoneX blue (matches the app header)
+const BRAND = '#2a4b8d'; // BluestoneX blue (submitted / awaiting-approval accent)
 
-// Key/value detail rows for the claim summary block.
+// Work Zone launchpad base + per-app deep links for the email CTA button.
+// Overridable via LAUNCHPAD_URL; falls back to the current TDD site.
+const LAUNCHPAD = process.env.LAUNCHPAD_URL || 'https://bsx-tdd-qq8akzjn.launchpad.cfapps.eu10.hana.ondemand.com';
+const LINK = {
+  approvals:  `${LAUNCHPAD}#ExpenseApproval-display`, // approver-facing emails
+  myExpenses: `${LAUNCHPAD}#MyExpenses-display`       // employee-facing emails
+};
+const FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+// Key/value detail rows for the claim summary grid (empty values dropped).
 const detailRows = (pairs) => pairs
   .filter(([, v]) => v != null && v !== '')
   .map(([k, v]) => `<tr>
-      <td style="padding:7px 0;color:#6b7a90;font-size:13px;">${k}</td>
-      <td style="padding:7px 0;color:#1a2b45;font-size:13px;font-weight:600;text-align:right;">${v}</td>
+      <td style="padding:9px 0;color:#6b7a90;font-size:13px;padding-right:18px;white-space:nowrap;vertical-align:top;">${k}</td>
+      <td style="padding:9px 0;color:#1a2b45;font-size:13px;font-weight:600;">${v}</td>
     </tr>`).join('');
 
-// Full HTML shell: header band + card + intro + optional detail table + CTA line.
-const emailShell = ({ heading, intro, rows, closing, accent }) => `<div style="margin:0;padding:0;background:#f4f6fa;">
-  <div style="max-width:560px;margin:0 auto;padding:24px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+// Solid accent CTA button (styled <a>; degrades to a plain link in Outlook desktop).
+const ctaButton = (href, label, accent) =>
+  `<a href="${href}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 22px;border-radius:8px;">${label}</a>`;
+
+// Structured-Alert HTML shell (the approved template): accent header band → greeting
+// → key/value grid → accent "section" callout → "Review Link" + CTA button → divided
+// footer. Per requirement the LAYOUT/FIELDS are constant across statuses; only the
+// accent COLOUR (and the status-specific wording) changes.
+const emailShell = ({ title, greeting, rows, calloutHeading, callout, cta, accent }) => {
+  const A = accent || BRAND;
+  return `<div style="margin:0;padding:0;background:#f2f4f7;">
+  <div style="max-width:560px;margin:0 auto;padding:24px;font-family:${FONT};">
     <div style="background:#ffffff;border:1px solid #e3e8f0;border-radius:12px;overflow:hidden;">
-      <div style="background:${accent || BRAND};padding:16px 24px;">
-        <span style="color:#ffffff;font-size:18px;font-weight:600;letter-spacing:.2px;">BluestoneX Expenses</span>
+      <div style="background:${A};padding:22px 28px;">
+        <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.2px;">${title}</span>
       </div>
-      <div style="padding:24px;color:#1a2b45;">
-        <h2 style="margin:0 0 14px;font-size:18px;line-height:1.3;color:#1a2b45;">${heading}</h2>
-        <p style="margin:0 0 18px;font-size:14px;line-height:1.55;color:#3a4a63;">${intro}</p>
-        ${rows && rows.length ? `<table style="width:100%;border-collapse:collapse;border-top:1px solid #eef1f6;border-bottom:1px solid #eef1f6;margin:0 0 20px;">${detailRows(rows)}</table>` : ''}
-        <p style="margin:0;font-size:14px;line-height:1.55;color:#3a4a63;">${closing}</p>
+      <div style="padding:26px 28px;color:#1a2b45;">
+        <p style="margin:0 0 18px;font-size:14px;line-height:1.55;color:#3a4a63;">Dear <strong>${greeting}</strong>,</p>
+        ${rows && rows.length ? `<table style="width:100%;border-collapse:collapse;">${detailRows(rows)}</table>` : ''}
+        ${callout ? `<h3 style="margin:24px 0 10px;font-size:15px;color:${A};">${calloutHeading || 'Details'}</h3>
+        <div style="background:#f5f7fb;border-left:4px solid ${A};border-radius:6px;padding:14px 16px;font-size:14px;color:#3a4a63;line-height:1.5;">${callout}</div>` : ''}
+        ${cta ? `<p style="margin:24px 0 10px;font-size:13px;font-weight:700;color:#1a2b45;">Review Link:</p>${ctaButton(cta.href, cta.label, A)}` : ''}
+      </div>
+      <div style="border-top:1px solid #eef1f6;padding:16px 28px;">
+        <p style="margin:0;font-size:12px;color:#8a97ab;text-align:center;">This is an automated message from <strong>BluestoneX Expenses</strong>.<br>Please do not reply.</p>
       </div>
     </div>
-    <p style="max-width:560px;margin:16px auto 0;padding:0 4px;font-size:12px;color:#8a97ab;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">This is an automated message from the BluestoneX Expense Reimbursement System — please do not reply.</p>
   </div>
 </div>`;
+};
 
 // Wraps SAP BTP Alert Notification Service (ANS).
 // In production: bind an `alert-notification` service instance to the app.
@@ -128,7 +150,7 @@ class NotificationService {
 
   // ─── Business notification methods ───────────────────────────────────────
 
-  async notifyClaimSubmitted(claim, employee, firstApprover) {
+  async notifyClaimSubmitted(claim, employee, firstApprover, approverName) {
     await this._sendEvent({
       eventType:    'ExpenseClaim.Submitted',
       resource: {
@@ -158,15 +180,18 @@ class NotificationService {
       text:    `${employee.fullName} has submitted expense claim ${claim.claimNumber} ` +
                `for ${money(claim)}. Please review and approve it in the Approvals app.`,
       html:    emailShell({
-        heading: `Expense claim ${claim.claimNumber} awaiting your approval`,
-        intro:   `<strong>${employee.fullName}</strong> has submitted an expense claim for your review.`,
+        accent:  BRAND, // blue — action needed
+        title:   'Expense Claim Awaiting Approval',
+        greeting: approverName || firstApprover,
         rows:    [
-          ['Claim number', claim.claimNumber],
-          ['Employee',     employee.fullName],
+          ['Claim Number', claim.claimNumber],
+          ['Requested By', employee.fullName],
           ['Amount',       money(claim)],
           ['Period',       claim.claimPeriod]
         ],
-        closing: `Please review and approve it in the <strong>Approvals</strong> app.`
+        calloutHeading: 'Request Details',
+        callout: `<strong>${employee.fullName}</strong> has submitted a new expense claim for <strong>${money(claim)}</strong> and it is pending your approval.`,
+        cta:     { href: LINK.approvals, label: 'Open in Approvals' }
       })
     });
   }
@@ -175,7 +200,7 @@ class NotificationService {
   // `nextApprover` is the configured second-level approver ANS should alert.
   // `requestedBy` is the original claimant's name, surfaced so the L2 approver
   // sees who raised the claim (optional — omitted gracefully if not supplied).
-  async notifyLevel1Approved(claim, nextApprover, requestedBy) {
+  async notifyLevel1Approved(claim, nextApprover, requestedBy, nextApproverName) {
     const who = requestedBy || '';
     await this._sendEvent({
       eventType:    'ExpenseClaim.Level1Approved',
@@ -203,14 +228,17 @@ class NotificationService {
       text:    `Claim ${claim.claimNumber}${who ? ` from ${who}` : ''} for ${money(claim)} has passed first-level ` +
                `approval and now awaits your second-level approval in the Approvals app.`,
       html:    emailShell({
-        heading: `Expense claim ${claim.claimNumber} awaiting your second-level approval`,
-        intro:   `This claim${who ? ` from <strong>${who}</strong>` : ''} has cleared first-level approval and now needs your <strong>second-level</strong> sign-off.`,
+        accent:  BRAND, // blue — action needed
+        title:   'Expense Claim Awaiting Second-Level Approval',
+        greeting: nextApproverName || nextApprover,
         rows:    [
-          ['Claim number', claim.claimNumber],
-          ['Requested by', who],
+          ['Claim Number', claim.claimNumber],
+          ['Requested By', who],
           ['Amount',       money(claim)]
         ],
-        closing: `Please review and approve it in the <strong>Approvals</strong> app.`
+        calloutHeading: 'Request Details',
+        callout: `This claim${who ? ` from <strong>${who}</strong>` : ''} has cleared first-level approval and now needs your <strong>second-level</strong> sign-off.`,
+        cta:     { href: LINK.approvals, label: 'Open in Approvals' }
       })
     });
   }
@@ -269,7 +297,10 @@ class NotificationService {
   // Fired when an approver declines a claim and sends it back for rework
   // (status → Returned). Alerts the employee (the claim's creator) so they can
   // fix and resubmit. `returnedBy` is the approver; `reason` is their comment.
-  async notifyReturned(claim, returnedBy, reason) {
+  async notifyReturned(claim, returnedBy, reason, returnedByName) {
+    // Greet the claimant by full name (FName + LName), falling back to their login.
+    const employeeName = [claim.employee?.FName, claim.employee?.LName].filter(Boolean).join(' ').trim() || claim.createdBy || '';
+    const returnedByDisplay = returnedByName || returnedBy;
     await this._sendEvent({
       eventType: 'ExpenseClaim.Returned',
       resource: {
@@ -297,15 +328,17 @@ class NotificationService {
                `Reason: ${reason || 'No reason provided'}. ` +
                `Please open the My Expenses app, fix the highlighted issues and re-apply for approval.`,
       html:    emailShell({
-        accent:  '#b9541b', // amber/rust — this is an action-needed, not a success
-        heading: `Expense claim ${claim.claimNumber} returned for rework`,
-        intro:   `Your expense claim has been returned by <strong>${returnedBy}</strong> and needs changes before it can be approved.`,
+        accent:  '#b9541b', // rust — action needed, not a success
+        title:   'Expense Claim Returned for Rework',
+        greeting: employeeName,
         rows:    [
-          ['Claim number', claim.claimNumber],
-          ['Returned by',  returnedBy],
+          ['Claim Number', claim.claimNumber],
+          ['Returned By',  returnedByDisplay],
           ['Reason',       reason || 'No reason provided']
         ],
-        closing: `Please open the <strong>My Expenses</strong> app, fix the highlighted issues and re-apply for approval.`
+        calloutHeading: 'What to do next',
+        callout: `Your expense claim has been returned by <strong>${returnedByDisplay}</strong> and needs changes before it can be approved. Please fix the highlighted issues and re-apply for approval.`,
+        cta:     { href: LINK.myExpenses, label: 'Open in My Expenses' }
       })
     });
   }
@@ -314,7 +347,10 @@ class NotificationService {
   // single level, UK after level 2. NOT fired on UK FirstApproved. Alerts the
   // employee (the claim's creator) that their claim is approved. `approvedBy` is
   // the approver who signed it off.
-  async notifyApproved(claim, approvedBy) {
+  async notifyApproved(claim, approvedBy, approvedByName) {
+    // Greet the claimant by full name (FName + LName), falling back to their login.
+    const employeeName = [claim.employee?.FName, claim.employee?.LName].filter(Boolean).join(' ').trim() || claim.createdBy || '';
+    const approvedByDisplay = approvedByName || approvedBy;
     await this._sendEvent({
       eventType: 'ExpenseClaim.Approved',
       resource: {
@@ -340,16 +376,18 @@ class NotificationService {
       text:    `Good news — your expense claim ${claim.claimNumber} for ${money(claim)} has been approved` +
                `${approvedBy ? ` by ${approvedBy}` : ''}. It will be processed for reimbursement.`,
       html:    emailShell({
-        accent:  '#2e7d52', // green — this is a success/approval
-        heading: `Expense claim ${claim.claimNumber} approved`,
-        intro:   `Good news — your expense claim has been <strong>approved</strong>${approvedBy ? ` by <strong>${approvedBy}</strong>` : ''} and will be processed for reimbursement.`,
+        accent:  '#2e7d52', // green — success/approval
+        title:   'Expense Claim Approved',
+        greeting: employeeName,
         rows:    [
-          ['Claim number', claim.claimNumber],
-          ['Approved by',  approvedBy],
+          ['Claim Number', claim.claimNumber],
+          ['Approved By',  approvedByDisplay],
           ['Amount',       money(claim)],
           ['Period',       claim.claimPeriod]
         ],
-        closing: `No further action is needed. You can view the claim status in the <strong>My Expenses</strong> app.`
+        calloutHeading: 'Approved',
+        callout: `Good news — your expense claim has been <strong>approved</strong>${approvedByDisplay ? ` by <strong>${approvedByDisplay}</strong>` : ''} and will be processed for reimbursement. No further action is needed.`,
+        cta:     { href: LINK.myExpenses, label: 'Open in My Expenses' }
       })
     });
   }

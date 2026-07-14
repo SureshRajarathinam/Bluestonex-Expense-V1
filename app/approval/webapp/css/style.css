@@ -48,9 +48,8 @@ html, body, .sapUiBody, .bsxBody,
   height: 3rem;
 }
 /* Brand: "Bluestone" black + trailing "X" blue (two sibling Texts in an HBox). */
-.bsxBrand  { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-black); padding: 0 0 0 .15rem; }
-.bsxBrandX { font-weight: 700; font-size: 1.125rem; letter-spacing: .2px; color: var(--bsx-lblue); padding: 0 .15rem 0 0; }
 .bsxGreeting { font-weight: 600; color: var(--bsx-black); padding: 0 .5rem 0 0; }
+.bsxGreetIcon { color: var(--bsx-black); padding-right: .25rem; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
 .bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }

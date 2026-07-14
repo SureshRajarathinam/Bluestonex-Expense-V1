@@ -15,7 +15,11 @@ sap.ui.define([
   return BaseController.extend("com.bluestonex.expense.approval.controller.App", {
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ greeting: "" }), "app");
+      // sideExpanded drives the side-rail chevron icon (◅ open, ▻ collapsed).
+      this.getView().setModel(new JSONModel({ greeting: "", sideExpanded: false }), "app");
+      // Currently-selected section, restored after a chevron toggle so the toggle
+      // item never steals the nav highlight.
+      this._navKey = "dashboard";
       this._loadGreeting();
     },
 
@@ -37,15 +41,26 @@ sap.ui.define([
         .catch(function () { /* greeting is optional — ignore */ });
     },
 
+    // Expand/collapse the side rail (the ☰ header button was removed). Mirrors the
+    // state into app>/sideExpanded so the chevron flips, and restores the active
+    // section so the keyless toggle item doesn't stay highlighted.
     onSideToggle: function () {
       var oTP = this.byId("toolPage");
-      oTP.setSideExpanded(!oTP.getSideExpanded());
+      var bExpanded = !oTP.getSideExpanded();
+      oTP.setSideExpanded(bExpanded);
+      this.getView().getModel("app").setProperty("/sideExpanded", bExpanded);
+      var oNav = this.byId("sideNav");
+      if (oNav) { oNav.setSelectedKey(this._navKey); }
     },
 
     onNavSelect: function (oEvent) {
       var sKey = oEvent.getParameter("item").getKey();
+      // The pinned chevron shares the side nav's itemSelect — treat it as a toggle,
+      // not a navigation target.
+      if (sKey === "__toggle") { this.onSideToggle(); return; }
       var sViewId = VIEW_BY_KEY[sKey];
       if (!sViewId) { return; }
+      this._navKey = sKey;
       var oView = this.byId(sViewId);
       this.byId("sectionNav").to(oView.getId());
       // On each switch, reset the section to its landing state (tabs with a

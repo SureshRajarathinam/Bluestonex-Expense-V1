@@ -548,9 +548,13 @@ sap.ui.define([
           if (that._isEntityLocked(oErr)) { return activateDraft().then(submitActive); }
           throw oErr;
         })
-        .then(function () {
+        .then(function (oResultCtx) {
           that.getView().setBusy(false);
-          MessageToast.show(that.getText("msgSubmitted"));
+          // Name the approver the notification email went to (from the action's
+          // transient `emailedTo`); fall back to the generic message if unavailable.
+          var sName = "";
+          try { sName = (oResultCtx && oResultCtx.getObject && oResultCtx.getObject().emailedTo) || ""; } catch (e) { sName = ""; }
+          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
           that.navTo("list");
         })
         .catch(function (e) {

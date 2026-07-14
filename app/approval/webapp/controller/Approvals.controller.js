@@ -149,11 +149,16 @@ sap.ui.define([
       var that = this;
       oDialog.setBusy(true);
       this.callAction(oCtx, "ApprovalService." + sAction, { comment: sComment })
-        .then(function () {
+        .then(function (oResultCtx) {
           that._deciding = false;
           oDialog.setBusy(false);
           oDialog.close();
-          MessageToast.show(that.getText(sMsgKey));
+          // Name whoever the notification email went to (next-level approver on a UK
+          // escalation, else the employee) from the action's transient `emailedTo`;
+          // fall back to the generic decision message.
+          var sName = "";
+          try { sName = (oResultCtx && oResultCtx.getObject && oResultCtx.getObject().emailedTo) || ""; } catch (e) { sName = ""; }
+          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText(sMsgKey));
           that.byId("approvalsTable").getBinding("items").refresh();
           that._loadCounts();
         })

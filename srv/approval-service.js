@@ -28,6 +28,15 @@ module.exports = class ApprovalService extends cds.ApplicationService {
   async init() {
     const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG, EMPLOYEES } = cds.entities('EXP');
 
+    // Resolve an email to its employee full name (FName + LName), falling back to a
+    // title-cased local-part. Used to name the notified recipient (e.g. the L2
+    // approver) in the "email sent to X" toast — recipients are stored as emails.
+    const fullNameForEmail = async (email) => {
+      if (!email) return '';
+      const emp = await SELECT.one.from(EMPLOYEES).columns('FName', 'LName').where({ Email: email });
+      return empName(emp) || nameFromEmail(email);
+    };
+
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
     this.before('READ', guardPaging);
 
@@ -70,6 +79,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // Set true only when this action drives the claim to FINAL Approved (India
       // single level, or UK level 2) — NOT on UK FirstApproved.
       let finalApproved = false;
+      // Full name of whoever the notification email goes to (L2 approver on a UK
+      // escalation, else the claimant on final approval) — surfaced to the client
+      // as the transient `emailedTo` so it can toast "email sent to X".
+      let emailedTo = '';
 
       // Authority to approve is governed SOLELY by Approval Workflow membership
       // (per requirement): whoever is configured as the country's approver may
@@ -87,7 +100,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           await audit.record({ userId: me, action: 'FirstApproved', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Level 1 approved; awaiting level 2 (${wf.secondApprover || 'n/a'})` });
           // Alert the configured second-level approver (fire-and-forget — email must
           // not sit in the request's critical path; a dead SMTP would 504 the approve).
-          notification.notifyLevel1Approved(claim, wf.secondApprover, requestedBy)
+          const l2Name = await fullNameForEmail(wf.secondApprover);
+          emailedTo = l2Name || wf.secondApprover || '';
+          notification.notifyLevel1Approved(claim, wf.secondApprover, requestedBy, l2Name)
             .catch((e) => LOG.warn('notifyLevel1Approved failed:', e.message));
         } else {
           await UPDATE(CLAIMS, ID).with({
@@ -111,12 +126,16 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // On final approval, email the employee who created the claim (fire-and-forget —
       // email must not sit in the request's critical path; a dead SMTP would 504).
       if (finalApproved) {
-        notification.notifyApproved(claim, me)
+        emailedTo = requestedBy || claim.employee?.Email || claim.createdBy || '';
+        const meName = await fullNameForEmail(me);
+        notification.notifyApproved(claim, me, meName)
           .catch((e) => LOG.warn('notifyApproved failed:', e.message));
       }
 
       LOG.info(`Claim ${claim.claimNumber} approved by ${me}`);
-      return SELECT.one.from(CLAIMS, ID);
+      const out = await SELECT.one.from(CLAIMS, ID);
+      if (out) out.emailedTo = emailedTo;
+      return out;
     });
 
     // ─── Action: reject ─────────────────────────────────────────────────────
@@ -125,10 +144,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const { comment } = req.data;
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');
 
-      // Expand the claimant's directory email so the "returned" notification can
-      // be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
-      // createdBy inside notifyReturned when the association is unresolved).
-      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => e('Email')); });
+      // Expand the claimant's directory email + name so the "returned" notification
+      // can be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
+      // createdBy inside notifyReturned when the association is unresolved) and the
+      // email body / "email sent to X" toast can show the claimant's full name.
+      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (!['Submitted', 'FirstApproved'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be rejected (status '${claim.status}').`);
@@ -147,12 +167,16 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // rejectedBy/rejectionReason — they now record who returned it and why.
       await UPDATE(CLAIMS, ID).with({ status: 'Returned', rejectedBy: me, rejectionReason: comment });
       // Fire-and-forget email to the employee (see submit/approve — never block on SMTP).
-      notification.notifyReturned(claim, me, comment)
+      const employeeName = empName(claim.employee) || claim.employee?.Email || claim.createdBy || '';
+      const meName = await fullNameForEmail(me);
+      notification.notifyReturned(claim, me, comment, meName)
         .catch((e) => LOG.warn('notifyReturned failed:', e.message));
       await audit.record({ userId: me, action: 'Returned', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
 
       LOG.info(`Claim ${claim.claimNumber} returned for rework by ${me}`);
-      return SELECT.one.from(CLAIMS, ID);
+      const out = await SELECT.one.from(CLAIMS, ID);
+      if (out) out.emailedTo = employeeName;
+      return out;
     });
 
     // ─── Policy Configuration: validate + audit (draft SAVE) ────────────────

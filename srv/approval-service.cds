@@ -74,7 +74,10 @@ service ApprovalService {
       when 'Approved'      then 3
       when 'Rejected'      then 1
       else 0
-    end as statusCriticality : Integer
+    end as statusCriticality : Integer,
+    // Transient: set on the approve/reject response to the resolved full name of the
+    // person the notification email was sent to (drives the "email sent to X" toast).
+    virtual null as emailedTo : String
   } where status in ('Submitted', 'FirstApproved') actions {
     @(Core.OperationAvailable: {
       $edmJson: { $Or: [

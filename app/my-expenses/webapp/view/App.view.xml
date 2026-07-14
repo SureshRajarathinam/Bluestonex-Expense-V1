@@ -11,20 +11,20 @@
 
     <tnt:header>
       <tnt:ToolHeader class="bsxHeader">
-        <Button icon="sap-icon://menu2" type="Transparent" tooltip="Menu" press=".onSideToggle" />
-        <HBox alignItems="Center">
-          <Text text="Bluestone" class="bsxBrand" />
-          <Text text="X" class="bsxBrandX" />
-        </HBox>
-        <ToolbarSpacer />
-        <Text text="{app>/greeting}" visible="{= !!${app>/greeting} }" class="bsxGreeting" />
         <core:Icon src="sap-icon://person-placeholder" class="bsxGreetIcon" visible="{= !!${app>/greeting} }" />
+        <Text text="{app>/greeting}" visible="{= !!${app>/greeting} }" class="bsxGreeting" />
       </tnt:ToolHeader>
     </tnt:header>
 
     <tnt:sideContent>
       <tnt:SideNavigation id="sideNav" class="bsxSideNav" selectedKey="myExpenses">
         <tnt:NavigationList>
+          <tnt:NavigationListItem
+            class="bsxNavToggle"
+            tooltip="{= ${app>/sideExpanded} ? 'Collapse menu' : 'Expand menu' }"
+            text="{= ${app>/sideExpanded} ? 'Collapse' : '' }"
+            icon="{= ${app>/sideExpanded} ? 'sap-icon://navigation-left-arrow' : 'sap-icon://navigation-right-arrow' }"
+            select=".onSideToggle" />
           <tnt:NavigationListItem
             key="myExpenses"
             text="{i18n>navMyExpenses}"

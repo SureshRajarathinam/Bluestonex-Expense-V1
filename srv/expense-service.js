@@ -20,6 +20,16 @@ module.exports = class ExpenseService extends cds.ApplicationService {
   async init() {
     const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW } = cds.entities('EXP');
 
+    // Resolve an email address to its employee full name (FName + LName), falling
+    // back to a title-cased local-part. Used to name the notified approver in the
+    // "email sent to X" toast — recipients are stored as emails, not person rows.
+    const fullNameForEmail = async (email) => {
+      if (!email) return '';
+      const emp = await SELECT.one.from(EMPLOYEES).columns('FName', 'LName').where({ Email: email });
+      const nm = emp ? [emp.FName, emp.LName].filter(Boolean).join(' ').trim() : '';
+      return nm || nameFromEmail(email);
+    };
+
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
     this.before('READ', guardPaging);
 
@@ -162,10 +172,13 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       const employee = await resolveEmployee(req, EMPLOYEES);
       const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
+      // The notification goes to the first-level approver — resolve their full name
+      // so the email greeting and the client's "email sent to X" toast can name them.
+      const approverName = await fullNameForEmail(wf?.firstApprover);
       // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
       // slow/unreachable SMTP would otherwise block the awaited submit long enough for
       // the approuter to 504. notifyClaimSubmitted is best-effort and self-logs.
-      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, { fullName: employeeName || req.user.id }, wf?.firstApprover)
+      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, { fullName: employeeName || req.user.id }, wf?.firstApprover, approverName)
         .catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
       const sym = claim.currency === 'INR' ? '₹' : '£';
       // Distinguish a fresh submission from a rework resubmission so the History
@@ -173,7 +186,9 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       await audit.record({ userId: req.user.id, action: wasReturned ? 'Resubmitted' : 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} ${wasReturned ? 'resubmitted' : 'submitted'} by ${req.user.id}`);
-      return SELECT.one.from(CLAIMS, ID);
+      const out = await SELECT.one.from(CLAIMS, ID);
+      if (out) out.emailedTo = approverName || wf?.firstApprover || '';
+      return out;
     });
 
     // ─── Guard: only pre-submission claims may be deleted ──────────────────

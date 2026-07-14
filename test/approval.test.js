@@ -66,6 +66,10 @@ test('approver IDENTITY: only the configured L1 can approve (others 403)', async
   // manager (L1) succeeds
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
   assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
+  // The approve response carries the transient `emailedTo` = the person notified
+  // (here the L2 approver on the UK escalation), so the UI can toast "email sent to X".
+  assert.ok(typeof ok.data.emailedTo === 'string' && ok.data.emailedTo.length > 0, 'approve response names who was emailed');
+  assert.ok(/barton/i.test(ok.data.emailedTo), `emailedTo derived from the configured L2 approver ${UK.second}, got "${ok.data.emailedTo}"`);
 });
 
 test('reject requires a reason (422) then returns the claim for rework (Returned)', async () => {
@@ -75,6 +79,9 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   const mark = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'Missing detail' }, { auth: MGR });
   assert.ok(ok.status < 400, `reject ${ok.status}`);
+  // The reject response carries `emailedTo` = the employee notified of the return,
+  // so the approval UI can toast "email sent to <employee>".
+  assert.ok(typeof ok.data.emailedTo === 'string' && ok.data.emailedTo.length > 0, 'reject response names who was emailed (the employee)');
   // A decline now returns the claim to the employee (reworkable), not a terminal Rejected.
   const claim = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data;
   assert.equal(claim.status, 'Returned');
@@ -88,6 +95,19 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
     /bluestonex\.com$/i.test(String(returnedMail.to || '')),
     `email addressed to the employee, got "${returnedMail.to}"`
   );
+});
+
+test('submitClaim response carries emailedTo (the first-level approver notified)', async () => {
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `submit ${s.status}`);
+  // Transient field drives the my-expenses "email sent to X" toast; recipient is the
+  // configured UK first-level approver (EMPLOYEES unseeded in test → local-part name).
+  assert.ok(typeof s.data.emailedTo === 'string' && s.data.emailedTo.length > 0, 'submit response names the approver emailed');
+  assert.ok(/manager/i.test(s.data.emailedTo), `emailedTo derived from the configured L1 approver ${UK.first}, got "${s.data.emailedTo}"`);
 });
 
 test('RBAC: employee-only user blocked from /approval data (403); metadata still loads', async () => {

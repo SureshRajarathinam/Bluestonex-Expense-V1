@@ -7,7 +7,8 @@ sap.ui.define([
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.App", {
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ greeting: "" }), "app");
+      // sideExpanded drives the side-rail chevron icon (◅ when open, ▻ when collapsed).
+      this.getView().setModel(new JSONModel({ greeting: "", sideExpanded: false }), "app");
       this._loadGreeting();
     },
 
@@ -29,9 +30,16 @@ sap.ui.define([
         .catch(function () { /* greeting is optional — ignore */ });
     },
 
+    // Expand/collapse the side rail via the pinned chevron (the ☰ header button was
+    // removed). Mirrors the state into app>/sideExpanded so the chevron icon flips,
+    // and restores the nav selection (the toggle item must not steal the highlight).
     onSideToggle: function () {
       var oTP = this.byId("toolPage");
-      oTP.setSideExpanded(!oTP.getSideExpanded());
+      var bExpanded = !oTP.getSideExpanded();
+      oTP.setSideExpanded(bExpanded);
+      this.getView().getModel("app").setProperty("/sideExpanded", bExpanded);
+      var oNav = this.byId("sideNav");
+      if (oNav) { oNav.setSelectedKey("myExpenses"); }
     },
 
     onNavToList: function () {

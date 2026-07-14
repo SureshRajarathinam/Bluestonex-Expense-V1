@@ -50,7 +50,10 @@ service ExpenseService {
       when 'Returned'      then 2   // amber — declined, back with the employee to rework
       when 'Rejected'      then 1
       else 0
-    end as statusCriticality : Integer
+    end as statusCriticality : Integer,
+    // Transient: set on the submitClaim response to the resolved full name of the
+    // approver the notification email was sent to (drives the "email sent to X" toast).
+    virtual null as emailedTo : String
   } actions {
     // Offered on a Draft OR a Returned claim (rework loop: an approver decline
     // sends the claim back to the employee, who fixes it and resubmits).
