@@ -15,14 +15,15 @@
   --bsx-text:   #32363a;
   --bsx-muted:  #6a6d70;
   --bsx-radius: 8px;
+  --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
   /* Analytics palette (rich, from the Outbound-Processing dashboard reference):
      emerald = positive/approved · coral = negative/rejected · amber = warning/returned
-     · rich blue = neutral/created · navy + purple round out the categorical set. */
+     · rich blue = neutral/created · navy + teal round out the categorical set. */
   --bsx-green:  #2e9e6b;   /* emerald "Released"  */
   --bsx-red:    #e0574f;   /* coral   "Suspended" */
   --bsx-amber:  #f0ab00;
   --bsx-navy:   #2f3345;   /* charcoal-navy "Short" */
-  --bsx-purple: #7c5cff;   /* accent purple         */
+  --bsx-teal:   #12a4b8;   /* categorical teal      */
   --bsx-blue-l: #a9c7f7;   /* light series blue  */
   --bsx-blue-m: #4c8bf5;   /* rich "Created" blue */
   --bsx-blue-d: #2f6fd6;   /* dark series blue   */
@@ -42,7 +43,7 @@ html, body, .sapUiBody, .bsxBody,
 .bsxGreeting { font-weight: 600; color: var(--bsx-navy); padding: 0 .5rem 0 0; }
 
 /* ---- Side navigation: flat light selected highlight ---------------------- */
-.bsxSideNav.sapTntSideNavigation { background: var(--bsx-card); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }
 .bsxSideNav .sapTntNLI:hover,
 .bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
 .bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
@@ -177,8 +178,10 @@ html, body, .sapUiBody, .bsxBody,
 /* Grouped vertical bars (Approved vs Rejected · Trend) */
 .bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
 /* Trend groups grow to fill the card width evenly — no trailing empty space, no scroll. */
-.bsxVChart--trend { gap: .5rem; justify-content: space-between; padding-bottom: .25rem; }
-.bsxVChart--trend .bsxVGroup { flex: 1 1 0; min-width: 0; }
+.bsxVChart--trend { gap: .5rem; justify-content: center; padding-bottom: .25rem; }
+/* Cap each month group so a short range (e.g. 2 months) clusters together in the
+   centre instead of spreading to the card edges; many months still shrink to fill. */
+.bsxVChart--trend .bsxVGroup { flex: 1 1 0; max-width: 7rem; min-width: 0; }
 .bsxVGroup { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; height: 100%; }
 .bsxVBars { display: flex; align-items: flex-end; gap: .5rem; flex: 1 1 auto; width: 100%; justify-content: center; }
 .bsxVChart--trend .bsxVBars { gap: .25rem; }
@@ -286,6 +289,6 @@ html, body, .sapUiBody, .bsxBody,
 .bsxHTrack { flex: 1 1 auto; height: .85rem; background: #eef0f2; border-radius: 1rem; overflow: hidden; }
 .bsxHFill { display: block; height: 100%; border-radius: 1rem; min-width: 2px; transition: width .3s ease; }
 .bsxHFill--blue   { background: var(--bsx-blue); }
-.bsxHFill--violet { background: #6b6ce0; }
-.bsxHFill--muted  { background: #b9c0e8; }
+.bsxHFill--violet { background: #4c8bf5; }
+.bsxHFill--muted  { background: #a9c7f7; }
 .bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }

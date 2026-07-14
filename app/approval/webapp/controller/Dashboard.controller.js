@@ -9,16 +9,16 @@ sap.ui.define([
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v6"; // localStorage key; bumped (reordered rows: donut+category, wave, trend, claimants+violation)
 
-  // The ONLY colours used on the dashboard cards (per requirement): blue, purple,
+  // The ONLY colours used on the dashboard cards (per requirement): blue, teal,
   // orange, light-blue, light-yellow, light-green, light-red, black/navy, grey.
   // Each expense category gets one fixed colour from this palette, so a category
   // reads the SAME colour in the donut ring, the donut legend, and the category
   // bars. Unknown codes fall through to the palette by a stable hash.
   var CAT_PALETTE = [
-    "#4c8bf5", "#7c5cff", "#f0ab00", "#a9c7f7", "#f2d16b", "#9bd3a0", "#f0a0a0", "#2f3345", "#9aa0a8"
+    "#4c8bf5", "#12a4b8", "#f0ab00", "#a9c7f7", "#f2d16b", "#9bd3a0", "#f0a0a0", "#2f3345", "#9aa0a8"
   ];
   var CAT_COLOR = {
-    TRAIN: "#4c8bf5", TAXI: "#7c5cff", FLIGHT: "#f0ab00", CAR_HIRE: "#a9c7f7",
+    TRAIN: "#4c8bf5", TAXI: "#12a4b8", FLIGHT: "#f0ab00", CAR_HIRE: "#a9c7f7",
     FOOD: "#f2d16b", HOTEL: "#9bd3a0", PARKING: "#f0a0a0", TOLLS: "#2f3345",
     PHONE: "#9aa0a8", OTHER: "#6a6d70"
   };
@@ -288,16 +288,15 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      // Default window = the FULL current calendar year (Jan 1 – Dec 31) so the
-      // Trend and every metric span every month that has claim-period records —
-      // not a rolling 6-month / current-month window (which showed "July only").
-      // Users can still narrow via the range picker or the D/W/M/Y presets.
+      // Default window = the "Year" preset: a ROLLING last-12-months span (first day
+      // of the month 11 months ago → today), so the Trend shows 12 clean month
+      // columns through the current month. The Year segment is selected on load;
+      // users can still narrow via the range picker or the D/W/M presets.
       var today = new Date();
-      var yr = today.getFullYear();
-      var from = new Date(yr, 0, 1);   // 1 Jan this year
-      var to = new Date(yr, 11, 31);   // 31 Dec this year
+      var from = new Date(today.getFullYear(), today.getMonth() - 11, 1);
+      var to = today;
       this._m = new JSONModel({
-        fromDate: from, toDate: to, preset: "", country: "UK", cur: "£",
+        fromDate: from, toDate: to, preset: "Y", country: "UK", cur: "£",
         busy: false, hasData: true, error: "", curLabel: "£", rangeText: "",
         awaitingTotal: 0, awaitingPills: "",
         approvedTotal: 0, approvedPills: "", rejectedTotal: 0, rejectedPills: "",
@@ -441,13 +440,14 @@ sap.ui.define([
       return head + " · " + months + " month" + (months === 1 ? "" : "s");
     },
 
-    // Rolling quick-ranges (each ending today): Day / Week(7d) / Month(30d) / Year(365d).
+    // Rolling quick-ranges (each ending today): Day / Week(7d) / Month(30d) /
+    // Year(last 12 whole months → 12 clean month columns in the trend).
     onPreset: function (oEvent) {
       var key = oEvent.getParameter("item").getKey();
       var to = new Date(), from = new Date();
       if (key === "W") { from.setDate(to.getDate() - 6); }
       else if (key === "M") { from.setDate(to.getDate() - 29); }
-      else if (key === "Y") { from.setDate(to.getDate() - 364); }
+      else if (key === "Y") { from = new Date(to.getFullYear(), to.getMonth() - 11, 1); }
       // "D" → from = to = today
       this._m.setProperty("/fromDate", from);
       this._m.setProperty("/toDate", to);
