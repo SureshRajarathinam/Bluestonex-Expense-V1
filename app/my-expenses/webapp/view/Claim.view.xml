@@ -43,6 +43,7 @@
               secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
               displayFormat="medium"
               width="100%"
+              maxDate="{ui>/today}"
               editable="{ui>/editable}" />
             <!-- Employee identity for the current (logged-in) user, resolved from
                  EXP_EMPLOYEES via whoami(). Shown from the ui model so it appears
@@ -103,7 +104,7 @@
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" maxDate="{ui>/today}" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
                 <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false" width="100%"
                   items="{ path: '/ExpenseTypes', templateShareable: false }">
                   <core:Item key="{code}" text="{description}" />
@@ -164,7 +165,7 @@
           <items>
             <ColumnListItem>
               <cells>
-                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" maxDate="{ui>/today}" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
                 <Input value="{destination}" editable="{ui>/editable}" width="100%" />
                 <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
                 <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false" width="100%">

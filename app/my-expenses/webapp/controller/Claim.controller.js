@@ -14,7 +14,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {}, live: { net: 0, tax: 0, total: 0 } }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {}, live: { net: 0, tax: 0, total: 0 }, today: new Date() }), "ui");
       // Which expense types always require a receipt (code → true). Loaded once so
       // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
       this._receiptTypes = {};
