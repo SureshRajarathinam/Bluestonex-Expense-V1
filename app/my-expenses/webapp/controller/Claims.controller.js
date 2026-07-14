@@ -1,13 +1,12 @@
 sap.ui.define([
   "com/bluestonex/expense/myexpenses/controller/BaseController",
   "com/bluestonex/expense/myexpenses/model/formatter",
-  "sap/ui/core/Fragment",
   "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
   "sap/m/MessageBox",
   "sap/m/MessageToast"
-], function (BaseController, formatter, Fragment, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
+], function (BaseController, formatter, JSONModel, Filter, FilterOperator, MessageBox, MessageToast) {
   "use strict";
 
   return BaseController.extend("com.bluestonex.expense.myexpenses.controller.Claims", {
@@ -47,7 +46,25 @@ sap.ui.define([
     },
 
     onRefresh: function () {
-      this.byId("claimsTable").getBinding("items").refresh();
+      var that = this;
+      var oBinding = this.byId("claimsTable").getBinding("items");
+      if (!oBinding) { return; }
+      // A stray transient/pending change (e.g. an abandoned create context) makes
+      // ODataListBinding.refresh() throw synchronously — which looked like "Refresh
+      // does nothing". Clear pending changes first, then refresh with a visible
+      // busy state + toast so the action is never silent.
+      var oModel = this.getModel();
+      if (oModel && oModel.hasPendingChanges && oModel.hasPendingChanges()) {
+        try { oModel.resetChanges(); } catch (e) { /* best-effort */ }
+      }
+      this.byId("claimsPage").setBusy(true);
+      oBinding.requestRefresh().then(function () {
+        that.byId("claimsPage").setBusy(false);
+        MessageToast.show(that.getText("msgRefreshed"));
+      }).catch(function (e) {
+        that.byId("claimsPage").setBusy(false);
+        that.showError(e);
+      });
     },
 
     _ymd: function (oDate) {
@@ -58,19 +75,17 @@ sap.ui.define([
 
     /**
      * Live look-up: one free-text box searches across several fields (claim
-     * number, employee name/number) combined with the Status / Country / Period
-     * filters. Runs on every keystroke / dropdown change (no "Go" button).
+     * number, employee name/number) combined with the Status / Period filters.
+     * Runs on every keystroke / dropdown change (no "Go" button).
      */
     onSearch: function () {
       var aFilters = [];
       var sStatus = this.byId("fStatus").getSelectedKey();
-      var sCountry = this.byId("fCountry").getSelectedKey();
       var sQuery = (this.byId("fSearch").getValue() || "").trim();
       var oPeriod = this.byId("fPeriod");
       var dFrom = oPeriod.getDateValue(), dTo = oPeriod.getSecondDateValue();
 
       if (sStatus) { aFilters.push(new Filter("status", FilterOperator.EQ, sStatus)); }
-      if (sCountry) { aFilters.push(new Filter("country", FilterOperator.EQ, sCountry)); }
       if (dFrom && dTo) { aFilters.push(new Filter("claimPeriod", FilterOperator.BT, this._ymd(dFrom), this._ymd(dTo))); }
       if (sQuery) {
         // OR across the searchable text fields — a single box matches any of them.
@@ -119,9 +134,10 @@ sap.ui.define([
 
     // ---- Create flow --------------------------------------------------------
     // Country is derived automatically from the logged-in user's site code
-    // (EXP_EMPLOYEES.BaseSiteKey via whoami): UK* → UK, IN* → IN. Only when the
-    // site matches neither (e.g. PLRMT, Apphaus) do we fall back to the country
-    // picker popup — so most users never see a dialog.
+    // (EXP_EMPLOYEES.BaseSiteKey via whoami): UK* → UK, IN* → IN. Reimbursement is
+    // only available for UK and India sites, so a site matching neither (e.g.
+    // PLMK, PLRMT, Apphaus) — or an unresolvable site — gets an informational
+    // popup and NO claim is created.
     onCreate: function () {
       var that = this;
       this._resolveSite().then(function (sSite) {
@@ -129,8 +145,16 @@ sap.ui.define([
         if (sCountry) {
           that._createClaim(sCountry);
         } else {
-          that._openCountryDialog();
+          that._showSiteNotSupported();
         }
+      });
+    },
+
+    // Non-UK/IN (or unresolved) site: reimbursement isn't available for this
+    // employee's site — tell them, and do not create a claim.
+    _showSiteNotSupported: function () {
+      MessageBox.information(this.getText("msgSiteNotSupported"), {
+        title: this.getText("titleSiteNotSupported")
       });
     },
 
@@ -157,48 +181,8 @@ sap.ui.define([
       return this._pSite;
     },
 
-    // Lazily load + open the country picker (fallback for non-UK/IN sites).
-    _openCountryDialog: function () {
-      var that = this;
-      if (this._pCountryDialog) {
-        this._pCountryDialog.then(function (oDialog) {
-          that.byId("countryGroup").setSelectedIndex(-1);
-          oDialog.open();
-        });
-        return;
-      }
-      this._pCountryDialog = Fragment.load({
-        id: this.getView().getId(),
-        name: "com.bluestonex.expense.myexpenses.view.CountryDialog",
-        controller: this
-      }).then(function (oDialog) {
-        that.getView().addDependent(oDialog);
-        return oDialog;
-      });
-      this._pCountryDialog.then(function (oDialog) { oDialog.open(); });
-    },
-
-    onCountryCancel: function () {
-      this.byId("countryDialog").close();
-    },
-
-    onCountryContinue: function () {
-      var oGroup = this.byId("countryGroup");
-      var oSelBtn = oGroup.getSelectedButton();
-      // Country code comes from the live /Countries row bound to the selected radio
-      // button (not a hardcoded index→code map), so it stays correct if the code
-      // list grows or reorders.
-      var sCountry = oSelBtn && oSelBtn.getBindingContext() ? oSelBtn.getBindingContext().getProperty("code") : null;
-      if (!sCountry) {
-        sap.m.MessageToast.show(this.getText("countryRequired"));
-        return;
-      }
-      this.byId("countryDialog").close();
-      this._createClaim(sCountry);
-    },
-
-    // Create a draft claim for the given country and open it. Shared by the auto
-    // site-code path (onCreate) and the country-picker fallback (onCountryContinue).
+    // Create a draft claim for the given country and open it (used by the auto
+    // site-code path in onCreate).
     _createClaim: function (sCountry) {
       var that = this;
       var sToday = new Date().toISOString().slice(0, 10);

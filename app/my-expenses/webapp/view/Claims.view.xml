@@ -12,7 +12,7 @@
       <!-- Look up (filters) -->
       <VBox class="bsxCard">
         <Title text="{i18n>lookUp}" class="bsxCardTitle bsxCardPad" level="H3" />
-        <l:Grid defaultSpan="XL3 L3 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+        <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
           <VBox>
             <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
             <DateRangeSelection id="fPeriod" width="100%" displayFormat="medium" change=".onSearch" />
@@ -27,14 +27,6 @@
               <core:Item key="Approved" text="Approved" />
               <core:Item key="Returned" text="Returned for rework" />
               <core:Item key="Rejected" text="Rejected" />
-            </Select>
-          </VBox>
-          <VBox>
-            <Label text="{i18n>filterCountry}" class="bsxFieldLbl" />
-            <Select id="fCountry" width="100%" change=".onSearch">
-              <core:Item key="" text="{i18n>all}" />
-              <core:Item key="UK" text="United Kingdom" />
-              <core:Item key="IN" text="India" />
             </Select>
           </VBox>
           <VBox>
