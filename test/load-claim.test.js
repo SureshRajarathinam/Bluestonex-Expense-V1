@@ -30,7 +30,7 @@ test('loadValidationContext OR-merges receiptAttached (flag OR uploaded blob) + 
   assert.equal(byId[a].receiptAttached, true, 'flag set → attached');
   assert.equal(byId[b].receiptAttached, true, 'uploaded blob → attached (OR-merge)');
   assert.equal(byId[c].receiptAttached, false, 'neither → not attached');
-  assert.equal(Number(ctx.policy.vatRate), 0.20, 'UK policy row loaded from config');
+  assert.equal(Number(ctx.policy.receiptThreshold), 25, 'UK policy row loaded from config');
   assert.ok(ctx.vatTypes.has('STD') && ctx.vatTypes.has('ZR') && ctx.vatTypes.has('EX'), 'UK tax-type codes');
   assert.ok(ctx.types.FOOD, 'expense-type map populated');
 });

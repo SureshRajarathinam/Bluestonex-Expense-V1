@@ -210,8 +210,6 @@ annotate ApprovalService.Policies with {
   hotelDailyLimit  @title: 'Hotel Daily Limit';
   mealDailyLimit   @title: 'Meal Daily Limit';
   receiptThreshold @title: 'Receipt Threshold';
-  vatRate          @title: 'UK VAT Rate';
-  gstRate          @title: 'India GST Rate';
 }
 
 annotate ApprovalService.WorkflowMembers with {

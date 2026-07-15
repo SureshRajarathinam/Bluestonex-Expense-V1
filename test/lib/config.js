@@ -26,6 +26,7 @@ const rows = (file) => (cache[file] || (cache[file] = parseCsv(file)));
 const numOrUndef = (v) => (v === '' || v == null ? undefined : Number(v));
 
 // Full POLICY row for a country, numerically coerced (matches srv/lib/calc + validate).
+// NOTE: the tax rate no longer lives here — it's on TAX_TYPES (see readTaxRate).
 function readPolicy(country) {
   const r = rows('EXP-POLICY.csv').find((p) => p.country === country) || {};
   return {
@@ -35,17 +36,29 @@ function readPolicy(country) {
     hotelDailyLimit: numOrUndef(r.hotelDailyLimit),
     mealDailyLimit: numOrUndef(r.mealDailyLimit),
     receiptThreshold: numOrUndef(r.receiptThreshold),
-    vatRate: numOrUndef(r.vatRate),
-    gstRate: numOrUndef(r.gstRate),
     claimNumberStart: r.claimNumberStart
   };
 }
 
+// TAX_TYPES rows for a country (or all), rate numerically coerced. This is the
+// array shape calc.taxRateFor consumes at runtime (from SELECT.from(TAX_TYPES)).
+function readTaxTypes(country) {
+  return rows('EXP-TAX_TYPES.csv')
+    .filter((t) => !country || t.country === country)
+    .map((t) => ({ country: t.country, code: t.code, description: t.description, rate: numOrUndef(t.rate) }));
+}
+
+// The effective rate for a (country, tax-type code) from TAX_TYPES — the single
+// source of the tax rate. STD carries the country standard rate; ZR/EX = 0.
+function readTaxRate(country, code) {
+  const r = rows('EXP-TAX_TYPES.csv').find((t) => t.country === country && t.code === code) || {};
+  return numOrUndef(r.rate);
+}
+
 // The standard tax rate a country actually charges (UK VAT / India GST), as the
-// engine would resolve it via calc.taxRateFor.
+// engine would resolve it via calc.taxRateFor — the STD treatment on TAX_TYPES.
 function readStdRate(country) {
-  const p = readPolicy(country);
-  return country === 'IN' ? p.gstRate : p.vatRate;
+  return readTaxRate(country, 'STD');
 }
 
 // Configured approver emails for a country: { first, second } (second null for IN).
@@ -54,4 +67,4 @@ function readApprovers(country) {
   return { first: r.firstApprover || null, second: r.secondApprover || null };
 }
 
-module.exports = { readPolicy, readStdRate, readApprovers };
+module.exports = { readPolicy, readTaxTypes, readTaxRate, readStdRate, readApprovers };

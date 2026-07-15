@@ -66,9 +66,9 @@ test('whoami falls back to the email local-part for a user with no employee row'
 });
 
 test('A. tax math: UK VAT 20% vs India GST 18%', () => {
-  const uk = calc.splitVAT(120, 'STD', calc.taxRateFor('UK', { vatRate: 0.20 }));
+  const uk = calc.splitVAT(120, 'STD', calc.taxRateFor('UK', [{ country: 'UK', code: 'STD', rate: 0.20 }]));
   assert.ok(near(uk.netAmount, 100) && near(uk.vatAmount, 20), `UK ${JSON.stringify(uk)}`);
-  const ind = calc.splitVAT(118, 'STD', calc.taxRateFor('IN', { gstRate: 0.18 }));
+  const ind = calc.splitVAT(118, 'STD', calc.taxRateFor('IN', [{ country: 'IN', code: 'STD', rate: 0.18 }]));
   assert.ok(near(ind.netAmount, 100) && near(ind.vatAmount, 18), `IN ${JSON.stringify(ind)}`);
 });
 

@@ -188,16 +188,13 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       for (const [f, label] of [['hotelDailyLimit', 'Hotel daily limit'], ['mealDailyLimit', 'Meal daily limit'], ['receiptThreshold', 'Receipt threshold']]) {
         if (p[f] != null && Number(p[f]) < 0) return req.error(422, `${label} cannot be negative.`);
       }
-      for (const [f, label] of [['vatRate', 'VAT rate'], ['gstRate', 'GST rate']]) {
-        if (p[f] != null && (Number(p[f]) < 0 || Number(p[f]) > 1))
-          return req.error(422, `${label} must be between 0 and 1 (e.g. 0.20 for 20%).`);
-      }
+      // Tax rate is no longer a Policy field — it lives per treatment on TAX_TYPES.
     });
 
     this.after('SAVE', 'Policies', async (data, req) => {
       await audit.record({
         userId: req.user.id, action: 'PolicyChanged', objectType: 'ExpensePolicy', objectKey: data?.policyName || '',
-        details: `VAT=${data?.vatRate}, GST=${data?.gstRate}, mileage=${data?.mileageRate}, hotel=${data?.hotelDailyLimit}, meal=${data?.mealDailyLimit}, receiptThreshold=${data?.receiptThreshold}`
+        details: `mileage=${data?.mileageRate}, hotel=${data?.hotelDailyLimit}, meal=${data?.mealDailyLimit}, receiptThreshold=${data?.receiptThreshold}`
       });
       LOG.info(`Policy '${data?.policyName}' updated by ${req.user.id}`);
     });

@@ -130,7 +130,8 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   // read
   const list = await GET('/approval/Policies', { auth: MGR });
   assert.equal(list.status, 200);
-  // Per-country policies: edit the India row (it carries the GST rate).
+  // Per-country policies: edit the India row. The tax rate is no longer a Policy
+  // field (it lives on TaxTypes), so we edit a Policy-owned field: policyName.
   const inRow = list.data.value.find((p) => p.country === 'IN');
   assert.ok(inRow, 'India policy row exists');
   const id = inRow.ID;
@@ -138,10 +139,10 @@ test('Policy config: read, edit (draft), and audit; non-admin blocked', async ()
   assert.equal((await GET('/approval/Policies', { auth: CLERK })).status, 403);
   // draft edit: edit → patch → activate
   await POST(`/approval/Policies(ID=${id},IsActiveEntity=true)/ApprovalService.draftEdit`, { PreserveChanges: false }, { auth: MGR });
-  await t.axios.patch(`/approval/Policies(ID=${id},IsActiveEntity=false)`, { gstRate: 0.20 }, { auth: MGR });
+  await t.axios.patch(`/approval/Policies(ID=${id},IsActiveEntity=false)`, { policyName: 'India Standard Policy (edited)' }, { auth: MGR });
   const act = await POST(`/approval/Policies(ID=${id},IsActiveEntity=false)/draftActivate`, {}, { auth: MGR });
   assert.ok(act.status < 400, `policy activate ${act.status}: ${JSON.stringify(act.data?.error)}`);
-  assert.equal(Number((await GET(`/approval/Policies(ID=${id},IsActiveEntity=true)`, { auth: MGR })).data.gstRate), 0.20);
+  assert.equal((await GET(`/approval/Policies(ID=${id},IsActiveEntity=true)`, { auth: MGR })).data.policyName, 'India Standard Policy (edited)');
   const logs = await GET(`/approval/AuditLogs?$filter=action eq 'PolicyChanged'`, { auth: MGR });
   assert.ok(logs.data.value.length > 0, 'policy change audited');
 });

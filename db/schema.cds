@@ -11,15 +11,17 @@ entity EXPENSE_TYPES {
 }
 
 // Country-aware tax-treatment list for the New Expense Claim item dropdown.
-// One row per (country, code): Standard / Zero-rated / Exempt. This table ONLY
-// enumerates the treatments + labels — it carries NO rate. The single standard
-// rate lives on ExpensePolicy (vatRate for UK, gstRate for IN) and is applied by
-// calc.splitVAT: Standard → the POLICY rate, Zero-rated/Exempt → 0% by definition.
-// Composite key lets UK and India each define their own STD/ZR/EX.
+// One row per (country, code): Standard / Zero-rated / Exempt. Each row carries
+// its own effective `rate` — this table is the SINGLE source of the tax rate:
+// STD holds the country standard rate (UK 0.20 / IN 0.18), Zero-rated/Exempt = 0.
+// calc.splitVAT resolves the rate from the item's chosen tax type. (ExpensePolicy
+// no longer holds vatRate/gstRate.) Composite key lets UK and India each define
+// their own STD/ZR/EX with independent rates.
 entity TAX_TYPES {
-  key country     : String(2);    // UK | IN
-  key code        : String(10);   // STD | ZR | EX
+  key country     : String(2);        // UK | IN
+  key code        : String(10);       // STD | ZR | EX
       description : String(50);
+      rate        : Decimal(5, 4);    // effective rate for this treatment (STD>0, ZR/EX=0)
 }
 
 // Countries the solution supports — drives tax (VAT/GST) and approval routing
@@ -69,8 +71,8 @@ entity POLICY : managed {
       hotelDailyLimit  : Decimal(10, 2);
       mealDailyLimit   : Decimal(10, 2);
       receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
-      vatRate          : Decimal(5, 4);  // UK VAT rate   (set on the UK row)
-      gstRate          : Decimal(5, 4);  // India GST rate (set on the IN row)
+      // Tax rate is NOT held here — it lives per treatment on TAX_TYPES (the tax
+      // type dropdown drives the rate). Policy owns limits + the claim-number seed.
       // Starting Claim Number for this country (e.g. 'UKEXP1' / 'INEXP1'). The
       // trailing digits seed the sequence; new claims for the country take this
       // value first, then increment (UKEXP1, UKEXP2, …). Maintained per country

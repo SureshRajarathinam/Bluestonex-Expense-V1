@@ -71,11 +71,11 @@ test('Req2: TaxTypes are country-aware (UK = VAT, India = GST)', async () => {
   const inStd = ind.find((r) => r.code === 'STD');
   assert.ok(/VAT|Standard Rate/i.test(ukStd.description), `UK STD is VAT, got "${ukStd.description}"`);
   assert.ok(/GST/i.test(inStd.description), `India STD is GST, got "${inStd.description}"`);
-  // TaxTypes carries NO rate — it only enumerates the treatments. The standard
-  // rate lives on ExpensePolicy (single source): India GST = 0.18.
-  assert.equal(inStd.rate, undefined, 'TaxTypes no longer exposes a rate column');
-  const inPolicy = (await GET(`/expense/Policies?$filter=country eq 'IN'`, { auth: EMP })).data.value[0];
-  assert.equal(Number(inPolicy.gstRate), 0.18, 'India GST standard rate lives on POLICY (0.18)');
+  // TaxTypes now carries the effective rate per treatment (SINGLE source of the
+  // tax rate): India GST standard = 0.18; Zero-rated/Exempt = 0.
+  assert.equal(Number(inStd.rate), 0.18, 'India STD rate lives on TaxTypes (0.18)');
+  const inZr = ind.find((r) => r.code === 'ZR');
+  assert.equal(Number(inZr.rate), 0, 'Zero-rated treatment is 0% on TaxTypes');
 });
 
 // Placed last: it activates an India claim (consuming an INEXP number), so keep it

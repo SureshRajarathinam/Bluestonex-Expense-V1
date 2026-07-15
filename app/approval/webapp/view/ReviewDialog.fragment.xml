@@ -3,7 +3,7 @@
   xmlns="sap.m"
   xmlns:f="sap.ui.layout.form">
 
-  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="46rem" contentHeight="36rem" verticalScrolling="true">
+  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="54rem" contentHeight="38rem" verticalScrolling="true">
     <content>
       <!-- Soft policy-limit flag: the claim was submitted over a daily limit. Shown
            so the approver can weigh it and decide (approve anyway or return). -->
@@ -18,6 +18,8 @@
           <Label text="{i18n>lblEmployee}" /><Text text="{employeeName}" />
           <Label text="{i18n>lblCountry}" /><Text text="{path: 'country', formatter: '.formatter.countryText'}" />
           <Label text="{i18n>lblLevel}" /><ObjectStatus text="{ parts: ['country','status'], formatter: '.formatter.levelText' }" state="Information" />
+          <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
+          <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
           <Label text="{i18n>lblTotal}" /><ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" emphasized="true" />
         </f:content>
       </f:SimpleForm>
@@ -27,8 +29,11 @@
           <columns>
             <Column><Text text="{i18n>itDate}" /></Column>
             <Column><Text text="{i18n>itType}" /></Column>
+            <Column><Text text="{i18n>itTaxType}" /></Column>
             <Column><Text text="{i18n>itReason}" /></Column>
             <Column hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>itNet}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>itTax}" /></Column>
             <Column><Text text="{i18n>itReceipt}" /></Column>
           </columns>
           <items>
@@ -36,8 +41,11 @@
               <cells>
                 <Text text="{expenseDate}" />
                 <Text text="{expenseType_code}" />
+                <Text text="{vatType}" />
                 <Text text="{reasonForTrip}" />
-                <Text text="{grossAmount}" />
+                <ObjectNumber number="{ parts: ['grossAmount','rev>/currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['netAmount','rev>/currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['vatAmount','rev>/currency'], formatter: '.formatter.money' }" />
                 <Link text="{i18n>viewReceipt}" press=".onOpenReceipt" visible="{= !!${receiptAttached} }" />
               </cells>
             </ColumnListItem>

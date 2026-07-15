@@ -14,7 +14,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], emp: {}, live: { net: 0, tax: 0, total: 0 }, today: new Date() }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], approverName: "", emp: {}, live: { net: 0, tax: 0, total: 0 }, today: new Date() }), "ui");
       // Which expense types always require a receipt (code → true). Loaded once so
       // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
       this._receiptTypes = {};
@@ -153,13 +153,18 @@ sap.ui.define([
     },
 
     // ---- Net / VAT live preview ---------------------------------------------
-    // Loads the standard tax rate for the claim's country (UK -> vatRate,
-    // India -> gstRate) so the items table can preview the net/VAT split as the
-    // user types the gross. The server before('SAVE') remains authoritative.
+    // Loads the standard tax rate for the claim's country from the TAX_TYPES
+    // config (the STD treatment's rate) so the items table can preview the
+    // net/tax split as the user types the gross. Server before('SAVE') is
+    // authoritative and resolves the same rate from TAX_TYPES.
     _loadTaxRate: function (sCountry) {
       var that = this;
       var oUi = this.getView().getModel("ui");
-      if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); oUi.setProperty("/taxTypes", []); return; }
+      if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); oUi.setProperty("/taxTypes", []); oUi.setProperty("/approverName", ""); return; }
+      // Pre-resolve the country's first-level approver name NOW (while the claim is
+      // open) so the "email sent to X" toast can fire SYNCHRONOUSLY on submit —
+      // never chained behind a post-submit fetch that races the navigation away.
+      this._approverName(sCountry).then(function (sName) { oUi.setProperty("/approverName", sName || ""); });
       // Country-aware tax treatments + the country's standard rate, loaded together
       // so the dropdown label can show each treatment's EFFECTIVE rate.
       var oTax = this.getModel().bindList("/TaxTypes", null, null, [
@@ -170,25 +175,27 @@ sap.ui.define([
       ]);
       Promise.all([oTax.requestContexts(0, 100), oList.requestContexts(0, 1)]).then(function (aRes) {
         var aTax = aRes[0], aPol = aRes[1];
-        var rate = 0, mileageRate = 0, threshold = 25;
+        var mileageRate = 0, threshold = 25;
+        // Rate now comes from the TAX_TYPES config rows — each treatment carries
+        // its own effective rate (STD = country standard, ZR/EX = 0). Build a
+        // code→rate map; the STD rate drives the live net/tax preview.
+        var mRate = {};
+        aTax.forEach(function (c) { var o = c.getObject(); mRate[o.code] = Number(o.rate) || 0; });
+        var rate = mRate.STD || 0;
         if (aPol.length) {
           var p = aPol[0].getObject();
-          rate = Number(sCountry === "IN" ? p.gstRate : p.vatRate) || 0;
-          // Live per-country mileage rate — the new-row default comes from here,
-          // not a hardcoded literal (mirrors the server-authoritative policy).
+          // Policy still owns the (non-tax) mileage rate + receipt threshold.
           mileageRate = Number(p.mileageRate) || 0;
-          // Receipt threshold drives the client-side "attach a receipt" gate.
           if (p.receiptThreshold != null) { threshold = Number(p.receiptThreshold) || 0; }
         }
         oUi.setProperty("/stdRate", rate);
         oUi.setProperty("/mileageRate", mileageRate);
         oUi.setProperty("/receiptThreshold", threshold);
-        // Dropdown label shows the EFFECTIVE rate per treatment so the source is
-        // unambiguous: Standard pulls the POLICY country rate; Zero-rated/Exempt
-        // are 0% by definition. e.g. "Standard (18%)", "Zero Rated (0%)".
+        // Dropdown label shows each treatment's EFFECTIVE rate straight from its
+        // TAX_TYPES row, so the source is unambiguous. e.g. "Standard (18%)",
+        // "Zero Rated (0%)".
         var pct = function (code) {
-          var r = code === "STD" ? rate : 0;
-          return Math.round(r * 10000) / 100; // rate (e.g. 0.18) → 18
+          return Math.round((mRate[code] || 0) * 10000) / 100; // rate (e.g. 0.18) → 18
         };
         oUi.setProperty("/taxTypes", aTax.map(function (c) {
           var o = c.getObject();
@@ -547,9 +554,6 @@ sap.ui.define([
     _doSubmit: function (oCtx, sId) {
       var that = this;
       var bDraft = oCtx.getPath().indexOf("IsActiveEntity=false") > -1;
-      // Capture the country now so we can name the notified approver in the success
-      // toast (the context path changes across activate/submit).
-      var sCountry = (oCtx && oCtx.getProperty("country")) || "";
       this.getView().setBusy(true);
 
       var submitActive = function () {
@@ -575,13 +579,13 @@ sap.ui.define([
         })
         .then(function () {
           that.getView().setBusy(false);
-          // Name the approver the notification email went to. Resolve the L1
-          // approver's full name via approverFor(country); toast with the name,
-          // or the generic message if it can't be resolved.
-          return that._approverName(sCountry).then(function (sName) {
-            MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
-            that.navTo("list");
-          });
+          // Name the approver the notification email went to. The L1 approver name
+          // was pre-resolved at claim load (ui>/approverName), so the toast fires
+          // SYNCHRONOUSLY here — no post-submit fetch racing the navigation. Fall
+          // back to the generic message if the name couldn't be resolved.
+          var sName = that.getView().getModel("ui").getProperty("/approverName") || "";
+          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
+          that.navTo("list");
         })
         .catch(function (e) {
           that.getView().setBusy(false);

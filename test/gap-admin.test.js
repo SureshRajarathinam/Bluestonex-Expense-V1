@@ -80,10 +80,8 @@ test('Policy: mileageRate <= 0 is rejected', async () => {
   assert.ok((await editPolicy({ mileageRate: -0.1 })).status >= 400, 'negative mileage rate rejected');
 });
 
-test('Policy: vatRate / gstRate outside 0..1 is rejected', async () => {
-  assert.ok((await editPolicy({ vatRate: 1.5 })).status >= 400, 'vatRate > 1 rejected');
-  assert.ok((await editPolicy({ gstRate: -0.2 })).status >= 400, 'negative gstRate rejected');
-});
+// (Removed: Policy no longer holds vatRate/gstRate — the tax rate lives per
+//  treatment on TAX_TYPES, so there is no rate field on Policy to range-check.)
 
 test('Policy: negative limits/threshold are rejected', async () => {
   assert.ok((await editPolicy({ receiptThreshold: -1 })).status >= 400, 'negative threshold rejected');

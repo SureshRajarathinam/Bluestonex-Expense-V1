@@ -18,7 +18,7 @@ const LOG = cds.log('expense-service');
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW } = cds.entities('EXP');
+    const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW, TAX_TYPES } = cds.entities('EXP');
 
     // Resolve an email address to its employee full name (FName + LName), falling
     // back to a title-cased local-part. Used to name the notified approver in the
@@ -128,9 +128,10 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       }
 
       claim.currency = currencyForCountry(country);
-      // Per-country policy: load the row for this claim's country (UK | IN).
-      const policy = await SELECT.one.from(POLICY).where({ country });
-      const stdRate = taxRateFor(country, policy || {});
+      // Tax rate is config-driven from TAX_TYPES (per country+code). Load the
+      // country's treatments once; the STD rate feeds splitVAT (ZR/EX = 0%).
+      const taxTypes = await SELECT.from(TAX_TYPES).where({ country });
+      const stdRate = taxRateFor(country, taxTypes);
 
       for (const item of claim.items || []) {
         const { netAmount, vatAmount } = splitVAT(item.grossAmount, item.vatType, stdRate);

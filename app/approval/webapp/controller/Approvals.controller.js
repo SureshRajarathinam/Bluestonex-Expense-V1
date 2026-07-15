@@ -120,6 +120,10 @@ sap.ui.define([
 
       pDialog.then(function (oDialog) {
         oDialog.setBindingContext(oCtx);
+        // Per-item money cells (Gross/Net/Tax) bind to the item context, which has
+        // no currency of its own — expose the claim's currency via a small JSON
+        // model so those cells render £/₹ correctly for UK vs India.
+        oDialog.setModel(new JSONModel({ currency: oCtx.getProperty("currency") || "GBP" }), "rev");
         that.byId("commentArea").setValue("");
         oDialog.open();
       });

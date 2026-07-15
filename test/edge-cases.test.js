@@ -17,7 +17,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { round2, taxRateFor, splitVAT, mileageTotal, claimTotals } = require('../srv/lib/calc');
 const { validateClaim } = require('../srv/lib/validate');
-const { readPolicy, readStdRate } = require('./lib/config');
+const { readTaxTypes, readStdRate } = require('./lib/config');
 
 // ═══ PART A — UNIT: tax split decision table (calc.splitVAT) ═══════════════════
 // Decision table — condition inputs → expected (net, vat):
@@ -70,18 +70,18 @@ test('splitVAT: DEFECT D5 — negative gross produces negative net/vat (no guard
 });
 
 // ═══ PART B — UNIT: taxRateFor country resolution ═════════════════════════════
-test('taxRateFor: IN uses gstRate, UK/other uses vatRate, with documented defaults', () => {
-  // "reads from policy" cases use the SEEDED config rates; the {} cases assert
-  // calc.js's own documented code defaults (not config).
-  assert.equal(taxRateFor('IN', readPolicy('IN')), readStdRate('IN'));
+test('taxRateFor: resolves the STD rate from TAX_TYPES per country, with documented defaults', () => {
+  // "reads from config" cases pass the SEEDED TAX_TYPES rows; the {} cases assert
+  // calc.js's own documented code defaults (used only when config is missing).
+  assert.equal(taxRateFor('IN', readTaxTypes('IN')), readStdRate('IN'));
   assert.equal(taxRateFor('IN', {}), 0.18, 'IN default (code fallback)');
-  assert.equal(taxRateFor('UK', readPolicy('UK')), readStdRate('UK'));
+  assert.equal(taxRateFor('UK', readTaxTypes('UK')), readStdRate('UK'));
   assert.equal(taxRateFor('UK', {}), 0.20, 'UK default (code fallback)');
   assert.equal(taxRateFor(null, {}), 0.20, 'null country → UK default');
 });
-test('taxRateFor: explicit 0 rate is honoured (?? not ||)', () => {
-  assert.equal(taxRateFor('IN', { gstRate: 0 }), 0, 'a genuine 0% GST must not fall back to 0.18');
-  assert.equal(taxRateFor('UK', { vatRate: 0 }), 0);
+test('taxRateFor: an explicit 0 STD rate is honoured (not treated as missing)', () => {
+  assert.equal(taxRateFor('IN', [{ country: 'IN', code: 'STD', rate: 0 }]), 0, 'a genuine 0% must not fall back to 0.18');
+  assert.equal(taxRateFor('UK', [{ country: 'UK', code: 'STD', rate: 0 }]), 0);
 });
 // Characterisation: any non-'IN' country (typo, unmapped) is treated as UK.
 test('taxRateFor: DEFECT-adjacent — unmapped country "FR" defaults to UK rate', () => {
