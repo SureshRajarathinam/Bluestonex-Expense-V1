@@ -160,23 +160,19 @@ sap.ui.define([
       var that = this;
       var oUi = this.getView().getModel("ui");
       if (!sCountry) { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); oUi.setProperty("/taxTypes", []); return; }
-      // Country-aware tax types (VAT for UK, GST for India) for the item dropdown.
+      // Country-aware tax treatments + the country's standard rate, loaded together
+      // so the dropdown label can show each treatment's EFFECTIVE rate.
       var oTax = this.getModel().bindList("/TaxTypes", null, null, [
         new Filter("country", FilterOperator.EQ, sCountry)
       ]);
-      oTax.requestContexts(0, 100).then(function (aCtx) {
-        oUi.setProperty("/taxTypes", aCtx.map(function (c) {
-          var o = c.getObject();
-          return { code: o.code, description: o.description };
-        }));
-      }).catch(function () { oUi.setProperty("/taxTypes", []); });
       var oList = this.getModel().bindList("/Policies", null, null, [
         new Filter("country", FilterOperator.EQ, sCountry)
       ]);
-      oList.requestContexts(0, 1).then(function (aCtx) {
+      Promise.all([oTax.requestContexts(0, 100), oList.requestContexts(0, 1)]).then(function (aRes) {
+        var aTax = aRes[0], aPol = aRes[1];
         var rate = 0, mileageRate = 0, threshold = 25;
-        if (aCtx.length) {
-          var p = aCtx[0].getObject();
+        if (aPol.length) {
+          var p = aPol[0].getObject();
           rate = Number(sCountry === "IN" ? p.gstRate : p.vatRate) || 0;
           // Live per-country mileage rate — the new-row default comes from here,
           // not a hardcoded literal (mirrors the server-authoritative policy).
@@ -187,10 +183,36 @@ sap.ui.define([
         oUi.setProperty("/stdRate", rate);
         oUi.setProperty("/mileageRate", mileageRate);
         oUi.setProperty("/receiptThreshold", threshold);
+        // Dropdown label shows the EFFECTIVE rate per treatment so the source is
+        // unambiguous: Standard pulls the POLICY country rate; Zero-rated/Exempt
+        // are 0% by definition. e.g. "Standard (18%)", "Zero Rated (0%)".
+        var pct = function (code) {
+          var r = code === "STD" ? rate : 0;
+          return Math.round(r * 10000) / 100; // rate (e.g. 0.18) → 18
+        };
+        oUi.setProperty("/taxTypes", aTax.map(function (c) {
+          var o = c.getObject();
+          return { code: o.code, description: o.description, label: o.description + " (" + pct(o.code) + "%)" };
+        }));
         // Rate is now known — recompute so the corner totals are correct even if
         // the item/mileage tables rendered before the policy resolved.
         that._recalcTotals();
-      }).catch(function () { oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0); });
+      }).catch(function () {
+        oUi.setProperty("/taxTypes", []); oUi.setProperty("/stdRate", 0); oUi.setProperty("/mileageRate", 0);
+      });
+    },
+
+    // Full name of the country's first-level approver, for the "email sent to X"
+    // toast after Apply for Approval. Uses _serviceUrl() so the fetch resolves
+    // under the Work Zone approuter mount (never a bare relative path). Resolves
+    // to "" on any failure so the caller falls back to the generic message.
+    _approverName: function (sCountry) {
+      if (!sCountry) { return Promise.resolve(""); }
+      return fetch(this._serviceUrl() + "approverFor(country='" + encodeURIComponent(sCountry) + "')",
+        { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return (j && j.value) || ""; })
+        .catch(function () { return ""; });
     },
 
     // ---- Inline rows --------------------------------------------------------
@@ -525,6 +547,9 @@ sap.ui.define([
     _doSubmit: function (oCtx, sId) {
       var that = this;
       var bDraft = oCtx.getPath().indexOf("IsActiveEntity=false") > -1;
+      // Capture the country now so we can name the notified approver in the success
+      // toast (the context path changes across activate/submit).
+      var sCountry = (oCtx && oCtx.getProperty("country")) || "";
       this.getView().setBusy(true);
 
       var submitActive = function () {
@@ -548,14 +573,15 @@ sap.ui.define([
           if (that._isEntityLocked(oErr)) { return activateDraft().then(submitActive); }
           throw oErr;
         })
-        .then(function (oResultCtx) {
+        .then(function () {
           that.getView().setBusy(false);
-          // Name the approver the notification email went to (from the action's
-          // transient `emailedTo`); fall back to the generic message if unavailable.
-          var sName = "";
-          try { sName = (oResultCtx && oResultCtx.getObject && oResultCtx.getObject().emailedTo) || ""; } catch (e) { sName = ""; }
-          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
-          that.navTo("list");
+          // Name the approver the notification email went to. Resolve the L1
+          // approver's full name via approverFor(country); toast with the name,
+          // or the generic message if it can't be resolved.
+          return that._approverName(sCountry).then(function (sName) {
+            MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
+            that.navTo("list");
+          });
         })
         .catch(function (e) {
           that.getView().setBusy(false);

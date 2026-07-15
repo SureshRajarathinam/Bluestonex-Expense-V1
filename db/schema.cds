@@ -10,15 +10,16 @@ entity EXPENSE_TYPES {
       requiresReceipt : Boolean default false;
 }
 
-// Country-aware tax code list — replaces the old VAT-only VAT_TYPES table.
-// One row per (country, code): the UK rows carry VAT, the India rows carry GST,
-// so the New Expense Claim item dropdown loads the right set for the selected
-// country. Composite key lets UK and India each define their own STD/ZR/EX.
+// Country-aware tax-treatment list for the New Expense Claim item dropdown.
+// One row per (country, code): Standard / Zero-rated / Exempt. This table ONLY
+// enumerates the treatments + labels — it carries NO rate. The single standard
+// rate lives on ExpensePolicy (vatRate for UK, gstRate for IN) and is applied by
+// calc.splitVAT: Standard → the POLICY rate, Zero-rated/Exempt → 0% by definition.
+// Composite key lets UK and India each define their own STD/ZR/EX.
 entity TAX_TYPES {
   key country     : String(2);    // UK | IN
   key code        : String(10);   // STD | ZR | EX
       description : String(50);
-      rate        : Decimal(5, 4);
 }
 
 // Countries the solution supports — drives tax (VAT/GST) and approval routing

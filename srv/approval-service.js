@@ -58,6 +58,18 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       return { email, fullName: fullName.trim(), firstName, lastName };
     });
 
+    // ─── Function: approverFor(country, level) → approver full name ──────────
+    // level 1 = first approver, 2 = second (UK only). Resolves the configured
+    // WORKFLOW email to a full name so the UI can name who an email went to.
+    this.on('approverFor', async (req) => {
+      const { country, level } = req.data;
+      if (!country) return null;
+      const wf = await SELECT.one.from(WORKFLOW).where({ country });
+      if (!wf) return null;
+      const email = Number(level) === 2 ? wf.secondApprover : wf.firstApprover;
+      return email ? fullNameForEmail(email) : null;
+    });
+
     // ─── Action: approve (country-aware: UK 2-level, India 1-level) ──────────
     this.on('approve', 'Approvals', async (req) => {
       const ID = idOf(req);
@@ -79,10 +91,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // Set true only when this action drives the claim to FINAL Approved (India
       // single level, or UK level 2) — NOT on UK FirstApproved.
       let finalApproved = false;
-      // Full name of whoever the notification email goes to (L2 approver on a UK
-      // escalation, else the claimant on final approval) — surfaced to the client
-      // as the transient `emailedTo` so it can toast "email sent to X".
-      let emailedTo = '';
 
       // Authority to approve is governed SOLELY by Approval Workflow membership
       // (per requirement): whoever is configured as the country's approver may
@@ -101,7 +109,6 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           // Alert the configured second-level approver (fire-and-forget — email must
           // not sit in the request's critical path; a dead SMTP would 504 the approve).
           const l2Name = await fullNameForEmail(wf.secondApprover);
-          emailedTo = l2Name || wf.secondApprover || '';
           notification.notifyLevel1Approved(claim, wf.secondApprover, requestedBy, l2Name)
             .catch((e) => LOG.warn('notifyLevel1Approved failed:', e.message));
         } else {
@@ -126,16 +133,13 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // On final approval, email the employee who created the claim (fire-and-forget —
       // email must not sit in the request's critical path; a dead SMTP would 504).
       if (finalApproved) {
-        emailedTo = requestedBy || claim.employee?.Email || claim.createdBy || '';
         const meName = await fullNameForEmail(me);
         notification.notifyApproved(claim, me, meName)
           .catch((e) => LOG.warn('notifyApproved failed:', e.message));
       }
 
       LOG.info(`Claim ${claim.claimNumber} approved by ${me}`);
-      const out = await SELECT.one.from(CLAIMS, ID);
-      if (out) out.emailedTo = emailedTo;
-      return out;
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     // ─── Action: reject ─────────────────────────────────────────────────────
@@ -167,16 +171,13 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // rejectedBy/rejectionReason — they now record who returned it and why.
       await UPDATE(CLAIMS, ID).with({ status: 'Returned', rejectedBy: me, rejectionReason: comment });
       // Fire-and-forget email to the employee (see submit/approve — never block on SMTP).
-      const employeeName = empName(claim.employee) || claim.employee?.Email || claim.createdBy || '';
       const meName = await fullNameForEmail(me);
       notification.notifyReturned(claim, me, comment, meName)
         .catch((e) => LOG.warn('notifyReturned failed:', e.message));
       await audit.record({ userId: me, action: 'Returned', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
 
       LOG.info(`Claim ${claim.claimNumber} returned for rework by ${me}`);
-      const out = await SELECT.one.from(CLAIMS, ID);
-      if (out) out.emailedTo = employeeName;
-      return out;
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     // ─── Policy Configuration: validate + audit (draft SAVE) ────────────────

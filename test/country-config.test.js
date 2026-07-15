@@ -71,5 +71,26 @@ test('Req2: TaxTypes are country-aware (UK = VAT, India = GST)', async () => {
   const inStd = ind.find((r) => r.code === 'STD');
   assert.ok(/VAT|Standard Rate/i.test(ukStd.description), `UK STD is VAT, got "${ukStd.description}"`);
   assert.ok(/GST/i.test(inStd.description), `India STD is GST, got "${inStd.description}"`);
-  assert.equal(Number(inStd.rate), 0.18, 'India GST standard rate is 0.18');
+  // TaxTypes carries NO rate — it only enumerates the treatments. The standard
+  // rate lives on ExpensePolicy (single source): India GST = 0.18.
+  assert.equal(inStd.rate, undefined, 'TaxTypes no longer exposes a rate column');
+  const inPolicy = (await GET(`/expense/Policies?$filter=country eq 'IN'`, { auth: EMP })).data.value[0];
+  assert.equal(Number(inPolicy.gstRate), 0.18, 'India GST standard rate lives on POLICY (0.18)');
+});
+
+// Placed last: it activates an India claim (consuming an INEXP number), so keep it
+// after the claim-number sequence tests above.
+test('currency follows the country on the draft (IN→INR) — UI sends it at create; server enforces on save', async () => {
+  // Regression: an India user saw £ on the freshly-created claim. The my-expenses
+  // Create dialog now sends currency alongside country (IN→INR), so the draft shows
+  // the right symbol immediately (verified here via the same create payload)…
+  const inDraft = await POST('/expense/MyClaims', { country: 'IN', currency: 'INR', claimPeriod: '2026-03-15' }, { auth: IN1 });
+  assert.ok(inDraft.status < 400, `create IN ${inDraft.status}`);
+  assert.equal(inDraft.data.currency, 'INR', 'India draft is INR at create');
+  const ukDraft = await POST('/expense/MyClaims', { country: 'UK', currency: 'GBP', claimPeriod: '2026-03-15' }, { auth: EMP });
+  assert.equal(ukDraft.data.currency, 'GBP', 'UK draft is GBP at create');
+  // …and the server re-derives currency from country on Save regardless of what the
+  // client sent (authoritative): an India claim is INR after activation.
+  const saved = await makeClaim('IN', '2026-03-16', IN1); // creates + activates
+  assert.equal(saved.currency, 'INR', 'server enforces INR for an India claim on save');
 });

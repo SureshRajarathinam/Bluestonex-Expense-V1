@@ -116,7 +116,7 @@
                 <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false" width="100%"
                   change=".onLineChange"
                   items="{ path: 'ui>/taxTypes', templateShareable: false }">
-                  <core:Item key="{ui>code}" text="{ui>description}" />
+                  <core:Item key="{ui>code}" text="{ui>label}" />
                 </Select>
                 <!-- No HTML type="Number" (that capped amounts at 3 digits). We
                      DECLARE the OData Decimal(15,2) model type so the value stored/

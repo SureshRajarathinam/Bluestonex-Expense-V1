@@ -43,7 +43,14 @@ sap.ui.define([], function () {
     },
 
     money: function (vAmount, sCurrency) {
-      var n = Number(vAmount || 0);
+      // Robust coercion: a freestyle OData V4 amount can arrive as a locale-GROUPED
+      // string (e.g. "₹10,00,000.00"); a plain Number() of that is NaN — which
+      // rendered "₹NaN" in the Approvals Total for large claims. Strip anything but
+      // digits/dot/minus (grouping, currency symbols, spaces) before parsing.
+      var n;
+      if (vAmount == null) { n = 0; }
+      else if (typeof vAmount === "number") { n = isFinite(vAmount) ? vAmount : 0; }
+      else { n = Number(String(vAmount).replace(/[^0-9.\-]/g, "")); if (!isFinite(n)) { n = 0; } }
       var sym = sCurrency === "INR" ? "₹" : (sCurrency === "GBP" ? "£" : "");
       return sym + n.toFixed(2);
     }

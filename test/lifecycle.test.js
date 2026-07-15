@@ -169,12 +169,14 @@ test('I. a Submitted claim cannot be deleted (409); a Draft can', async () => {
   assert.ok(okDel.status < 400, `draft delete got ${okDel.status}`);
 });
 
-test('J. approverFor returns the country first-level approver email', async () => {
+test('J. approverFor returns the country first-level approver full name', async () => {
+  // Returns the resolved full name (EMPLOYEES unseeded in test → derived from the
+  // configured workflow email's local-part) — drives the "email sent to X" toast.
   const uk = await GET(`/expense/approverFor(country='UK')`, { auth: EMP });
   assert.equal(uk.status, 200, `UK ${uk.status}`);
-  assert.equal(uk.data.value, 'manager@bluestonex.com', 'UK L1 approver');
+  assert.ok(/manager/i.test(uk.data.value || ''), `UK L1 name, got "${uk.data.value}"`);
   const ind = await GET(`/expense/approverFor(country='IN')`, { auth: EMP });
-  assert.equal(ind.data.value, 'suresh.rajarathinam@bluestonex.com', 'India L1 approver');
+  assert.ok(/suresh/i.test(ind.data.value || ''), `India L1 name, got "${ind.data.value}"`);
   const none = await GET(`/expense/approverFor(country='ZZ')`, { auth: EMP });
   assert.ok(none.data.value == null, `unknown country → null (${JSON.stringify(none.data)})`);
 });

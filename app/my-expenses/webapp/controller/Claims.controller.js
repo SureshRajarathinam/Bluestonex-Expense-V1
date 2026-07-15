@@ -189,7 +189,9 @@ sap.ui.define([
       var oList = this.byId("claimsTable").getBinding("items");
 
       // create(initialData, bSkipRefresh) — skip refresh since we navigate away.
-      var oCtx = oList.create({ country: sCountry, claimPeriod: sToday }, true);
+      // Send currency alongside country (IN → INR, UK → GBP) so the claim detail
+      // shows the right symbol immediately, without waiting for a server round-trip.
+      var oCtx = oList.create({ country: sCountry, currency: sCountry === "IN" ? "INR" : "GBP", claimPeriod: sToday }, true);
       this.getView().setBusy(true);
 
       oCtx.created().then(function () {

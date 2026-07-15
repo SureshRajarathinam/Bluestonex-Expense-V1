@@ -139,6 +139,13 @@ sap.ui.define([
         return;
       }
 
+      // Capture the recipient signals BEFORE the action — the row leaves the queue
+      // once decided. The email goes to: the L2 approver when a UK Submitted claim
+      // is approved (escalation), otherwise the employee (final approve / return).
+      var sCountry = oCtx.getProperty("country");
+      var sStatus = oCtx.getProperty("status");
+      var sEmployee = oCtx.getProperty("employeeName") || "";
+
       // Guard against a double-submit: the Approve/Reject buttons live in the
       // dialog (static area), which view.setBusy does NOT cover, so a fast
       // double-click could fire the action twice. Busy the DIALOG and gate on a
@@ -149,24 +156,37 @@ sap.ui.define([
       var that = this;
       oDialog.setBusy(true);
       this.callAction(oCtx, "ApprovalService." + sAction, { comment: sComment })
-        .then(function (oResultCtx) {
+        .then(function () {
           that._deciding = false;
           oDialog.setBusy(false);
           oDialog.close();
-          // Name whoever the notification email went to (next-level approver on a UK
-          // escalation, else the employee) from the action's transient `emailedTo`;
-          // fall back to the generic decision message.
-          var sName = "";
-          try { sName = (oResultCtx && oResultCtx.getObject && oResultCtx.getObject().emailedTo) || ""; } catch (e) { sName = ""; }
-          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText(sMsgKey));
-          that.byId("approvalsTable").getBinding("items").refresh();
-          that._loadCounts();
+          // Resolve who the notification email went to, then toast their name.
+          var pName = (sAction === "approve" && sCountry === "UK" && sStatus === "Submitted")
+            ? that._approverName(sCountry, 2)          // escalated to the second-level approver
+            : Promise.resolve(sEmployee);              // final approve / return → the employee
+          return pName.then(function (sName) {
+            MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText(sMsgKey));
+            that.byId("approvalsTable").getBinding("items").refresh();
+            that._loadCounts();
+          });
         })
         .catch(function (e) {
           that._deciding = false;
           oDialog.setBusy(false);
           that.showError(e);
         });
+    },
+
+    // Full name of the country's approver at a given level (2 = second-level), for
+    // the "email sent to X" toast. Uses _serviceUrl() so the fetch resolves under
+    // the Work Zone approuter mount. Resolves to "" on any failure.
+    _approverName: function (sCountry, iLevel) {
+      if (!sCountry) { return Promise.resolve(""); }
+      return fetch(this._serviceUrl() + "approverFor(country='" + encodeURIComponent(sCountry) + "',level=" + (iLevel || 1) + ")",
+        { headers: { Accept: "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return (j && j.value) || ""; })
+        .catch(function () { return ""; });
     },
 
     onApprove: function () {

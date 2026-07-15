@@ -20,7 +20,10 @@ const BRAND = '#2a4b8d'; // BluestoneX blue (submitted / awaiting-approval accen
 
 // Work Zone launchpad base + per-app deep links for the email CTA button.
 // Overridable via LAUNCHPAD_URL; falls back to the current TDD site.
-const LAUNCHPAD = process.env.LAUNCHPAD_URL || 'https://bsx-tdd-qq8akzjn.launchpad.cfapps.eu10.hana.ondemand.com';
+// Work Zone site base for the email CTA. MUST include the site path (…/site/<siteId>)
+// — the FLP shell that resolves an #Intent-action lives under /site, not host root
+// (a hash on the bare host 404s "site not found"). Overridable via LAUNCHPAD_URL.
+const LAUNCHPAD = process.env.LAUNCHPAD_URL || 'https://bsx-tdd-qq8akzjn.launchpad.cfapps.eu10.hana.ondemand.com/site/MyBSX';
 const LINK = {
   approvals:  `${LAUNCHPAD}#ExpenseApproval-display`, // approver-facing emails
   myExpenses: `${LAUNCHPAD}#MyExpenses-display`       // employee-facing emails

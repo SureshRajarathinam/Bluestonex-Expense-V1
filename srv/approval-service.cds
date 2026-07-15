@@ -60,6 +60,11 @@ service ApprovalService {
   type WhoAmI : { email : String; fullName : String; firstName : String; lastName : String; }
   function whoami() returns WhoAmI;
 
+  // Full name of the configured approver for a country and level (1 = first, 2 =
+  // second). Lets the app toast "Email notification sent to <name>" after an
+  // approve that escalates to the next-level approver.
+  function approverFor(country : String, level : Integer) returns String;
+
   // ── Approvals queue: claims awaiting a decision ─────────────────────────────
   @restrict: [{ grant: ['READ', 'approve', 'reject'], to: 'Approver' }]
   entity Approvals as select from db.CLAIMS {
@@ -74,10 +79,7 @@ service ApprovalService {
       when 'Approved'      then 3
       when 'Rejected'      then 1
       else 0
-    end as statusCriticality : Integer,
-    // Transient: set on the approve/reject response to the resolved full name of the
-    // person the notification email was sent to (drives the "email sent to X" toast).
-    virtual null as emailedTo : String
+    end as statusCriticality : Integer
   } where status in ('Submitted', 'FirstApproved') actions {
     @(Core.OperationAvailable: {
       $edmJson: { $Or: [

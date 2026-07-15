@@ -29,6 +29,11 @@ modules:
       disk-quota: 512M
     build-parameters:
       builder: npm
+    properties:
+      # Work Zone site base for the email "Review" CTA deep-links. MUST include the
+      # /site/<siteId> path (the FLP shell resolving #Intent-action lives there;
+      # a hash on the bare host 404s). Update if the site host/id changes.
+      LAUNCHPAD_URL: https://bsx-tdd-qq8akzjn.launchpad.cfapps.eu10.hana.ondemand.com/site/MyBSX
     requires:
       - name: expense-management-db
       - name: expense-management-xsuaa

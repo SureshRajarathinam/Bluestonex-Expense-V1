@@ -66,10 +66,10 @@ test('approver IDENTITY: only the configured L1 can approve (others 403)', async
   // manager (L1) succeeds
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
   assert.ok(ok.status < 400, `L1 approve ${ok.status}`);
-  // The approve response carries the transient `emailedTo` = the person notified
-  // (here the L2 approver on the UK escalation), so the UI can toast "email sent to X".
-  assert.ok(typeof ok.data.emailedTo === 'string' && ok.data.emailedTo.length > 0, 'approve response names who was emailed');
-  assert.ok(/barton/i.test(ok.data.emailedTo), `emailedTo derived from the configured L2 approver ${UK.second}, got "${ok.data.emailedTo}"`);
+  // The UI names the notified L2 approver via ApprovalService.approverFor(country,2)
+  // (the mechanism behind the "email sent to X" toast on a UK escalation).
+  const l2 = (await GET(`/approval/approverFor(country='UK',level=2)`, { auth: MGR })).data;
+  assert.ok(typeof l2.value === 'string' && /barton/i.test(l2.value), `approverFor L2 resolves the configured ${UK.second}, got "${l2.value}"`);
 });
 
 test('reject requires a reason (422) then returns the claim for rework (Returned)', async () => {
@@ -79,9 +79,6 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   const mark = MAILS.length;
   const ok = await POST(`/approval/Approvals(${id})/ApprovalService.reject`, { comment: 'Missing detail' }, { auth: MGR });
   assert.ok(ok.status < 400, `reject ${ok.status}`);
-  // The reject response carries `emailedTo` = the employee notified of the return,
-  // so the approval UI can toast "email sent to <employee>".
-  assert.ok(typeof ok.data.emailedTo === 'string' && ok.data.emailedTo.length > 0, 'reject response names who was emailed (the employee)');
   // A decline now returns the claim to the employee (reworkable), not a terminal Rejected.
   const claim = (await GET(`/expense/MyClaims${active(id)}`, { auth: EMP })).data;
   assert.equal(claim.status, 'Returned');
@@ -97,17 +94,30 @@ test('reject requires a reason (422) then returns the claim for rework (Returned
   );
 });
 
-test('submitClaim response carries emailedTo (the first-level approver notified)', async () => {
-  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-02-28' }, { auth: EMP });
+test('Approval Total is a clean finite number for a very large claim (no ₹NaN)', async () => {
+  // ₹NaN came from the client formatter's naive Number() of a grouped amount; the
+  // server side must still return a finite numeric totalGross for the fixed
+  // formatter to render. Use a large-but-in-range INR amount (~1.2 crore).
+  const big = 12345678.90;
+  const c = await POST('/expense/MyClaims', { country: 'IN', claimPeriod: '2026-02-28' }, { auth: EMP });
   const id = c.data.ID;
-  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'T', vatType: 'STD', grossAmount: 120, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: '2026-02-16', expenseType_code: 'HOTEL', reasonForTrip: 'Big', vatType: 'STD', grossAmount: big, receiptAttached: true }, { auth: EMP });
   await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
   const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   assert.ok(s.status < 400, `submit ${s.status}`);
-  // Transient field drives the my-expenses "email sent to X" toast; recipient is the
-  // configured UK first-level approver (EMPLOYEES unseeded in test → local-part name).
-  assert.ok(typeof s.data.emailedTo === 'string' && s.data.emailedTo.length > 0, 'submit response names the approver emailed');
-  assert.ok(/manager/i.test(s.data.emailedTo), `emailedTo derived from the configured L1 approver ${UK.first}, got "${s.data.emailedTo}"`);
+  const row = (await GET(`/approval/Approvals(${id})`, { auth: MGR })).data;
+  const n = Number(row.totalGross);
+  assert.ok(Number.isFinite(n) && n > 0, `Approvals totalGross is finite numeric, got "${row.totalGross}"`);
+});
+
+test('approverFor names the first-level approver (drives the my-expenses "email sent to X" toast)', async () => {
+  // The my-expenses app calls ExpenseService.approverFor(country) after Apply for
+  // Approval to name the L1 approver in the toast. It returns the resolved full name
+  // (EMPLOYEES unseeded in test → local-part), derived from the configured workflow.
+  const uk = (await GET(`/expense/approverFor(country='UK')`, { auth: EMP })).data;
+  assert.ok(typeof uk.value === 'string' && /manager/i.test(uk.value), `UK L1 name from ${UK.first}, got "${uk.value}"`);
+  const ind = (await GET(`/expense/approverFor(country='IN')`, { auth: EMP })).data;
+  assert.ok(typeof ind.value === 'string' && ind.value.length > 0, `IN L1 name from ${IN.first}, got "${ind.value}"`);
 });
 
 test('RBAC: employee-only user blocked from /approval data (403); metadata still loads', async () => {

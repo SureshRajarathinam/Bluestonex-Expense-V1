@@ -48,16 +48,10 @@ function readStdRate(country) {
   return country === 'IN' ? p.gstRate : p.vatRate;
 }
 
-// A specific TAX_TYPES rate (e.g. STD/ZR/EX) for a country.
-function readTaxRate(country, code) {
-  const r = rows('EXP-TAX_TYPES.csv').find((t) => t.country === country && t.code === code);
-  return r ? Number(r.rate) : undefined;
-}
-
 // Configured approver emails for a country: { first, second } (second null for IN).
 function readApprovers(country) {
   const r = rows('EXP-WORKFLOW.csv').find((w) => w.country === country) || {};
   return { first: r.firstApprover || null, second: r.secondApprover || null };
 }
 
-module.exports = { readPolicy, readStdRate, readTaxRate, readApprovers };
+module.exports = { readPolicy, readStdRate, readApprovers };

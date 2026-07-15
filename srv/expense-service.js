@@ -2,7 +2,7 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
-const { splitVAT, mileageTotal, claimTotals, taxRateFor } = require('./lib/calc');
+const { splitVAT, mileageTotal, claimTotals, taxRateFor, currencyForCountry } = require('./lib/calc');
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
@@ -63,6 +63,11 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     // Employees never type their own ID — it comes from $user (the login).
     const applyDefaults = async (req) => {
       req.data.status   = req.data.status || 'Draft';
+      // Currency is provided by the client at create (UI sends it with country) and
+      // is re-derived authoritatively from country in before('SAVE'). We do NOT set
+      // it here: a before-CREATE mutation of this schema-defaulted column does not
+      // stick for a draft insert (CAP re-applies the column default), so it would be
+      // misleading. Keep the schema default 'GBP' as the pre-client fallback.
       req.data.currency = req.data.currency || 'GBP';
       // Resolve by ANY caller identity (Work Zone id = logon name, not email).
       const emp = await resolveEmployee(req, EMPLOYEES);
@@ -76,6 +81,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     // 'NEW' fires when a Fiori draft is created; 'CREATE' for non-draft inserts.
     this.before('NEW', 'MyClaims', applyDefaults);
     this.before('CREATE', 'MyClaims', applyDefaults);
+
 
     // ─── Before SAVE: the draft-correct place to compute everything ────────
     // Fires when a draft is activated. req.data holds the full tree (items +
@@ -121,7 +127,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
         claim.claimNumber = prefix + String(next).padStart(width, '0');
       }
 
-      claim.currency = country === 'IN' ? 'INR' : 'GBP';
+      claim.currency = currencyForCountry(country);
       // Per-country policy: load the row for this claim's country (UK | IN).
       const policy = await SELECT.one.from(POLICY).where({ country });
       const stdRate = taxRateFor(country, policy || {});
@@ -186,9 +192,7 @@ module.exports = class ExpenseService extends cds.ApplicationService {
       await audit.record({ userId: req.user.id, action: wasReturned ? 'Resubmitted' : 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
 
       LOG.info(`Claim ${claim.claimNumber} ${wasReturned ? 'resubmitted' : 'submitted'} by ${req.user.id}`);
-      const out = await SELECT.one.from(CLAIMS, ID);
-      if (out) out.emailedTo = approverName || wf?.firstApprover || '';
-      return out;
+      return SELECT.one.from(CLAIMS, ID);
     });
 
     // ─── Guard: only pre-submission claims may be deleted ──────────────────
@@ -207,14 +211,15 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     });
 
     // ─── Function: approverFor(country) ────────────────────────────────────
-    // Returns the first-level approver email for a country, so the my-expenses
-    // "Apply for Approval" confirmation popup can name who the claim will go to.
+    // Returns the first-level approver's FULL NAME for a country, so the my-expenses
+    // app can toast "Email notification sent to <name>" after Apply for Approval.
     // Read-only, Employee-callable; exposes only the recipient of your own claim.
     this.on('approverFor', async (req) => {
       const country = req.data.country;
       if (!country) return null;
       const wf = await SELECT.one.from(WORKFLOW).where({ country });
-      return (wf && wf.firstApprover) || null;
+      if (!wf || !wf.firstApprover) return null;
+      return fullNameForEmail(wf.firstApprover);
     });
 
     await super.init();
