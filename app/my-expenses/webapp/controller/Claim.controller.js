@@ -14,7 +14,7 @@ sap.ui.define([
     formatter: formatter,
 
     onInit: function () {
-      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, receiptThreshold: 25, currency: "GBP", taxTypes: [], approverName: "", emp: {}, live: { net: 0, tax: 0, total: 0 }, today: new Date() }), "ui");
+      this.getView().setModel(new JSONModel({ editable: false, canEdit: false, canSubmit: false, isReturned: false, returnReason: "", itemCount: 0, mileageCount: 0, stdRate: 0, mileageRate: 0, currency: "GBP", taxTypes: [], approverName: "", emp: {}, live: { net: 0, tax: 0, total: 0 }, today: new Date() }), "ui");
       // Which expense types always require a receipt (code → true). Loaded once so
       // the submit gate can mirror the server rule in srv/lib/validate.js (Rule 4).
       this._receiptTypes = {};
@@ -175,7 +175,7 @@ sap.ui.define([
       ]);
       Promise.all([oTax.requestContexts(0, 100), oList.requestContexts(0, 1)]).then(function (aRes) {
         var aTax = aRes[0], aPol = aRes[1];
-        var mileageRate = 0, threshold = 25;
+        var mileageRate = 0;
         // Rate now comes from the TAX_TYPES config rows — each treatment carries
         // its own effective rate (STD = country standard, ZR/EX = 0). Build a
         // code→rate map; the STD rate drives the live net/tax preview.
@@ -184,13 +184,11 @@ sap.ui.define([
         var rate = mRate.STD || 0;
         if (aPol.length) {
           var p = aPol[0].getObject();
-          // Policy still owns the (non-tax) mileage rate + receipt threshold.
+          // Policy still owns the (non-tax) mileage rate.
           mileageRate = Number(p.mileageRate) || 0;
-          if (p.receiptThreshold != null) { threshold = Number(p.receiptThreshold) || 0; }
         }
         oUi.setProperty("/stdRate", rate);
         oUi.setProperty("/mileageRate", mileageRate);
-        oUi.setProperty("/receiptThreshold", threshold);
         // Dropdown label shows each treatment's EFFECTIVE rate straight from its
         // TAX_TYPES row, so the source is unambiguous. e.g. "Standard (18%)",
         // "Zero Rated (0%)".
@@ -471,12 +469,10 @@ sap.ui.define([
       var sReq = this.getText("fieldRequired");
       var aBadRows = [];
       // Receipt gate (mirrors srv/lib/validate.js Rule 4): a receipt is required
-      // when the expense type always needs one OR the gross is at/above the policy
-      // threshold. Flag such rows that have no attachment so the user gets an
-      // immediate, specific popup instead of a server 422 after submit.
+      // when the expense type is configured to always need one (EXP_EXPENSE_TYPES.
+      // requiresReceipt). No amount threshold. Flag such rows that have no
+      // attachment so the user gets an immediate, specific popup rather than a 422.
       var aReceiptRows = [];
-      var oUi = this.getView().getModel("ui");
-      var nThreshold = Number(oUi && oUi.getProperty("/receiptThreshold"));
       var oTypes = this._receiptTypes || {};
       aItems.forEach(function (oItem, i) {
         var aCells = oItem.getCells();
@@ -495,9 +491,8 @@ sap.ui.define([
         });
         if (bRowBad) { aBadRows.push(i + 1); }
         if (oItemCtx) {
-          var gross = Number(oItemCtx.getProperty("grossAmount")) || 0;
           var sType = oItemCtx.getProperty("expenseType_code");
-          var bNeedsReceipt = !!oTypes[sType] || (nThreshold >= 0 && gross >= nThreshold);
+          var bNeedsReceipt = !!oTypes[sType];
           // Use receiptFileName (always set alongside the attachment, and part of
           // the items table's $select) as the "has receipt" signal. Reading
           // receiptAttached here caused a V4 drill-down error because that column

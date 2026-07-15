@@ -37,6 +37,16 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       return empName(emp) || nameFromEmail(email);
     };
 
+    // Full name of the ACTING user (the approver performing approve/reject). In Work
+    // Zone req.user.id is the LOGON NAME, not an email — so fullNameForEmail(req.user.id)
+    // misses the Email lookup and title-cases the logon ("srajarathinam" → "Srajarathinam").
+    // Resolve identity-aware (email/logon/token claims) via resolveEmployee → FName+LName,
+    // like submitClaim does; fall back to the email/local-part transforms.
+    const myName = async (req) => {
+      const emp = await resolveEmployee(req, EMPLOYEES);
+      return empName(emp) || (await fullNameForEmail(req.user?.id)) || nameFromEmail(req.user?.id);
+    };
+
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
     this.before('READ', guardPaging);
 
@@ -133,7 +143,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // On final approval, email the employee who created the claim (fire-and-forget —
       // email must not sit in the request's critical path; a dead SMTP would 504).
       if (finalApproved) {
-        const meName = await fullNameForEmail(me);
+        const meName = await myName(req);
         notification.notifyApproved(claim, me, meName)
           .catch((e) => LOG.warn('notifyApproved failed:', e.message));
       }
@@ -171,7 +181,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       // rejectedBy/rejectionReason — they now record who returned it and why.
       await UPDATE(CLAIMS, ID).with({ status: 'Returned', rejectedBy: me, rejectionReason: comment });
       // Fire-and-forget email to the employee (see submit/approve — never block on SMTP).
-      const meName = await fullNameForEmail(me);
+      const meName = await myName(req);
       notification.notifyReturned(claim, me, comment, meName)
         .catch((e) => LOG.warn('notifyReturned failed:', e.message));
       await audit.record({ userId: me, action: 'Returned', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: comment });
@@ -185,7 +195,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const p = req.data;
       if (p.mileageRate != null && Number(p.mileageRate) <= 0)
         return req.error(422, 'Mileage rate must be greater than 0.');
-      for (const [f, label] of [['hotelDailyLimit', 'Hotel daily limit'], ['mealDailyLimit', 'Meal daily limit'], ['receiptThreshold', 'Receipt threshold']]) {
+      for (const [f, label] of [['hotelDailyLimit', 'Hotel daily limit'], ['mealDailyLimit', 'Meal daily limit']]) {
         if (p[f] != null && Number(p[f]) < 0) return req.error(422, `${label} cannot be negative.`);
       }
       // Tax rate is no longer a Policy field — it lives per treatment on TAX_TYPES.
@@ -194,7 +204,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     this.after('SAVE', 'Policies', async (data, req) => {
       await audit.record({
         userId: req.user.id, action: 'PolicyChanged', objectType: 'ExpensePolicy', objectKey: data?.policyName || '',
-        details: `mileage=${data?.mileageRate}, hotel=${data?.hotelDailyLimit}, meal=${data?.mealDailyLimit}, receiptThreshold=${data?.receiptThreshold}`
+        details: `mileage=${data?.mileageRate}, hotel=${data?.hotelDailyLimit}, meal=${data?.mealDailyLimit}`
       });
       LOG.info(`Policy '${data?.policyName}' updated by ${req.user.id}`);
     });

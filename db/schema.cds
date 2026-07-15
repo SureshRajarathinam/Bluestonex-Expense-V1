@@ -70,7 +70,8 @@ entity POLICY : managed {
       mileageRate      : Decimal(8, 4) default 0.2500;
       hotelDailyLimit  : Decimal(10, 2);
       mealDailyLimit   : Decimal(10, 2);
-      receiptThreshold : Decimal(10, 2) default 25.00;  // receipt required at/above this gross amount
+      // Receipts are NOT threshold-driven — a receipt is required only when the
+      // item's expense type has requiresReceipt=true (EXP_EXPENSE_TYPES config).
       // Tax rate is NOT held here — it lives per treatment on TAX_TYPES (the tax
       // type dropdown drives the rate). Policy owns limits + the claim-number seed.
       // Starting Claim Number for this country (e.g. 'UKEXP1' / 'INEXP1'). The

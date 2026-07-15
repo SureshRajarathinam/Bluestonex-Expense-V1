@@ -22,16 +22,20 @@ sap.ui.define([
       this._loadCounts();
     },
 
-    // Pending-claim counts per country for the landing cards.
+    // Pending-claim counts per country for the landing cards. Fetch only the
+    // server-side $count (one light request per country, batched via the default
+    // group) instead of pulling up to 999 rows just to measure their length —
+    // a big open-time saving. Same country filter as before (the Approvals queue
+    // is already scoped to pending statuses server-side).
     _loadCounts: function () {
       var oModel = this.getModel();
       var oView = this.getView().getModel("view");
       ["UK", "IN"].forEach(function (sCountry) {
-        oModel.bindList("/Approvals", null, null,
-          [new Filter("country", FilterOperator.EQ, sCountry)], { $$groupId: "$direct" })
-          .requestContexts(0, 999)
-          .then(function (aCtx) {
-            oView.setProperty(sCountry === "UK" ? "/pendUK" : "/pendIN", aCtx.length);
+        var oBinding = oModel.bindList("/Approvals", null, null,
+          [new Filter("country", FilterOperator.EQ, sCountry)], { $count: true });
+        oBinding.requestContexts(0, 1)
+          .then(function () {
+            oView.setProperty(sCountry === "UK" ? "/pendUK" : "/pendIN", oBinding.getCount() || 0);
           })
           .catch(function () { /* leave count at 0 */ });
       });

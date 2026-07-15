@@ -22,20 +22,20 @@
      headings/primary text = black, secondary/borders/tracks = grey. All the
      legacy token names below are repointed into this family so the whole app
      cascades automatically. ── */
-  --bsx-lblue:  #5b9bd5;   /* light blue accent  */
-  --bsx-lgreen: #82c48f;   /* light green accent */
+  --bsx-lblue:  #2e6fb0;   /* glass blue accent  */
+  --bsx-lgreen: #17a589;   /* teal-green accent */
   --bsx-lorange:#efb366;   /* light orange accent */
   --bsx-black:  #1d1d1f;   /* near-black text/brand */
-  --bsx-blue:   #5b9bd5;   /* was Fiori blue → light blue */
+  --bsx-blue:   #2e6fb0;   /* glass blue (premium card accent) */
   --bsx-danger: #efb366;   /* was red → light orange */
-  --bsx-green:  #82c48f;   /* → light green   */
+  --bsx-green:  #148f77;   /* rich emerald   */
   --bsx-red:    #efb366;   /* → light orange  */
   --bsx-amber:  #efb366;   /* → light orange  */
   --bsx-navy:   #1d1d1f;   /* → black         */
-  --bsx-teal:   #5b9bd5;   /* → light blue    */
-  --bsx-blue-l: #aecbe8;   /* light-blue tint */
-  --bsx-blue-m: #5b9bd5;   /* light blue      */
-  --bsx-blue-d: #3a6fa5;   /* dark light-blue */
+  --bsx-teal:   #17a589;   /* teal            */
+  --bsx-blue-l: #5dade2;   /* glass-blue tint */
+  --bsx-blue-m: #2e86c1;   /* glass blue      */
+  --bsx-blue-d: #1b4f72;   /* deep glass blue */
 }
 
 html, body, .sapUiBody, .bsxBody,

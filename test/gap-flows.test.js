@@ -115,7 +115,7 @@ test('each submitted claim gets a unique claimNumber', async () => {
 test('@assert.unique.country: a second Policy for an existing country is rejected', async () => {
   const list = await GET('/approval/Policies', { auth: MGR });
   const existingCountry = list.data.value[0].country;
-  const c = await POST('/approval/Policies', { policyName: 'dup', country: existingCountry, mileageRate: 0.25, receiptThreshold: 25 }, { auth: MGR });
+  const c = await POST('/approval/Policies', { policyName: 'dup', country: existingCountry, mileageRate: 0.25 }, { auth: MGR });
   if (c.status < 400) {
     const id = c.data.ID;
     const act = await POST(`/approval/Policies(ID=${id},IsActiveEntity=false)/draftActivate`, {}, { auth: MGR });

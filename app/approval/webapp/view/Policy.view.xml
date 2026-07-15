@@ -42,8 +42,6 @@
         <Input value="{hotelDailyLimit}" editable="{ui>/editing}" />
         <Label text="{= ${i18n>lblMeal} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
         <Input value="{mealDailyLimit}" editable="{ui>/editing}" />
-        <Label text="{= ${i18n>lblThreshold} + (${ui>/isUK} ? ' (£)' : ' (₹)') }" />
-        <Input value="{receiptThreshold}" editable="{ui>/editing}" />
       </f:content>
     </f:SimpleForm>
     <Text text="{i18n>ratesHint}" class="bsxCardPad" />

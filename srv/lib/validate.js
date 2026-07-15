@@ -12,8 +12,8 @@ const blank = (s) => s == null || String(s).trim() === '';
 //   claim   : header { claimPeriod, totalGross, ... }
 //   items   : [{ expenseDate, expenseType_code, reasonForTrip, grossAmount, receiptAttached }]
 //   mileage : [{ tripDate, destination, reasonForTrip, milesCount, ratePerMile, totalAmount }]
-//   policy  : { receiptThreshold, mealDailyLimit, hotelDailyLimit, mileageRate }
-//   types   : { CODE: { requiresReceipt } }
+//   policy  : { mealDailyLimit, hotelDailyLimit, mileageRate }
+//   types   : { CODE: { requiresReceipt } }  ← sole driver of the receipt rule
 //   today   : 'YYYY-MM-DD'
 function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, vatTypes = new Set(), today }) {
   const errors = [];
@@ -22,7 +22,6 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
   // approver sees "limit crossed" and decides. Never block submission.
   const flags = [];
 
-  const threshold = Number(policy.receiptThreshold ?? 25);
   const mealLimit = Number(policy.mealDailyLimit ?? 0);
   const hotelLimit = Number(policy.hotelDailyLimit ?? 0);
   const maxRate = Number(policy.mileageRate ?? 0);
@@ -62,16 +61,11 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     if (vatTypes.size && !blank(it.vatType) && !vatTypes.has(it.vatType))
       errors.push(`${n}: invalid tax type '${it.vatType}'.`);
 
-    // Rule 4 — receipt mandatory when the type requires it, or at/above threshold
+    // Rule 4 — receipt mandatory when the expense type requires it (config-driven
+    // per EXP_EXPENSE_TYPES.requiresReceipt). There is no amount threshold.
     const type = types[it.expenseType_code] || {};
-    const byType = !!type.requiresReceipt;
-    const byThreshold = gross > 0 && gross >= threshold;
-    if ((byType || byThreshold) && !it.receiptAttached) {
-      // State the reason that actually applies (don't print an unmet threshold).
-      const reason = byType
-        ? 'this expense type always requires a receipt'
-        : `£${round2(gross || 0)} is at or above the £${threshold} receipt threshold`;
-      errors.push(`${n}: a receipt is required — ${reason}. Please attach one.`);
+    if (type.requiresReceipt && !it.receiptAttached) {
+      errors.push(`${n}: a receipt is required — this expense type always requires a receipt. Please attach one.`);
     }
 
     // Rule 7 — duplicate detection (warning)

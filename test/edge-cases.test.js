@@ -110,25 +110,25 @@ test('claimTotals: empty rows → all zero', () => {
 
 // ═══ PART D — UNIT: validation boundaries not covered by validate.test.js ══════
 const TODAY = '2026-06-20';
-const POLICY = { receiptThreshold: 25, mealDailyLimit: 40, hotelDailyLimit: 200, mileageRate: 0.25 };
+const POLICY = { mealDailyLimit: 40, hotelDailyLimit: 200, mileageRate: 0.25 };
 const TYPES = { TOLLS: { requiresReceipt: false }, FOOD: { requiresReceipt: true }, HOTEL: { requiresReceipt: true } };
 const hasErr = (r, s) => r.errors.some((e) => e.toLowerCase().includes(s.toLowerCase()));
 
-test('rule 4 BOUNDARY: gross exactly at threshold (£25) requires a receipt (>=)', () => {
+test('rule 4: a requiresReceipt type with no attachment errors (config-driven, no threshold)', () => {
   const r = validateClaim({
-    claim: { claimPeriod: '2026-02-28', totalGross: 25 },
-    items: [{ expenseDate: '2026-02-16', expenseType_code: 'TOLLS', reasonForTrip: 'Toll', grossAmount: 25, receiptAttached: false }],
+    claim: { claimPeriod: '2026-02-28', totalGross: 10 },
+    items: [{ expenseDate: '2026-02-16', expenseType_code: 'FOOD', reasonForTrip: 'Lunch', grossAmount: 10, receiptAttached: false }],
     mileage: [], policy: POLICY, types: TYPES, today: TODAY
   });
-  assert.ok(hasErr(r, 'receipt'), '£25 == threshold must require a receipt');
+  assert.ok(hasErr(r, 'receipt'), 'FOOD (requiresReceipt=true) must require a receipt even at a small amount');
 });
-test('rule 4 BOUNDARY: gross just below threshold (£24.99) does NOT require a receipt', () => {
+test('rule 4: a non-receipt type needs no receipt at any amount (thresholds removed)', () => {
   const r = validateClaim({
-    claim: { claimPeriod: '2026-02-28', totalGross: 24.99 },
-    items: [{ expenseDate: '2026-02-16', expenseType_code: 'TOLLS', reasonForTrip: 'Toll', grossAmount: 24.99, receiptAttached: false }],
+    claim: { claimPeriod: '2026-02-28', totalGross: 5000 },
+    items: [{ expenseDate: '2026-02-16', expenseType_code: 'TOLLS', reasonForTrip: 'Toll', grossAmount: 5000, receiptAttached: false }],
     mileage: [], policy: POLICY, types: TYPES, today: TODAY
   });
-  assert.ok(!hasErr(r, 'receipt'), '£24.99 < threshold must not require a receipt');
+  assert.ok(!hasErr(r, 'receipt'), 'TOLLS (requiresReceipt=false) never requires a receipt');
 });
 test('rule 2 header (previously untested): periodEnd before claimPeriod is an error', () => {
   const r = validateClaim({

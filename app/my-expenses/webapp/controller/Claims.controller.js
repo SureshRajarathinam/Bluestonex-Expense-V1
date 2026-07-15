@@ -16,9 +16,16 @@ sap.ui.define([
     onInit: function () {
       this.getView().setModel(new JSONModel({ count: 0, submitted: 0, approved: 0 }), "view");
       this.getRouter().getRoute("list").attachPatternMatched(this._onListMatched, this);
+      // Show a busy state on first open until the claim list arrives, so the user
+      // sees a clean loading spinner instead of a blank/empty screen. Cleared in
+      // onUpdateFinished (fires when the table binding completes).
+      var oPage = this.byId("claimsPage");
+      if (oPage) { oPage.setBusy(true); }
     },
 
     onUpdateFinished: function (oEvent) {
+      var oPage = this.byId("claimsPage");
+      if (oPage) { oPage.setBusy(false); }
       var oView = this.getView().getModel("view");
       oView.setProperty("/count", oEvent.getParameter("total") || 0);
       var aCtx = this.byId("claimsTable").getBinding("items").getCurrentContexts();

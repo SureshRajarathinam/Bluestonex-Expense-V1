@@ -35,7 +35,6 @@ function readPolicy(country) {
     mileageRate: numOrUndef(r.mileageRate),
     hotelDailyLimit: numOrUndef(r.hotelDailyLimit),
     mealDailyLimit: numOrUndef(r.mealDailyLimit),
-    receiptThreshold: numOrUndef(r.receiptThreshold),
     claimNumberStart: r.claimNumberStart
   };
 }

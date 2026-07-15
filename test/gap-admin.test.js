@@ -83,13 +83,13 @@ test('Policy: mileageRate <= 0 is rejected', async () => {
 // (Removed: Policy no longer holds vatRate/gstRate — the tax rate lives per
 //  treatment on TAX_TYPES, so there is no rate field on Policy to range-check.)
 
-test('Policy: negative limits/threshold are rejected', async () => {
-  assert.ok((await editPolicy({ receiptThreshold: -1 })).status >= 400, 'negative threshold rejected');
+test('Policy: negative limits are rejected', async () => {
+  assert.ok((await editPolicy({ mealDailyLimit: -1 })).status >= 400, 'negative meal limit rejected');
   assert.ok((await editPolicy({ hotelDailyLimit: -5 })).status >= 400, 'negative hotel limit rejected');
 });
 
 test('Policy: a valid edit is accepted', async () => {
-  const res = await editPolicy({ receiptThreshold: 30 });
+  const res = await editPolicy({ mealDailyLimit: 45 });
   assert.ok(res.status < 400, `valid policy edit should succeed, got ${res.status}`);
 });
 

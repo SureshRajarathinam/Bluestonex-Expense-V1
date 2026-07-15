@@ -107,7 +107,10 @@ class NotificationService {
     const res = await fetch(`${oauth_url}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
+      body: body.toString(),
+      // Bound the ANS token call — an unreachable/slow endpoint must not stall the
+      // notification (this used to add ~1 min before the email went out).
+      signal: AbortSignal.timeout(Number(process.env.ANS_TIMEOUT_MS) || 4000)
     });
 
     if (!res.ok) throw new Error(`ANS token request failed: ${res.status}`);
@@ -137,7 +140,8 @@ class NotificationService {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(Number(process.env.ANS_TIMEOUT_MS) || 4000)
       });
 
       if (!res.ok) {
@@ -154,7 +158,7 @@ class NotificationService {
   // ─── Business notification methods ───────────────────────────────────────
 
   async notifyClaimSubmitted(claim, employee, firstApprover, approverName) {
-    await this._sendEvent({
+    this._sendEvent({
       eventType:    'ExpenseClaim.Submitted',
       resource: {
         resourceName:     claim.claimNumber,
@@ -205,7 +209,7 @@ class NotificationService {
   // sees who raised the claim (optional — omitted gracefully if not supplied).
   async notifyLevel1Approved(claim, nextApprover, requestedBy, nextApproverName) {
     const who = requestedBy || '';
-    await this._sendEvent({
+    this._sendEvent({
       eventType:    'ExpenseClaim.Level1Approved',
       resource: {
         resourceName:     claim.claimNumber,
@@ -247,7 +251,7 @@ class NotificationService {
   }
 
   async notifyManagerApproved(claim, managerUserId) {
-    await this._sendEvent({
+    this._sendEvent({
       eventType: 'ExpenseClaim.ManagerApproved',
       resource: {
         resourceName:     claim.claimNumber,
@@ -264,7 +268,7 @@ class NotificationService {
   }
 
   async notifyFinanceApproved(claim, financeUserId) {
-    await this._sendEvent({
+    this._sendEvent({
       eventType: 'ExpenseClaim.FinanceApproved',
       resource: {
         resourceName:     claim.claimNumber,
@@ -281,7 +285,7 @@ class NotificationService {
   }
 
   async notifySettled(claim) {
-    await this._sendEvent({
+    this._sendEvent({
       eventType: 'ExpenseClaim.Settled',
       resource: {
         resourceName:     claim.claimNumber,
@@ -304,7 +308,7 @@ class NotificationService {
     // Greet the claimant by full name (FName + LName), falling back to their login.
     const employeeName = [claim.employee?.FName, claim.employee?.LName].filter(Boolean).join(' ').trim() || claim.createdBy || '';
     const returnedByDisplay = returnedByName || returnedBy;
-    await this._sendEvent({
+    this._sendEvent({
       eventType: 'ExpenseClaim.Returned',
       resource: {
         resourceName:     claim.claimNumber,
@@ -354,7 +358,7 @@ class NotificationService {
     // Greet the claimant by full name (FName + LName), falling back to their login.
     const employeeName = [claim.employee?.FName, claim.employee?.LName].filter(Boolean).join(' ').trim() || claim.createdBy || '';
     const approvedByDisplay = approvedByName || approvedBy;
-    await this._sendEvent({
+    this._sendEvent({
       eventType: 'ExpenseClaim.Approved',
       resource: {
         resourceName:     claim.claimNumber,

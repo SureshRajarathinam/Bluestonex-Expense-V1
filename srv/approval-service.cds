@@ -209,7 +209,6 @@ annotate ApprovalService.Policies with {
   mileageRate      @title: 'Mileage Rate (£/mile)';
   hotelDailyLimit  @title: 'Hotel Daily Limit';
   mealDailyLimit   @title: 'Meal Daily Limit';
-  receiptThreshold @title: 'Receipt Threshold';
 }
 
 annotate ApprovalService.WorkflowMembers with {

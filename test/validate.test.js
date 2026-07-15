@@ -44,14 +44,22 @@ test('rule 3: claim total must equal sum of line items', () => {
   assert.ok(hasErr(run(o), 'does not match the sum'));
 });
 
-test('rule 4: receipt mandatory at/above threshold', () => {
+test('rule 4: receipt mandatory when the expense type requires one (no amount threshold)', () => {
   const o = base();
-  const above = POLICY.receiptThreshold + 5; // just over the configured threshold
-  o.items[0] = { expenseDate: '2026-02-16', expenseType_code: 'TAXI', reasonForTrip: 'Office', grossAmount: above, receiptAttached: false };
-  o.claim.totalGross = above;
-  assert.ok(hasErr(run(o), 'receipt is required'), `should require receipt above the £${POLICY.receiptThreshold} threshold`);
+  // TAXI is configured requiresReceipt=true → a receipt is required regardless of amount.
+  o.items[0] = { expenseDate: '2026-02-16', expenseType_code: 'TAXI', reasonForTrip: 'Office', grossAmount: 50, receiptAttached: false };
+  o.claim.totalGross = 50;
+  assert.ok(hasErr(run(o), 'receipt is required'), 'a requiresReceipt type must require a receipt');
   o.items[0].receiptAttached = true;
   assert.ok(!hasErr(run(o), 'receipt is required'), 'receipt attached should clear it');
+});
+
+test('rule 4: a non-receipt type never requires a receipt, at ANY amount', () => {
+  const o = base();
+  // TOLLS is requiresReceipt=false → even a large amount needs no receipt (thresholds removed).
+  o.items[0] = { expenseDate: '2026-02-16', expenseType_code: 'TOLLS', reasonForTrip: 'Toll', grossAmount: 100000, receiptAttached: false };
+  o.claim.totalGross = 100000;
+  assert.ok(!hasErr(run(o), 'receipt is required'), 'TOLLS never needs a receipt regardless of amount');
 });
 
 test('rule 5: meal daily limit is a SOFT flag (warns + flags, does not block)', () => {

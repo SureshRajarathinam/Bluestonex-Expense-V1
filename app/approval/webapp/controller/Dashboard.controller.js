@@ -13,13 +13,15 @@ sap.ui.define([
   // light green, light orange, grey or black (no other hues). Each expense
   // category gets one fixed colour so it reads the SAME in the donut ring, the
   // donut legend and the category bars. Unknown codes fall through by stable hash.
+  // Premium "glass blue → teal → green → slate" ramp. Rich, cohesive tones that
+  // read well on the donut ring, its legend and the category bars alike.
   var CAT_PALETTE = [
-    "#5b9bd5", "#3a6fa5", "#aecbe8", "#82c48f", "#4f9e6a", "#efb366", "#d9902f", "#9aa0a8", "#5a5e63", "#1d1d1f"
+    "#2e6fb0", "#17a589", "#5dade2", "#148f77", "#2e86c1", "#45b39d", "#1b4f72", "#1abc9c", "#5499c7", "#2c3e50"
   ];
   var CAT_COLOR = {
-    TRAIN: "#5b9bd5", TAXI: "#3a6fa5", FLIGHT: "#aecbe8", CAR_HIRE: "#82c48f",
-    FOOD: "#4f9e6a", HOTEL: "#efb366", PARKING: "#d9902f", TOLLS: "#9aa0a8",
-    PHONE: "#5a5e63", OTHER: "#1d1d1f"
+    TRAIN: "#2e6fb0", TAXI: "#1b4f72", FLIGHT: "#5dade2", CAR_HIRE: "#17a589",
+    FOOD: "#148f77", HOTEL: "#45b39d", PARKING: "#2e86c1", TOLLS: "#5499c7",
+    PHONE: "#1abc9c", OTHER: "#2c3e50"
   };
   function catColor(code) {
     if (code && CAT_COLOR[code]) { return CAT_COLOR[code]; }

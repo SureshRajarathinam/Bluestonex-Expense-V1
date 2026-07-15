@@ -24,7 +24,7 @@
         </f:content>
       </f:SimpleForm>
 
-      <Panel headerText="{i18n>secItems}" expandable="true" expanded="true">
+      <Panel headerText="{i18n>secItems}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
         <!-- Bounded layout: fixed column widths keep the money columns aligned and
              apart even when Reason is very long; Reason has no width so it takes the
              remaining space and WRAPS instead of squeezing the amounts. Money order
@@ -35,10 +35,10 @@
             <Column width="8.5rem"><Text text="{i18n>itType}" /></Column>
             <Column width="7rem"><Text text="{i18n>itTaxType}" /></Column>
             <Column><Text text="{i18n>itReason}" /></Column>
-            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itGross}" /></Column>
-            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itNet}" /></Column>
-            <Column width="8rem" hAlign="End"><Text text="{i18n>itTax}" /></Column>
-            <Column width="6rem"><Text text="{i18n>itReceipt}" /></Column>
+            <Column width="9rem" hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column width="9rem" hAlign="End"><Text text="{i18n>itNet}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itTax}" /></Column>
+            <Column width="3.5rem" hAlign="Center"><Text text="{i18n>itReceipt}" /></Column>
           </columns>
           <items>
             <ColumnListItem>
@@ -50,14 +50,14 @@
                 <ObjectNumber number="{ parts: ['grossAmount','rev>/currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['netAmount','rev>/currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['vatAmount','rev>/currency'], formatter: '.formatter.money' }" />
-                <Link text="{i18n>viewReceipt}" press=".onOpenReceipt" visible="{= !!${receiptAttached} }" />
+                <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>viewReceipt}" press=".onOpenReceipt" visible="{= !!${receiptAttached} }" />
               </cells>
             </ColumnListItem>
           </items>
         </Table>
       </Panel>
 
-      <Panel headerText="{i18n>secMileage}" expandable="true" expanded="true">
+      <Panel headerText="{i18n>secMileage}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
         <Table items="{mileageClaims}" mode="None" class="bsxTable">
           <columns>
             <Column><Text text="{i18n>mlDate}" /></Column>
