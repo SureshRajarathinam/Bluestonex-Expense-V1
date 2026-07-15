@@ -9,19 +9,18 @@ sap.ui.define([
   var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var LKEY = "bsx.dash.layout.v6"; // localStorage key; bumped (reordered rows: donut+category, wave, trend, claimants+violation)
 
-  // 5-colour scheme only — every category colour is a tint/shade of light blue,
-  // light green, light orange, grey or black (no other hues). Each expense
-  // category gets one fixed colour so it reads the SAME in the donut ring, the
-  // donut legend and the category bars. Unknown codes fall through by stable hash.
-  // Premium "glass blue → teal → green → slate" ramp. Rich, cohesive tones that
-  // read well on the donut ring, its legend and the category bars alike.
+  // SAP standard qualitative chart palette (sapChart_OrderedColor_1…11) — the
+  // ordered categorical set SAP Fiori defines for exactly this: distinct donut
+  // slices / category series. Each expense category gets one fixed colour so it
+  // reads the SAME in the donut ring, the donut legend and the category bars.
+  // Unknown codes fall through by stable hash into the same palette.
   var CAT_PALETTE = [
-    "#2e6fb0", "#17a589", "#5dade2", "#148f77", "#2e86c1", "#45b39d", "#1b4f72", "#1abc9c", "#5499c7", "#2c3e50"
+    "#5899DA", "#E8743B", "#19A979", "#ED4A7B", "#945ECF", "#13A4B4", "#525DF4", "#BF399E", "#6C8893", "#EE6868", "#2F6497"
   ];
   var CAT_COLOR = {
-    TRAIN: "#2e6fb0", TAXI: "#1b4f72", FLIGHT: "#5dade2", CAR_HIRE: "#17a589",
-    FOOD: "#148f77", HOTEL: "#45b39d", PARKING: "#2e86c1", TOLLS: "#5499c7",
-    PHONE: "#1abc9c", OTHER: "#2c3e50"
+    TRAIN: "#5899DA", TAXI: "#E8743B", FLIGHT: "#19A979", CAR_HIRE: "#ED4A7B",
+    FOOD: "#945ECF", HOTEL: "#13A4B4", PARKING: "#525DF4", TOLLS: "#BF399E",
+    PHONE: "#6C8893", OTHER: "#EE6868"
   };
   function catColor(code) {
     if (code && CAT_COLOR[code]) { return CAT_COLOR[code]; }
@@ -121,11 +120,11 @@ sap.ui.define([
   }
 
   // ── Chart-body builders (return a single-root HTML string) ──────────────────
-  // Light-blue shade by rank (same family as #5b9bd5 ≈ hsl(207,55%,60%)): deepest
-  // for the top claimant, lightening down the list (lightness ramps 45% → 75%).
+  // SAP Horizon-blue shade by rank (hue 212 ≈ brand #0070f2): deepest for the top
+  // claimant, lightening down the list (lightness ramps 42% → 72%).
   function blueShade(rank, total) {
     var ratio = total > 1 ? rank / (total - 1) : 0;
-    return "hsl(207, 55%, " + Math.round(45 + ratio * 30) + "%)";
+    return "hsl(212, 90%, " + Math.round(42 + ratio * 30) + "%)";
   }
 
   // Top 5 claimants: horizontal bars — name (left) · blue-shaded bar · amount
