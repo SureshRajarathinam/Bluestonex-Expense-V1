@@ -3,7 +3,7 @@
   xmlns="sap.m"
   xmlns:f="sap.ui.layout.form">
 
-  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="54rem" contentHeight="38rem" verticalScrolling="true">
+  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="62rem" contentHeight="38rem" verticalScrolling="true">
     <content>
       <!-- Soft policy-limit flag: the claim was submitted over a daily limit. Shown
            so the approver can weigh it and decide (approve anyway or return). -->
@@ -25,24 +25,28 @@
       </f:SimpleForm>
 
       <Panel headerText="{i18n>secItems}" expandable="true" expanded="true">
-        <Table items="{items}" mode="None" class="bsxTable">
+        <!-- Bounded layout: fixed column widths keep the money columns aligned and
+             apart even when Reason is very long; Reason has no width so it takes the
+             remaining space and WRAPS instead of squeezing the amounts. Money order
+             is Gross → Net → Tax, right-aligned, grouped via .formatter.money. -->
+        <Table items="{items}" mode="None" class="bsxTable" fixedLayout="true">
           <columns>
-            <Column><Text text="{i18n>itDate}" /></Column>
-            <Column><Text text="{i18n>itType}" /></Column>
-            <Column><Text text="{i18n>itTaxType}" /></Column>
+            <Column width="5rem"><Text text="{i18n>itDate}" /></Column>
+            <Column width="8.5rem"><Text text="{i18n>itType}" /></Column>
+            <Column width="7rem"><Text text="{i18n>itTaxType}" /></Column>
             <Column><Text text="{i18n>itReason}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>itGross}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>itNet}" /></Column>
-            <Column hAlign="End"><Text text="{i18n>itTax}" /></Column>
-            <Column><Text text="{i18n>itReceipt}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itNet}" /></Column>
+            <Column width="8rem" hAlign="End"><Text text="{i18n>itTax}" /></Column>
+            <Column width="6rem"><Text text="{i18n>itReceipt}" /></Column>
           </columns>
           <items>
             <ColumnListItem>
               <cells>
                 <Text text="{expenseDate}" />
-                <Text text="{expenseType_code}" />
-                <Text text="{vatType}" />
-                <Text text="{reasonForTrip}" />
+                <Text text="{ parts: ['expenseType_code', 'rev>/types'], formatter: '.formatter.lookupText' }" />
+                <Text text="{ parts: ['vatType', 'rev>/taxLabels'], formatter: '.formatter.lookupText' }" />
+                <Text text="{reasonForTrip}" wrapping="true" />
                 <ObjectNumber number="{ parts: ['grossAmount','rev>/currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['netAmount','rev>/currency'], formatter: '.formatter.money' }" />
                 <ObjectNumber number="{ parts: ['vatAmount','rev>/currency'], formatter: '.formatter.money' }" />

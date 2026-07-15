@@ -37,6 +37,14 @@ sap.ui.define([
       if (oBinding) {
         oBinding.refresh();
       }
+      // A submit/discard on the detail page defers its confirmation toast to here:
+      // showing it after the list route has settled avoids the NavContainer
+      // transition suppressing the toast's async popup (see Claim._doSubmit).
+      var oComp = this.getOwnerComponent();
+      if (oComp && oComp._pendingToast) {
+        MessageToast.show(oComp._pendingToast);
+        oComp._pendingToast = null;
+      }
     },
 
     /** Extract the key predicate (inside the parentheses) from an OData V4 path. */

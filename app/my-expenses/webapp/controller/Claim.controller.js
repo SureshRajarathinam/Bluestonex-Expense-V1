@@ -579,12 +579,14 @@ sap.ui.define([
         })
         .then(function () {
           that.getView().setBusy(false);
-          // Name the approver the notification email went to. The L1 approver name
-          // was pre-resolved at claim load (ui>/approverName), so the toast fires
-          // SYNCHRONOUSLY here — no post-submit fetch racing the navigation. Fall
-          // back to the generic message if the name couldn't be resolved.
+          // Name the approver the notification email went to (pre-resolved at claim
+          // load in ui>/approverName). We must NOT MessageToast.show() here: navTo
+          // below drives a synchronous NavContainer slide transition in the same
+          // tick, which re-renders the DOM before the toast's async popup can open —
+          // suppressing it. Instead hand the message to the list controller, which
+          // shows it once the 'list' route has settled (see Claims._onListMatched).
           var sName = that.getView().getModel("ui").getProperty("/approverName") || "";
-          MessageToast.show(sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted"));
+          that.getOwnerComponent()._pendingToast = sName ? that.getText("msgEmailSent", [sName]) : that.getText("msgSubmitted");
           that.navTo("list");
         })
         .catch(function (e) {
@@ -608,7 +610,8 @@ sap.ui.define([
           that.getView().setBusy(true);
           that._claimCtx().delete().then(function () {
             that.getView().setBusy(false);
-            MessageToast.show(that.getText("msgDiscarded"));
+            // Same toast-vs-navigation race as _doSubmit: defer to the list controller.
+            that.getOwnerComponent()._pendingToast = that.getText("msgDiscarded");
             that.navTo("list");
           }).catch(function (e) { that.getView().setBusy(false); that.showError(e); });
         }

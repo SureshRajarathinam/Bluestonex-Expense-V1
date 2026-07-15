@@ -52,7 +52,15 @@ sap.ui.define([], function () {
       else if (typeof vAmount === "number") { n = isFinite(vAmount) ? vAmount : 0; }
       else { n = Number(String(vAmount).replace(/[^0-9.\-]/g, "")); if (!isFinite(n)) { n = 0; } }
       var sym = sCurrency === "INR" ? "₹" : (sCurrency === "GBP" ? "£" : "");
-      return sym + n.toFixed(2);
+      // Thousands-grouped, 2dp (e.g. ₹15,617,181.00) so large amounts stay readable.
+      return sym + n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
+
+    /** Look up a label for a key in a plain {key: label} map; fall back to the key.
+     *  Used by the Review dialog to render the expense-type description and the
+     *  tax-type "CODE (rate%)" label from maps built in Approvals.onReview. */
+    lookupText: function (sKey, oMap) {
+      return (oMap && oMap[sKey]) || sKey || "";
     }
   };
 });

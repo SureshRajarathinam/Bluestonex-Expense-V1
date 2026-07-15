@@ -120,13 +120,41 @@ sap.ui.define([
 
       pDialog.then(function (oDialog) {
         oDialog.setBindingContext(oCtx);
-        // Per-item money cells (Gross/Net/Tax) bind to the item context, which has
-        // no currency of its own — expose the claim's currency via a small JSON
-        // model so those cells render £/₹ correctly for UK vs India.
-        oDialog.setModel(new JSONModel({ currency: oCtx.getProperty("currency") || "GBP" }), "rev");
+        // Per-item cells resolve labels/currency from a small JSON 'rev' model:
+        //  • currency — item rows have none of their own, so money renders £/₹ right
+        //  • types    — expenseType_code → employee-facing description ("Taxi / Cab")
+        //  • taxLabels— vatType → "CODE (rate%)" e.g. "STD (18%)"
+        // Set currency + empty maps now so the dialog opens immediately; the maps
+        // populate async and the JSON bindings refresh the cells when they arrive.
+        oDialog.setModel(new JSONModel({ currency: oCtx.getProperty("currency") || "GBP", types: {}, taxLabels: {} }), "rev");
+        that._loadReviewLookups(oDialog, oCtx.getProperty("country") || "UK");
         that.byId("commentArea").setValue("");
         oDialog.open();
       });
+    },
+
+    // Build the Review dialog's label maps: expense-type descriptions (all rows) +
+    // the country's tax-type "CODE (rate%)" labels. Both ExpenseTypes and TaxTypes
+    // (with rate) are exposed read-only on ApprovalService. Mirrors the my-expenses
+    // _loadTaxRate pct() logic so the % shown matches what the employee picked.
+    _loadReviewLookups: function (oDialog, sCountry) {
+      var oModel = this.getView().getModel();
+      var oTypes = oModel.bindList("/ExpenseTypes");
+      var oTax = oModel.bindList("/TaxTypes", null, null, [new Filter("country", FilterOperator.EQ, sCountry)]);
+      Promise.all([oTypes.requestContexts(0, 200), oTax.requestContexts(0, 100)]).then(function (aRes) {
+        var oRev = oDialog.getModel("rev");
+        if (!oRev) { return; }
+        var mTypes = {};
+        aRes[0].forEach(function (c) { var o = c.getObject(); mTypes[o.code] = o.description; });
+        var mTax = {};
+        aRes[1].forEach(function (c) {
+          var o = c.getObject();
+          var pct = Math.round((Number(o.rate) || 0) * 10000) / 100; // 0.18 → 18
+          mTax[o.code] = o.code + " (" + pct + "%)";
+        });
+        oRev.setProperty("/types", mTypes);
+        oRev.setProperty("/taxLabels", mTax);
+      }).catch(function () { /* labels fall back to the raw code via .formatter.lookupText */ });
     },
 
     onCloseReview: function () {
