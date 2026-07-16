@@ -1,11 +1,10 @@
 # Reusing the classic `USERS_MASTER` employee master (cross-container)
 
-**Status: WIRED, not yet deployable.** The HDI synonym + grants are in `db/src/` and
-the `bsx-org-apps-db` resource is wired in `mta.yaml`, but the deploy will FAIL until
-(a) the real `service-name` is filled in `mta.yaml` and (b) a **grantor** can grant
-`SELECT` on `USERS_MASTER` to this container. Prepared on branch `feat/users-master`;
-keep it off any deployed branch until (a)+(b) are ready. Dev/test are unaffected
-(they use a local seeded stand-in — see below).
+**Status: WIRED. Deploys once the manual grant is in place.** The HDI synonym is in `db/src/`
+and the `bsx-org-apps-db` resource is wired in `mta.yaml`. Production reads of `USERS_MASTER`
+work as soon as the `USERS_MASTER` owner runs the one-time `SELECT` grant (see "Activation"
+below). There is **no `.hdbgrants`** — HDI cannot apply object privileges from an HDI-container
+grantor. Dev/test are unaffected (they use a local seeded stand-in — see below).
 
 ## Design
 `USERS_MASTER` is the **sole** employee master for the app (the old `EXP_EMPLOYEES`
@@ -37,36 +36,53 @@ Country is derived from `BaseSiteKey` (UK* → UK, IN* → IN).
 ## Files
 - `db/external/users-master.cds` — the `ext.UsersMaster` entity (the model; stays here).
 - `db/src/USERS_MASTER.hdbsynonym` — synonym → the external table (in the deploy path).
-- `db/src/USERS_MASTER.hdbgrants` — cross-container `SELECT` grant for our container's
-  `object_owner` (deploy-time) + `application_user` (runtime), via the `bsx-org-apps-db`
-  grantor service.
-- `mta.yaml` — `bsx-org-apps-db` resource (`existing-service`) wired into the `requires:`
-  of both `expense-management-srv` and `expense-management-db-deployer`.
+  The target schema (`DC573…`) is **hardcoded**, so the synonym resolves WITHOUT a grantor
+  binding; it just needs the runtime/`#OO` users to hold `SELECT` on the target (see below).
+- `mta.yaml` — `bsx-org-apps-db` resource (`existing-service`) still wired into `requires:`
+  of both modules (now vestigial — harmless; drop later if desired).
 - `db/init.js` — dev/test-only local stand-in create + seed.
 
-## Activation (gated — needs a DBA / BTP admin)
-1. **Provide the grantor.** A service bound as `bsx-org-apps-db` whose user holds
-   `SELECT … WITH GRANT OPTION` on `USERS_MASTER` (so the HDI deployer can apply
-   `USERS_MASTER.hdbgrants`). Typically a service instance / SBSS on the org container.
-2. **Set the service name.** Replace `<SERVICE_NAME>` in `mta.yaml` (`bsx-org-apps-db`
-   → `service-name`) with the real instance, and ensure it is **shared into this space**.
-3. **Deploy** (gated): `mbt build && cf deploy mta_archives/*.mtar`. This also drops the
-   old `EXP_EMPLOYEES` table (auto_undeploy) — expected.
-4. **Verify** read access in our container:
+> **Why there is NO `.hdbgrants`.** We originally shipped a `USERS_MASTER.hdbgrants` granting
+> `SELECT` via the `hdi_bsx-org-apps-db` grantor service. HANA rejects it:
+> `object privileges are not supported in case of an HDI container service binding`. `.hdbgrants`
+> can grant *object* privileges only from a plain user/securestore grantor — **not** from another
+> **HDI container** (which the org's `hdi_bsx-org-apps-db` is; that only exposes container *roles*,
+> which we don't own). So the grant is done **manually, once**, by the `USERS_MASTER` owner. The
+> grants file was removed.
+
+## Activation — manual grant (gated: run by the `USERS_MASTER` owner), then deploy
+The grant MUST land **before** the deploy, because the CAP-generated views (e.g.
+`ApprovalService.Employees.hdbview`) are built by our container's object owner (`#OO`) on top of
+the synonym → `DC573….USERS_MASTER`; `#OO` needs `SELECT … WITH GRANT OPTION` to create them.
+
+1. **Run the grant** as the `USERS_MASTER` owner (the `DC573…` schema owner) in the org
+   container's SQL console. User names below come from the live `VCAP_SERVICES` of
+   `expense-management-db`:
+   ```sql
+   -- object owner: needed at DEPLOY time to build the views on the synonym + cascade to the
+   -- container access role (so the runtime user inherits SELECT automatically).
+   GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
+     TO "6536919E64B54B90AF8DC846613EF484#OO" WITH GRANT OPTION;
+
+   -- runtime user: explicit belt-and-suspenders for the app's queries.
+   GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
+     TO "6536919E64B54B90AF8DC846613EF484_C0G93XPG403KYIZMKX0MCFQ70_RT";
+   ```
+   ⚠ These names are tied to the CURRENT `expense-management-db` instance. If that HDI
+   container is ever deleted + recreated, the `#OO`/`_RT` names change — re-read them from
+   `cf env expense-management-srv` (the `hana` binding for `expense-management-db`) and re-grant.
+2. **Deploy:** `mbt build && cf deploy mta_archives/*.mtar`. Also drops the old `EXP_EMPLOYEES`
+   table (auto_undeploy) — expected.
+3. **Verify** read access in our container:
    ```sql
    SELECT COUNT(*) FROM "USERS_MASTER";   -- via the deployed synonym
    ```
-   Then open the app: the whoami greeting + claim `employeeName` resolve from the live
-   table. There is **no runtime flag** to flip — the app reads `USERS_MASTER` as soon
-   as the synonym + grant are in place.
+   Then open the app: the whoami greeting + claim `employeeName` resolve from the live table.
+   There is **no runtime flag** — the app reads `USERS_MASTER` as soon as the synonym + grant
+   are in place.
 
-### DBA alternative to the grantor service (manual object grant)
-Fragile (HDI can recreate the technical users on redeploy), but quick:
-```sql
--- Run as the USERS_MASTER owner in hdi_bsx-org-apps-db.
-GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
-  TO "<expense-management-db#OO>" WITH GRANT OPTION;
-GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
-  TO "<expense-management-db runtime user>";
-```
-Prefer the grantor service (`.hdbgrants`) for anything long-lived.
+### Longer-lived alternative (avoids re-granting on container recreate)
+Ask the org team that owns `hdi_bsx-org-apps-db` to expose a **container role** granting `SELECT`
+on `USERS_MASTER` (a `.hdbrole` in THEIR container). We then consume it from a `.hdbgrants` via
+`container_roles` (not `object_privileges`) — the only form HDI allows from an HDI-container
+grantor. Requires their cooperation + deploy, so the manual grant above is the pragmatic default.
