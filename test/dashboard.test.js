@@ -312,6 +312,50 @@ test('trend spans multiple months and is sorted ascending', async () => {
   assert.deepEqual(months, sorted, 'trend months are ascending');
 });
 
+test('amounts reconcile: donut/category (incl. Mileage) == approved wave == Top-Claimants', async () => {
+  // Regression for the dashboard amount bug: spendByCategory/donut summed item gross
+  // only, while the wave + Top-Claimants sum claim totalGross (items + MILEAGE) — so a
+  // claim with mileage made the donut under-report. Fix: mileage is rolled up as its
+  // own 'Mileage' category. Seed ONE approved UK claim (hotel item + a mileage line) in
+  // an isolated window so the three views must reconcile to the same figure.
+  const HOTEL = 100;
+  const MILES = 40;
+  const RATE = Number(UKP.mileageRate) || 0.25;      // config-driven; <= policy cap so it validates
+  const MILE_TOTAL = Math.round(MILES * RATE * 100) / 100;
+  const EXPECTED = HOTEL + MILE_TOTAL;               // = claim totalGross (items + mileage)
+  const period = '2025-11-15';                       // PAST, isolated window nothing else in this file uses
+
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: period }, { auth: EMP });
+  const id = c.data.ID;
+  await POST(`/expense/MyClaims${draft(id)}/items`, { expenseDate: period, expenseType_code: 'HOTEL', reasonForTrip: 'Stay', vatType: 'STD', grossAmount: HOTEL, receiptAttached: true }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/mileageClaims`, { tripDate: period, destination: 'Site', reasonForTrip: 'Visit', engineType: 'Petrol', milesCount: MILES, ratePerMile: RATE }, { auth: EMP });
+  await POST(`/expense/MyClaims${draft(id)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
+  assert.ok(s.status < 400, `mileage claim submit failed: ${s.status} ${JSON.stringify(s.data?.error)}`);
+  await approveUK(id);
+
+  const r = await GET(stats('2025-11-01', '2025-11-30', 'UK'), { auth: MGR });
+  assert.equal(r.status, 200, `dashboardStats ${r.status}: ${JSON.stringify(r.data?.error)}`);
+  const d = r.data;
+  assert.equal(d.approved.total, 1, 'exactly one approved claim in the isolated window');
+
+  // Mileage now appears as its own category, equal to the mileage total.
+  const hotel = d.spendByCategory.find((x) => x.code === 'HOTEL');
+  const mileage = d.spendByCategory.find((x) => x.code === 'MILEAGE');
+  assert.ok(hotel && Number(hotel.gbp) === HOTEL, `HOTEL category = £${HOTEL}`);
+  assert.ok(mileage, 'a MILEAGE category is present');
+  assert.equal(Number(mileage.gbp), MILE_TOTAL, `MILEAGE category = £${MILE_TOTAL} (${MILES} mi × ${RATE})`);
+
+  // The three amount views must all equal the claim's reimbursed total.
+  const catSum = d.spendByCategory.reduce((sum, x) => sum + Number(x.gbp), 0);
+  const feb = d.trend.find((tt) => tt.month === '2025-11');
+  const waveGbp = feb ? Number(feb.gbp) : NaN;       // approved-spend wave for the month
+  const tcGbp = d.topClaimants.reduce((sum, x) => sum + Number(x.gbp), 0);
+  assert.equal(catSum, EXPECTED, `category/donut total (£${EXPECTED}) includes mileage`);
+  assert.equal(waveGbp, EXPECTED, 'approved-spend wave equals the category/donut total');
+  assert.equal(tcGbp, EXPECTED, 'Top-Claimants total equals the category/donut total');
+});
+
 test('topBreach tie (meal == hotel) resolves to Meal daily limit', async () => {
   // One claim, one day, breaching BOTH limits: FOOD lines over the meal limit AND
   // HOTEL lines over the hotel limit → the flag text contains "meal" and "hotel"

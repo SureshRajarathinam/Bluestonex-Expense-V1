@@ -1,9 +1,8 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/core/UIComponent",
-  "sap/m/MessageBox",
-  "sap/m/MessageToast"
-], function (Controller, UIComponent, MessageBox, MessageToast) {
+  "sap/m/MessageBox"
+], function (Controller, UIComponent, MessageBox) {
   "use strict";
 
   return Controller.extend("com.bluestonex.expense.myexpenses.controller.BaseController", {
@@ -80,8 +79,10 @@ sap.ui.define([
       return "";
     },
 
-    toast: function (sKey) {
-      MessageToast.show(this.getText(sKey));
+    /** Extract the key predicate (inside the parentheses) from an OData V4 path. */
+    _predicateOf: function (sPath) {
+      var m = /\(([^)]*)\)/.exec(sPath);
+      return m ? m[1] : "";
     },
 
     /**

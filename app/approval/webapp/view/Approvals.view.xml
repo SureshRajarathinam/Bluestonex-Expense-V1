@@ -51,7 +51,8 @@
           items="{
             path: '/Approvals',
             parameters: { '$expand': 'items,mileageClaims', '$count': true },
-            sorter: { path: 'submittedAt' }
+            sorter: { path: 'submittedAt' },
+            suspended: true
           }"
           updateFinished=".onUpdateFinished"
           mode="None">

@@ -57,6 +57,10 @@ sap.ui.define([
 
     onUpdateFinished: function (oEvent) {
       this.getView().getModel("view").setProperty("/count", oEvent.getParameter("total") || 0);
+      // Record the country now on screen + clear the busy overlay set in onGo once the
+      // country-scoped rows have rendered.
+      this._loadedCountry = this.getView().getModel("ui").getProperty("/country");
+      this.byId("approvalsTable").setBusy(false);
     },
 
     onRefresh: function () {
@@ -94,7 +98,22 @@ sap.ui.define([
         }));
       }
 
-      this.byId("approvalsTable").getBinding("items").filter(aFilters);
+      // The table binding starts `suspended` (Approvals.view.xml) so it never
+      // auto-loads the unfiltered UK+IN set — that unfiltered load is what briefly
+      // flashed India rows under the UK tab. On first entry we apply the country
+      // filter and resume; on later calls the binding is live and .filter() requests
+      // immediately.
+      var oTable = this.byId("approvalsTable");
+      var oBinding = oTable.getBinding("items");
+      var bSuspended = oBinding.isSuspended();
+      // Busy the table only when the country is (re)loading — first load, or a switch
+      // to a different country — so the previous country's rows can't show while the
+      // new request is in flight. A same-country search/period change updates in place
+      // (nothing wrong-country to hide) and so can't leave the table stuck busy if the
+      // filter happens to be a no-op (which fires no updateFinished).
+      if (bSuspended || sCountry !== this._loadedCountry) { oTable.setBusy(true); }
+      oBinding.filter(aFilters);
+      if (bSuspended) { oBinding.resume(); }
     },
 
     onExportPdf: function () {

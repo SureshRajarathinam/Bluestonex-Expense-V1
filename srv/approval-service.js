@@ -363,10 +363,15 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     });
 
     // ─── Function: dashboardStats (Approver/Admin) — analytics aggregation ────
-    // Read-only. Scopes non-draft claims by [fromDate,toDate] (on submittedAt,
-    // falling back to claimPeriod) and by country ('ALL' | 'UK' | 'IN'), then
-    // aggregates. Currencies are kept SEPARATE (GBP for UK, INR for India) — never
-    // summed. spendByCountry is keyed by ISO alpha-2 (UK → GB, IN → IN) for the map.
+    // Read-only. Scopes non-draft claims by [fromDate,toDate] on the EXPENSE PERIOD
+    // (claimPeriod, falling back to submittedAt — see dateOf below) and by country
+    // ('ALL' | 'UK' | 'IN'), then aggregates. Currencies are kept SEPARATE (GBP for
+    // UK, INR for India) — never summed. spendByCategory (bars + Total-reimbursed
+    // donut) includes a synthetic 'Mileage' category so it reconciles with the
+    // approved-spend wave + Top-Claimants (both sum claim totalGross = items+mileage).
+    // spendByCountry is keyed by ISO alpha-2 (UK → GB, IN → IN) for the map.
+    // Note: 'ALL' returns both currencies, but the UI selector lists only UK/IN and
+    // renders a single currency, so 'ALL' is not reachable from the dashboard today.
     this.on('dashboardStats', async (req) => {
       const { fromDate, toDate, country } = req.data || {};
       const ymd = (d) => (d ? String(d).slice(0, 10) : null);
@@ -382,6 +387,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         c('submittedAt'); c('claimPeriod'); c('createdBy'); c('policyFlags');
         c('employeeName');   // denormalized claimant name (Top-5 card) — no external read
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
+        c.mileageClaims((mc) => { mc('totalAmount'); });  // mileage → its own 'Mileage' category
       });
 
       // "Declined" bucket = returned-for-rework (current flow) + legacy Rejected,
@@ -434,6 +440,9 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         const mk = (dateOf(r) || '').slice(0, 7);
         if (mk) {
           const t = trendMap.get(mk) || { month: mk, submitted: 0, approved: 0, rejected: 0, flagged: 0, gbp: 0, inr: 0 };
+          // 'submitted' = every non-draft claim in the month (a superset of approved +
+          // rejected), i.e. all claims that entered the workflow — also the denominator
+          // of the monthly Policy Violation Rate (flagged / submitted).
           t.submitted += 1;
           // Policy-flagged claims per month — feeds the Policy Violation Rate sparkline
           // (monthly rate = flagged / submitted for that month).
@@ -455,8 +464,18 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
         if (r.status === 'Approved') {
           approved[isIN(r) ? 'IN' : 'UK'] += 1; approved.total += 1;
-          // Approved-only category spend feeds BOTH the bars and the Top Expense Items donut.
+          // Approved-only category spend feeds BOTH the bars and the Total-reimbursed donut.
           for (const it of (r.items || [])) addCat(catMap, r, it);
+          // Mileage is part of the claim's reimbursed total but has no expense-type, so
+          // roll it up as its own 'Mileage' category. Without this the donut/bars sum
+          // item gross only while the wave + Top-Claimants sum claim totalGross (items +
+          // mileage) — so for any approved claim with mileage they would NOT reconcile.
+          const mileSum = (r.mileageClaims || []).reduce((s, mc) => s + (Number(mc.totalAmount) || 0), 0);
+          if (mileSum) {
+            const mc = catMap.get('MILEAGE') || { code: 'MILEAGE', description: 'Mileage', gbp: 0, inr: 0 };
+            if (isIN(r)) mc.inr += mileSum; else mc.gbp += mileSum;
+            catMap.set('MILEAGE', mc);
+          }
           // Top 5 claimants — APPROVED (reimbursed) amount per person only, so a
           // claimant surfaces on the card once their claim is approved.
           const nm = r.employeeName || r.createdBy || '—';

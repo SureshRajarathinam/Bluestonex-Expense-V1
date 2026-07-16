@@ -5,7 +5,55 @@
 **Landscape:** SAP BTP Cloud Foundry (CF `bsx-tdd`/`TDD`, eu10) + HANA Cloud (prod) / SQLite (dev+test). **Test bed:** local `cds.test` on in-memory SQLite + seed data (HANA not exercised in CI).
 **Key entities/process:** Expense claim **create → submit → approve/reject** with country-aware tax (UK VAT / India GST) and country-driven routing (UK 2-level, India 1-level).
 **OData services:** `ExpenseService` (`/expense`), `ApprovalService` (`/approval`), both `@requires:'authenticated-user'`.
-**Date:** 2026-07-12. **Suite baseline:** 113 → **153 tests (151 pass, 0 fail, 1 skip, 1 todo)** via `npm test`. Every finding cites `file:line`.
+**Date:** 2026-07-16 (latest pass; earlier passes below). **Suite baseline:** 113 → **221 tests (219 pass, 0 fail, 1 skip CSRF, 1 todo ETag)** via `npm test`. Every finding cites `file:line`.
+
+---
+
+## Validation Pass — 2026-07-16 (full both-app audit + 2 fixes)
+
+**Scope requested:** validate all JS/functions in both apps; verify success/error flows, the History
+tab, and dashboard cards + calculations; check every `USERS_MASTER`/config-table usage; confirm
+correct user identification on launch and claim-creation auto-populate; guarantee 100%-accurate
+amounts, **no mock data**, and **no real mail** during testing; fix the reported Approvals country
+flicker; generate this report.
+
+**Method:** 3 parallel read-only code audits (flicker mechanism · dashboard/calculations + config &
+user_master usage · my-expenses JS + flows + user-identify) cross-checked by direct file reads, then
+`npm test` on the in-memory `cds.test` harness (HANA not exercised in CI). **No real mail:**
+`MAIL_DISABLED=true` in the `test`/`test:coverage` scripts; mailer logs "mail disabled … skipped"
+(seen in run output); `sendMail` never throws. **No mock data:** grep-clean across both webapps and
+`srv/`; the only seed is `db/init.js SAMPLE_USERS`, a dev/test SQLite stand-in guarded off
+production/HANA (`db/init.js:53`).
+
+### Defects fixed this pass
+
+| Ref | Severity | Area | Fix | Evidence |
+|---|---|---|---|---|
+| V1 | Medium (reported) | Approvals country tab | Table `/Approvals` binding auto-loaded UK+IN unfiltered, then the country `$filter` was applied async → India rows flashed under the UK tab (~1s). Now the binding is `suspended:true` (`Approvals.view.xml:56`) and `onGo` busy-gates + resumes it with the country filter applied first (`Approvals.controller.js` `onGo`/`onUpdateFinished`). | Manual `cds watch` (UI timing — not unit-testable); no unfiltered request issued. |
+| V2 | Medium (accuracy) | Dashboard amounts | "Total reimbursed" donut + category bars summed **item gross only**, while the approved-spend wave + Top-Claimants summed **claim `totalGross` (items + mileage)** → they didn't reconcile for approved claims with mileage. Fixed: mileage rolled up as its own **`Mileage`** category in `dashboardStats` (`approval-service.js`). | New automated test `test/dashboard.test.js` "amounts reconcile: donut/category (incl. Mileage) == approved wave == Top-Claimants" — **PASS**. |
+| V3 | Cleanup | my-expenses | Removed dead `BaseController.toast()` (+ unused `MessageToast` import) and dead `formatter.receiptText`/`canEditDraft`; hoisted the duplicated `_predicateOf` into `BaseController`. Fixed stale `dashboardStats` date-basis comment (claimPeriod-first, not submittedAt) + `Mileage`/`ALL` notes (`approval-service.js`, `approval-service.cds`). | `npm test` green; no behaviour change. |
+
+### Verified WORKING (no change needed)
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| User identification on launch — **both apps** | ✅ | my-expenses `App.controller.js:17-31` + approval `App.controller.js:23,30-42` fetch `whoami()` via `_serviceUrl()`; `ExpenseService.whoami` (`expense-service.js:39-60`) + `ApprovalService.whoami` (`approval-service.js:57-70`) resolve via `resolveEmployee` → `users-master.js`. Greeting test `country-config.test.js:56`. |
+| Claim-creation auto-populate from `USERS_MASTER` | ✅ | `Claims.onCreate`→`_resolveSite()` (whoami `site`→country) + `Claim._loadEmployee` populate `ui>/emp` from `whoami()`; backend `applyDefaults` + `before('SAVE')` set `employee_ID` + denormalized name/number/email (`expense-service.js`). No hardcoded per-user data. |
+| Amount calculations (VAT/GST split, mileage, totals) | ✅ | Single source `calc.js` applied in `before('SAVE')`; dashboards consume persisted values. `validate.test.js`, `country-config.test.js`, splitVAT rounding test all green. |
+| Dashboard cards (counts, category, claimants, geo, trend/wave, violation) | ✅ + V2 | `dashboard.test.js` (14 tests incl. currency separation, date-window, delta, reconciliation). |
+| History tab (list, search, journey timeline) | ✅ | `ClaimHistory`/`claimJourney` read employee via native SQL only (no HANA-500 risk); History default = all non-draft org-wide, so it has **no** wrong-country flash (fix V1 is Approvals-only). |
+| Success/error flows (save/submit/approve/reject/return/delete/receipt) | ✅ | `lifecycle.test.js`, `approval.test.js`, `expense.test.js`, `security.test.js`, `edge-cases.test.js`. |
+| No real mail during tests | ✅ | `MAIL_DISABLED=true`; run log shows "mail disabled … skipped". |
+| No mock data anywhere | ✅ | grep-clean; only guarded dev SQLite seed (`db/init.js`). |
+
+### Observations (documented, NOT changed)
+
+- `formatter.isDraft` (my-expenses) has no live reference — dead but left in place (was outside the
+  agreed removal list). Candidate for a later cleanup PR.
+- `dashboardStats` supports `country='ALL'` (returns both currencies) but the dashboard's country
+  `Select` binds `/Countries` (UK/IN only) and renders a single currency — so `ALL` is unreachable
+  from the UI and would show GBP-only if forced. Latent, not a live inaccuracy.
+- Dead approval-app i18n keys / CSS classes catalogued in `test/DEAD-CODE-PERF-REPORT.md` remain.
 
 ---
 

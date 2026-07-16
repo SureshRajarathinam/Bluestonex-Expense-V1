@@ -54,11 +54,6 @@ sap.ui.define([
       }
     },
 
-    /** Extract the key predicate (inside the parentheses) from an OData V4 path. */
-    _predicateOf: function (sPath) {
-      var m = /\(([^)]*)\)/.exec(sPath);
-      return m ? m[1] : "";
-    },
 
     onRefresh: function () {
       var that = this;

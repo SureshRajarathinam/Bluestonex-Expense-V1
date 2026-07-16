@@ -101,19 +101,9 @@ sap.ui.define([], function () {
       return moneyStr(v, sCurrency);
     },
 
-    /** Receipt attached indicator text. */
-    receiptText: function (bAttached, sFileName) {
-      return bAttached || sFileName ? "Attached" : "None";
-    },
-
     /** Enable submit only while the claim is a Draft. */
     isDraft: function (sStatus) {
       return !sStatus || sStatus === "Draft";
-    },
-
-    /** Show the Edit button only for an active (read-only) Draft claim. */
-    canEditDraft: function (bEditable, sStatus) {
-      return !bEditable && sStatus === "Draft";
     }
   };
 });

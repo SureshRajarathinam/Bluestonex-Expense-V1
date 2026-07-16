@@ -145,7 +145,8 @@ service ApprovalService {
   ) returns LargeBinary;
 
   // ── Dashboard analytics (Approver/Admin) — read-only aggregation over CLAIMS.
-  //    fromDate/toDate scope the KPIs; country ∈ 'ALL' | 'UK' | 'IN'. ──
+  //    fromDate/toDate scope the KPIs on the expense period (claimPeriod); country ∈
+  //    'ALL' | 'UK' | 'IN' ('ALL' supported but not offered by the UI selector). ──
   @requires: [ 'Approver', 'Admin' ]
   function dashboardStats(fromDate : Date, toDate : Date, country : String) returns DashStats;
 
