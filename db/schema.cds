@@ -75,6 +75,15 @@ entity CLAIMS : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
       employee            : Association to UsersMaster;  // auto-set from logged-in user (org USERS_MASTER)
+      // Denormalized claimant identity — copied from USERS_MASTER at save time (see
+      // expense-service before('SAVE')). Persisted as real columns so the list
+      // screens display + server-side-search them WITHOUT joining the cross-container
+      // employee master on every read (that join needs a privileged view; reading it
+      // at runtime 500s with 'insufficient privilege'). The master is now read only
+      // via native SQL against the synonym (srv/lib/users-master.js) at write time.
+      employeeName        : String(101);  // FName + ' ' + LName
+      employeeNumber      : String(50);   // EmpID
+      employeeEmail       : String(100);  // Email (kept @UI.Hidden in the projections)
       country             : String(2);                 // UK | IN — set on Create; drives tax + routing
       payrollArea         : String(50);
       claimPeriod         : Date @mandatory;   // single claim date

@@ -9,6 +9,7 @@
 // and match against any of them, case-insensitively.
 
 const cds = require('@sap/cds');
+const usersMaster = require('./users-master');
 
 // All identities the current caller might be known by, lower-cased.
 function callerIdentities(req) {
@@ -22,14 +23,15 @@ function callerIdentities(req) {
   return set;
 }
 
-// Resolve the org USERS_MASTER row (ext.UsersMaster) for the caller by matching
-// USERS_MASTER.Email (case-insensitively) against ANY of the caller's known
-// identities. Returns the raw row (FName/LName/EmpID/BaseSiteKey/ID/…) or null.
+// Resolve the org USERS_MASTER row for the caller by matching USERS_MASTER.Email
+// (case-insensitively) against ANY of the caller's known identities. Returns the
+// raw row (FName/LName/EmpID/BaseSiteKey/ID/…) or null. Reads via srv/lib/users-master
+// (native SQL on the synonym in prod; CQL on the local stand-in in dev/test).
 async function resolveEmployee(req) {
   const ids = [...callerIdentities(req)];
   if (!ids.length) return null;
-  const { UsersMaster } = cds.entities('ext');
-  return SELECT.one.from(UsersMaster).where(`lower(Email) in`, ids);
+  const rows = await usersMaster.findByEmails(ids);
+  return rows[0] || null;
 }
 
 module.exports = { callerIdentities, resolveEmployee };

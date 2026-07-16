@@ -38,11 +38,10 @@ service ExpenseService {
   // 404 and submitClaim 403).
   @restrict: [{ grant: '*', to: 'Employee', where: 'createdBy = $user' }]
   entity MyClaims as projection on db.CLAIMS {
+    // employeeName / employeeNumber / employeeEmail are now DENORMALIZED columns on
+    // CLAIMS (`*` includes them) — set at save from USERS_MASTER, so the list can
+    // display + $filter them without joining the cross-container master on read.
     *,
-    employee.FName || ' ' || employee.LName as employeeName : String,
-    employee.EmpID          as employeeNumber : String,
-    employee.Email          as employeeEmail  : String,
-    employee.BaseSiteKey    as employeeSite   : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2
@@ -97,7 +96,6 @@ annotate ExpenseService.MyClaims with {
   statusCriticality @UI.Hidden;
   employeeEmail     @UI.Hidden;
   employeeName      @title: 'Employee';
-  employeeSite      @title: 'Site';
   country           @mandatory
                     @Common.ValueListWithFixedValues
                     @Common.ValueList: {

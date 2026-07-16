@@ -6,6 +6,7 @@ const audit = require('./lib/audit');
 const { renderClaimsPdf } = require('./lib/pdf');
 const { guardPaging } = require('./lib/paging');
 const { callerIdentities, resolveEmployee } = require('./lib/identity');
+const usersMaster = require('./lib/users-master');
 
 const LOG = cds.log('approval-service');
 
@@ -27,15 +28,41 @@ module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
     const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG } = cds.entities('EXP');
-    const { UsersMaster } = cds.entities('ext');
 
     // Resolve an email to its employee full name (FName + LName), falling back to a
     // title-cased local-part. Used to name the notified recipient (e.g. the L2
     // approver) in the "email sent to X" toast — recipients are stored as emails.
     const fullNameForEmail = async (email) => {
       if (!email) return '';
-      const emp = await SELECT.one.from(UsersMaster).columns('FName', 'LName').where({ Email: email });
+      const emp = await usersMaster.findByEmail(email);
       return empName(emp) || nameFromEmail(email);
+    };
+
+    // Attach the claimant's USERS_MASTER row onto a claim as `.employee` (native-SQL
+    // read of the synonym — never the #OO-owned view), so existing code that reads
+    // claim.employee.{FName,LName,EmpID,Email} keeps working unchanged.
+    const attachEmployee = async (claim) => {
+      if (claim && claim.employee_ID) {
+        claim.employee = (await usersMaster.findByIds([claim.employee_ID]))[0] || null;
+      }
+      return claim;
+    };
+
+    // Backfill the denormalized employeeName/Number/Email on a page of claim rows
+    // saved BEFORE denormalization (older data). New rows already carry them (set in
+    // ExpenseService before SAVE), so this is a no-op — no external read — for them.
+    // One batch read for the whole page; never N+1.
+    const backfillEmployee = async (list) => {
+      const missing = list.filter((r) => r && r.employee_ID && ('employeeName' in r) && !r.employeeName);
+      if (!missing.length) return;
+      const m = await usersMaster.mapByIds(missing.map((r) => r.employee_ID));
+      for (const r of missing) {
+        const e = m[String(r.employee_ID)];
+        if (!e) continue;
+        r.employeeName = usersMaster.fullName(e) || r.employeeName;
+        if (!r.employeeNumber) r.employeeNumber = e.EmpID || '';
+        if (('employeeEmail' in r) && !r.employeeEmail) r.employeeEmail = e.Email || '';
+      }
     };
 
     // Full name of the ACTING user (the approver performing approve/reject). In Work
@@ -85,10 +112,10 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     this.on('approve', 'Approvals', async (req) => {
       const ID = idOf(req);
       const { comment } = req.data;
-      // Expand the claimant's directory email so a final-approval notification can
-      // be addressed to the authoritative USERS_MASTER.Email (falls back to
-      // createdBy inside notifyApproved when the association is unresolved).
-      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });
+      // Attach the claimant's directory row so a final-approval notification can be
+      // addressed to the authoritative USERS_MASTER.Email (falls back to createdBy
+      // inside notifyApproved when the row is unresolved).
+      const claim = await attachEmployee(await SELECT.one.from(CLAIMS, ID));
       if (!claim) return req.error(404, 'Expense claim not found.');
       // Original claimant's display name for the L2 escalation email (falls back to
       // the login when the directory row is unresolved).
@@ -159,11 +186,11 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const { comment } = req.data;
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');
 
-      // Expand the claimant's directory email + name so the "returned" notification
-      // can be addressed to the authoritative USERS_MASTER.Email (falls back to
-      // createdBy inside notifyReturned when the association is unresolved) and the
-      // email body / "email sent to X" toast can show the claimant's full name.
-      const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });
+      // Attach the claimant's directory row + name so the "returned" notification can
+      // be addressed to the authoritative USERS_MASTER.Email (falls back to createdBy
+      // inside notifyReturned when unresolved) and the email body / "email sent to X"
+      // toast can show the claimant's full name.
+      const claim = await attachEmployee(await SELECT.one.from(CLAIMS, ID));
       if (!claim) return req.error(404, 'Expense claim not found.');
       if (!['Submitted', 'FirstApproved'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be rejected (status '${claim.status}').`);
@@ -226,12 +253,19 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       LOG.info(`Workflow for '${data?.country}' updated by ${req.user.id}`);
     });
 
+    // ─── Approvals: backfill denormalized claimant name/number for old rows ──
+    this.after('READ', 'Approvals', async (rows) => {
+      const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
+      if (list.length) await backfillEmployee(list);
+    });
+
     // ─── History enrichment: batch-fill attachmentCount + resubmitCount ──────
     // One SELECT over ITEMS and one over AUDITLOG for the whole page of rows
     // (NOT N+1). The virtual columns are null from the DB; we set them here.
     this.after('READ', 'ClaimHistory', async (rows) => {
       const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
       if (!list.length) return;
+      await backfillEmployee(list);
       const ids = list.map((r) => r.ID).filter(Boolean);
       const numbers = list.map((r) => r.claimNumber).filter(Boolean);
 
@@ -258,9 +292,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const { claimNumber } = req.data || {};
       if (!claimNumber) return req.error(400, 'A claim number is required.');
 
-      const claim = await SELECT.one.from(CLAIMS)
-        .columns((c) => { c('*'); c.employee((e) => { e('FName'); e('LName'); e('EmpID'); }); })
-        .where({ claimNumber });
+      const claim = await attachEmployee(await SELECT.one.from(CLAIMS).where({ claimNumber }));
       if (!claim) return req.error(404, 'Expense claim not found.');
 
       const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
@@ -298,9 +330,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const d = req.data || {};
       const scope = d.scope === 'history' ? 'history' : 'approvals';
 
-      let rows = await SELECT.from(CLAIMS)
-        .columns((c) => { c('*'); c.employee((e) => { e('FName'); e('LName'); e('EmpID'); }); })
-        .orderBy('submittedAt desc');
+      let rows = await SELECT.from(CLAIMS).orderBy('submittedAt desc');
 
       rows = rows.filter((r) => scope === 'history'
         ? r.status !== 'Draft'
@@ -312,12 +342,18 @@ module.exports = class ApprovalService extends cds.ApplicationService {
         rows = rows.filter((r) => r.claimPeriod && r.claimPeriod >= d.fromDate && r.claimPeriod <= d.toDate);
       }
 
-      const data = rows.map((r) => ({
-        ...r,
-        employeeName: empName(r.employee) || String(r.employee_ID || ''),
-        employeeNumber: (r.employee && r.employee.EmpID) || '',
-        decidedBy: r.level2ApprovedBy || r.level1ApprovedBy || r.rejectedBy || ''
-      }));
+      // Use the denormalized name/number; batch-resolve any that are still null
+      // (rows saved before denormalization) in ONE read of the employee master.
+      const empMap = await usersMaster.mapByIds(rows.map((r) => r.employee_ID));
+      const data = rows.map((r) => {
+        const e = empMap[String(r.employee_ID)];
+        return {
+          ...r,
+          employeeName: r.employeeName || usersMaster.fullName(e) || String(r.employee_ID || ''),
+          employeeNumber: r.employeeNumber || (e && e.EmpID) || '',
+          decidedBy: r.level2ApprovedBy || r.level1ApprovedBy || r.rejectedBy || ''
+        };
+      });
 
       const buf = await renderClaimsPdf(data, {
         title: scope === 'history' ? 'Claim History' : 'Pending Approvals'
@@ -344,7 +380,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       let rows = await SELECT.from(CLAIMS).columns((c) => {
         c('ID'); c('status'); c('country'); c('currency'); c('totalGross');
         c('submittedAt'); c('claimPeriod'); c('createdBy'); c('policyFlags');
-        c.employee((e) => { e('FName'); e('LName'); });
+        c('employeeName');   // denormalized claimant name (Top-5 card) — no external read
         c.items((i) => { i('grossAmount'); i.expenseType((t) => { t('code'); t('description'); }); });
       });
 
@@ -423,7 +459,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           for (const it of (r.items || [])) addCat(catMap, r, it);
           // Top 5 claimants — APPROVED (reimbursed) amount per person only, so a
           // claimant surfaces on the card once their claim is approved.
-          const nm = empName(r.employee) || r.createdBy || '—';
+          const nm = r.employeeName || r.createdBy || '—';
           const cm = claimantMap.get(nm) || { name: nm, gbp: 0, inr: 0 };
           if (isIN(r)) cm.inr += g; else cm.gbp += g;
           claimantMap.set(nm, cm);
@@ -488,6 +524,19 @@ module.exports = class ApprovalService extends cds.ApplicationService {
           .map((t) => ({ ...t, gbp: round2(t.gbp), inr: round2(t.inr) }))
           .sort((a, b) => (a.month < b.month ? -1 : 1))
       };
+    });
+
+    // ─── Employees (Admin approver picker): serve via the native-SQL helper ───
+    // The entity projects the external ext.UsersMaster; reading it through CAP on
+    // HANA hits the #OO-owned view (insufficient privilege). Fully serve it here so
+    // no DB query targets that view. The Workflow-config UI binds "/Employees" and
+    // maps email → fullName for the approver dropdowns.
+    this.on('READ', 'Employees', async () => {
+      const rows = await usersMaster.listAll();
+      return rows.map((r) => ({
+        ID: r.ID, email: r.Email, fullName: usersMaster.fullName(r),
+        employeeNumber: r.EmpID, site: r.BaseSiteKey, UserTypeKey: r.UserTypeKey, IsActive: r.IsActive
+      }));
     });
 
     await super.init();

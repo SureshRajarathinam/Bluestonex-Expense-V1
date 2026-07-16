@@ -69,10 +69,11 @@ service ApprovalService {
   // ── Approvals queue: claims awaiting a decision ─────────────────────────────
   @restrict: [{ grant: ['READ', 'approve', 'reject'], to: 'Approver' }]
   entity Approvals as select from db.CLAIMS {
+    // employeeName / employeeNumber / employeeEmail are DENORMALIZED columns on
+    // CLAIMS (`*` includes them), set from USERS_MASTER at save — so the queue
+    // displays + server-side-searches them without joining the cross-container
+    // master on read (that join 500s at runtime).
     *,
-    employee.FName || ' ' || employee.LName as employeeName : String,
-    employee.EmpID          as employeeNumber : String,
-    employee.Email          as employeeEmail  : String,
     case status
       when 'Draft'         then 0
       when 'Submitted'     then 2
@@ -114,10 +115,9 @@ service ApprovalService {
   @readonly
   @restrict: [{ grant: 'READ', to: 'Approver' }, { grant: 'READ', to: 'Admin' }]
   entity ClaimHistory as select from db.CLAIMS {
+    // employeeName / employeeNumber / employeeEmail: denormalized CLAIMS columns
+    // (`*` includes them) — see Approvals above.
     *,
-    employee.FName || ' ' || employee.LName as employeeName : String,
-    employee.EmpID          as employeeNumber : String,
-    employee.Email          as employeeEmail  : String,
     case status
       when 'Submitted'     then 2
       when 'FirstApproved' then 2

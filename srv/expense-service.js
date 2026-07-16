@@ -8,6 +8,7 @@ const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
 const { guardPaging } = require('./lib/paging');
 const { resolveEmployee } = require('./lib/identity');
+const usersMaster = require('./lib/users-master');
 
 // Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
 const nameFromEmail = (email) => String(email || '').split('@')[0]
@@ -19,16 +20,14 @@ module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
     const { CLAIMS, POLICY, WORKFLOW, TAX_TYPES } = cds.entities('EXP');
-    const { UsersMaster } = cds.entities('ext');
 
     // Resolve an email address to its employee full name (FName + LName), falling
     // back to a title-cased local-part. Used to name the notified approver in the
     // "email sent to X" toast — recipients are stored as emails, not person rows.
     const fullNameForEmail = async (email) => {
       if (!email) return '';
-      const emp = await SELECT.one.from(UsersMaster).columns('FName', 'LName').where({ Email: email });
-      const nm = emp ? [emp.FName, emp.LName].filter(Boolean).join(' ').trim() : '';
-      return nm || nameFromEmail(email);
+      const emp = await usersMaster.findByEmail(email);
+      return usersMaster.fullName(emp) || nameFromEmail(email);
     };
 
     // Reject malformed $top/$skip (400) instead of silently ignoring them.
@@ -82,6 +81,36 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.before('NEW', 'MyClaims', applyDefaults);
     this.before('CREATE', 'MyClaims', applyDefaults);
 
+    // ─── MyClaims: backfill denormalized name/number for pre-denormalization rows ──
+    // New claims carry employeeName/Number (set in before SAVE). Older rows have null
+    // — fill them (display only) from the employee master in ONE batch read. No-op
+    // (no external read) once every row is denormalized.
+    this.after('READ', 'MyClaims', async (rows) => {
+      const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
+      const missing = list.filter((r) => r && r.employee_ID && ('employeeName' in r) && !r.employeeName);
+      if (!missing.length) return;
+      const m = await usersMaster.mapByIds(missing.map((r) => r.employee_ID));
+      for (const r of missing) {
+        const e = m[String(r.employee_ID)];
+        if (!e) continue;
+        r.employeeName = usersMaster.fullName(e) || r.employeeName;
+        if (!r.employeeNumber) r.employeeNumber = e.EmpID || '';
+        if (('employeeEmail' in r) && !r.employeeEmail) r.employeeEmail = e.Email || '';
+      }
+    });
+
+    // ─── Employees (approver value-help): serve via the native-SQL helper ─────
+    // The entity is a projection on the external ext.UsersMaster; reading it through
+    // CAP on HANA hits the #OO-owned view (insufficient privilege). Fully serve it
+    // here so no DB query targets that view.
+    this.on('READ', 'Employees', async () => {
+      const rows = await usersMaster.listAll();
+      return rows.map((r) => ({
+        ID: r.ID, email: r.Email, fullName: usersMaster.fullName(r),
+        employeeNumber: r.EmpID, site: r.BaseSiteKey, UserTypeKey: r.UserTypeKey, IsActive: r.IsActive
+      }));
+    });
+
 
     // ─── Before SAVE: the draft-correct place to compute everything ────────
     // Fires when a draft is activated. req.data holds the full tree (items +
@@ -90,14 +119,27 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.before('SAVE', 'MyClaims', async (req) => {
       const claim = req.data;
 
-      // Fallback: ensure the employee (and Base-Site-derived payroll area) are
-      // set even if NEW didn't run.
+      // Resolve the claimant: by login if the FK isn't set yet (first save), else
+      // by the existing employee_ID (resubmit) so the denormalized fields below are
+      // refreshed. `emp` is a raw USERS_MASTER row read via srv/lib/users-master.
+      let emp = null;
       if (!claim.employee_ID && req.user?.id) {
-        const emp = await resolveEmployee(req);
+        emp = await resolveEmployee(req);
         if (emp) {
           claim.employee_ID = emp.ID;
           if (!claim.payrollArea) claim.payrollArea = emp.BaseSiteKey;
         }
+      } else if (claim.employee_ID) {
+        emp = (await usersMaster.findByIds([claim.employee_ID]))[0] || null;
+      }
+
+      // Denormalize claimant identity onto the claim so the list screens can display
+      // + server-side-search it without joining the cross-container employee master
+      // on every read (that join 500s at runtime — see srv/lib/users-master.js).
+      if (emp) {
+        claim.employeeName   = usersMaster.fullName(emp) || null;
+        claim.employeeNumber = emp.EmpID || null;
+        claim.employeeEmail  = emp.Email || null;
       }
 
       // Country drives tax (VAT for UK, GST for India) and currency
