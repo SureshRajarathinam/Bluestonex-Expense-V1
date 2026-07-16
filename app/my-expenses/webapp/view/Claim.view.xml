@@ -38,15 +38,14 @@
             <Label text="{i18n>lblCountry}" />
             <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
             <Label text="{i18n>lblPeriod}" required="true" />
-            <DateRangeSelection
-              dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
-              secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
+            <DatePicker
+              value="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
               displayFormat="medium"
               width="100%"
               maxDate="{ui>/today}"
               editable="{ui>/editable}" />
             <!-- Employee identity for the current (logged-in) user, resolved from
-                 EXP_EMPLOYEES via whoami(). Shown from the ui model so it appears
+                 USERS_MASTER via whoami(). Shown from the ui model so it appears
                  immediately on a brand-new draft (which has no persisted employee
                  yet). All MyClaims belong to the caller, so this is always right. -->
             <Label text="{i18n>lblEmployee}" />

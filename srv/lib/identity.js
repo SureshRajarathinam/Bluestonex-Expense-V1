@@ -3,10 +3,12 @@
 // Caller-identity resolution shared by both services.
 //
 // In Work Zone the IdP sets `req.user.id` to the LOGON NAME (e.g. "Srajarathinam")
-// while EXP_EMPLOYEES / Approval Workflow store the EMAIL — so a plain
+// while USERS_MASTER / Approval Workflow store the EMAIL — so a plain
 // `req.user.id === email` check passes locally (mock login id IS the email) but
 // fails when deployed. We gather the id plus every email/user_name claim available
 // and match against any of them, case-insensitively.
+
+const cds = require('@sap/cds');
 
 // All identities the current caller might be known by, lower-cased.
 function callerIdentities(req) {
@@ -20,13 +22,14 @@ function callerIdentities(req) {
   return set;
 }
 
-// Resolve the EXP_EMPLOYEES row for the caller by matching EXP_EMPLOYEES.Email
-// (case-insensitively) against ANY of the caller's known identities. Returns the
-// raw mirror row (FName/LName/EmpID/BaseSiteKey/…) or null.
-async function resolveEmployee(req, EMPLOYEES) {
+// Resolve the org USERS_MASTER row (ext.UsersMaster) for the caller by matching
+// USERS_MASTER.Email (case-insensitively) against ANY of the caller's known
+// identities. Returns the raw row (FName/LName/EmpID/BaseSiteKey/ID/…) or null.
+async function resolveEmployee(req) {
   const ids = [...callerIdentities(req)];
   if (!ids.length) return null;
-  return SELECT.one.from(EMPLOYEES).where(`lower(Email) in`, ids);
+  const { UsersMaster } = cds.entities('ext');
+  return SELECT.one.from(UsersMaster).where(`lower(Email) in`, ids);
 }
 
 module.exports = { callerIdentities, resolveEmployee };

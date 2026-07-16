@@ -5,14 +5,19 @@
 //  DIFFERENT HDI container (`hdi_bsx-org-apps-db`). It is reached at runtime via a
 //  cross-container synonym + grants (see db/external/README.md), NOT deployed by us.
 //
+//  This is now the SOLE employee master for the app (the old EXP_EMPLOYEES mirror
+//  was removed). CLAIMS.employee associates to it and all identity/name resolution
+//  reads it.
+//
 //  @cds.persistence.exists  → the deployer must NOT issue CREATE TABLE for it
-//                             (the table already exists in the other container).
+//                             (the table already exists in the other container; a
+//                             cross-container synonym points at it in production).
 //  @cds.persistence.name    → bind to the physical/synonym name `USERS_MASTER`.
 //
-//  HYBRID (per decision): this is only consulted in PRODUCTION (HANA). Local dev and
-//  the test suite run on in-memory SQLite where this table does not exist — nothing
-//  queries it there, so the seeded EXP_EMPLOYEES remains the dev/test source.
-//  The runtime cut-over (EMPLOYEE_SOURCE=USERS_MASTER) is a post-deploy step.
+//  Dev/test run on SQLite where the external table does not exist, so `exists`
+//  suppresses table creation. db/init.js creates a local USERS_MASTER stand-in
+//  (raw DDL) and seeds it — see db/init.js. Production reaches the live org table
+//  via the synonym + cross-container grant (see db/external/README.md).
 // ─────────────────────────────────────────────────────────────────────────────
 namespace ext;
 

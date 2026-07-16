@@ -2,7 +2,7 @@
 //  srv/lib/identity.js — caller-identity gathering.
 //
 //  Proves the deployed-IdP fix: in Work Zone req.user.id is the LOGON NAME (e.g.
-//  "Srajarathinam"), not the email that EXP_EMPLOYEES / Approval Workflow are keyed
+//  "Srajarathinam"), not the email that USERS_MASTER / Approval Workflow are keyed
 //  on. callerIdentities must still surface the email (from token claims) so the
 //  employee/approver lookup resolves. Pure unit test — no DB needed.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ test('gathers the email claim even when user.id is a logon name (the deployed-Id
   const ids = callerIdentities(req);
   assert.ok(ids.has('srajarathinam'), 'includes the logon-name id (lower-cased)');
   assert.ok(ids.has('suresh.rajarathinam@bluestonex.com'),
-    'includes the email claim (lower-cased) — this is what matches EXP_EMPLOYEES.Email');
+    'includes the email claim (lower-cased) — this is what matches USERS_MASTER.Email');
 });
 
 test('accepts string OR array claims and trims + lower-cases every identity', () => {

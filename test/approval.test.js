@@ -113,7 +113,7 @@ test('Approval Total is a clean finite number for a very large claim (no ₹NaN)
 test('approverFor names the first-level approver (drives the my-expenses "email sent to X" toast)', async () => {
   // The my-expenses app calls ExpenseService.approverFor(country) after Apply for
   // Approval to name the L1 approver in the toast. It returns the resolved full name
-  // (EMPLOYEES unseeded in test → local-part), derived from the configured workflow.
+  // (USERS_MASTER unseeded in test → local-part), derived from the configured workflow.
   const uk = (await GET(`/expense/approverFor(country='UK')`, { auth: EMP })).data;
   assert.ok(typeof uk.value === 'string' && /manager/i.test(uk.value), `UK L1 name from ${UK.first}, got "${uk.value}"`);
   const ind = (await GET(`/expense/approverFor(country='IN')`, { auth: EMP })).data;

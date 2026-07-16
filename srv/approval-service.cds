@@ -1,4 +1,5 @@
 using EXP as db from '../db/schema';
+using ext from '../db/external/users-master';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ApprovalService — merged Approvals + Policy Config + Workflow Members
@@ -173,7 +174,7 @@ service ApprovalService {
   @readonly entity Countries    as projection on db.COUNTRIES;
   @readonly entity ExpenseTypes as projection on db.EXPENSE_TYPES;
   @readonly entity TaxTypes     as projection on db.TAX_TYPES;
-  @readonly entity Employees as projection on db.EMPLOYEES {
+  @readonly entity Employees as projection on ext.UsersMaster {
     ID,
     Email                                   as email          : String,
     FName || ' ' || LName                   as fullName       : String,

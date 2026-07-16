@@ -149,7 +149,7 @@ sap.ui.define([
 
     // ---- Create flow --------------------------------------------------------
     // Country is derived automatically from the logged-in user's site code
-    // (EXP_EMPLOYEES.BaseSiteKey via whoami): UK* → UK, IN* → IN. Reimbursement is
+    // (USERS_MASTER.BaseSiteKey via whoami): UK* → UK, IN* → IN. Reimbursement is
     // only available for UK and India sites, so a site matching neither (e.g.
     // PLMK, PLRMT, Apphaus) — or an unresolvable site — gets an informational
     // popup and NO claim is created.

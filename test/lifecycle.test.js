@@ -39,7 +39,7 @@ async function submitClaim(country, gross = 120) {
 test('whoami returns the logged-in employee first + last name', async () => {
   const r = await GET('/expense/whoami()', { auth: EMP });
   assert.equal(r.status, 200, `whoami ${r.status}`);
-  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'full name from EXP_EMPLOYEES');
+  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'full name from USERS_MASTER');
   assert.equal(r.data.firstName, 'Sabarinathan', 'first name');
   assert.equal(r.data.lastName, 'Chandrasekar', 'last name');
   assert.equal(r.data.email, EMP.username, 'email echoes $user');
@@ -170,7 +170,7 @@ test('I. a Submitted claim cannot be deleted (409); a Draft can', async () => {
 });
 
 test('J. approverFor returns the country first-level approver full name', async () => {
-  // Returns the resolved full name (EMPLOYEES unseeded in test → derived from the
+  // Returns the resolved full name (USERS_MASTER unseeded in test → derived from the
   // configured workflow email's local-part) — drives the "email sent to X" toast.
   const uk = await GET(`/expense/approverFor(country='UK')`, { auth: EMP });
   assert.equal(uk.status, 200, `UK ${uk.status}`);

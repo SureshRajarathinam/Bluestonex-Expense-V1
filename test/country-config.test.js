@@ -2,7 +2,7 @@ const cds = require('@sap/cds');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-// EMP (sab) does NOT match a seeded EXP_EMPLOYEES row → employee/payroll blank
+// EMP (sab) does NOT match a seeded USERS_MASTER row → employee/payroll blank
 // (used for the country-agnostic claim-number sequence). IN1 (suresh) DOES match
 // a seed row (case-insensitive email) → employee-derived fields populate.
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' };
@@ -47,7 +47,7 @@ test('Req3: India uses its own start value (INEXP1) — prefixes never collide',
   assert.equal(in1.claimNumber, 'INEXP1', `first India claim, got ${in1.claimNumber}`);
 });
 
-test('Req1: employee identity (number/site/payroll area) resolved from EXP_EMPLOYEES via whoami', async () => {
+test('Req1: employee identity (number/site/payroll area) resolved from USERS_MASTER via whoami', async () => {
   // The New Expense Claim header is driven by whoami() — so it shows the employee
   // straight away on a brand-new draft (which has no persisted employee yet).
   // suresh matches a seed row: EmpID + BaseSiteKey INAUG (Site = Payroll Area).

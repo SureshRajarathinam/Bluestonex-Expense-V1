@@ -16,7 +16,7 @@ const nameFromEmail = (email) => String(email || '').split('@')[0]
 // Bound-action key: object {ID,...} for draft entities, raw scalar otherwise.
 const idOf = (req) => { const p = req.params[0]; return p && typeof p === 'object' ? p.ID : p; };
 
-// Display name from a raw EMPLOYEES (USERS_MASTER-mirror) row: FName + ' ' + LName.
+// Display name from a raw USERS_MASTER row: FName + ' ' + LName.
 const empName = (e) => e ? [e.FName, e.LName].filter(Boolean).join(' ').trim() : '';
 
 // True when the caller is the configured approver `email` (matched against any of
@@ -26,14 +26,15 @@ const isConfiguredApprover = (req, email) => !!email && callerIdentities(req).ha
 module.exports = class ApprovalService extends cds.ApplicationService {
 
   async init() {
-    const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG, EMPLOYEES } = cds.entities('EXP');
+    const { CLAIMS, WORKFLOW, ITEMS, AUDITLOG } = cds.entities('EXP');
+    const { UsersMaster } = cds.entities('ext');
 
     // Resolve an email to its employee full name (FName + LName), falling back to a
     // title-cased local-part. Used to name the notified recipient (e.g. the L2
     // approver) in the "email sent to X" toast — recipients are stored as emails.
     const fullNameForEmail = async (email) => {
       if (!email) return '';
-      const emp = await SELECT.one.from(EMPLOYEES).columns('FName', 'LName').where({ Email: email });
+      const emp = await SELECT.one.from(UsersMaster).columns('FName', 'LName').where({ Email: email });
       return empName(emp) || nameFromEmail(email);
     };
 
@@ -43,7 +44,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     // Resolve identity-aware (email/logon/token claims) via resolveEmployee → FName+LName,
     // like submitClaim does; fall back to the email/local-part transforms.
     const myName = async (req) => {
-      const emp = await resolveEmployee(req, EMPLOYEES);
+      const emp = await resolveEmployee(req);
       return empName(emp) || (await fullNameForEmail(req.user?.id)) || nameFromEmail(req.user?.id);
     };
 
@@ -51,14 +52,14 @@ module.exports = class ApprovalService extends cds.ApplicationService {
     this.before('READ', guardPaging);
 
     // ─── whoami: resolve the logged-in user's display name for the greeting ────
-    // Identical logic to ExpenseService.whoami — matches EXP_EMPLOYEES by Email
-    // (case-insensitive) via the shared source; falls back to the email local-part.
+    // Identical logic to ExpenseService.whoami — matches USERS_MASTER by Email
+    // (case-insensitive); falls back to the email local-part.
     this.on('whoami', async (req) => {
       const email = req.user?.id || '';
       let fullName = '';
       try {
         // Resolve by ANY caller identity (Work Zone id = logon name, not email).
-        const emp = await resolveEmployee(req, EMPLOYEES);
+        const emp = await resolveEmployee(req);
         fullName = emp ? [emp.FName, emp.LName].filter(Boolean).join(' ').trim() : '';
       } catch (e) { LOG.warn('whoami lookup failed', e.message); }
       if (!fullName) fullName = nameFromEmail(email);
@@ -85,7 +86,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       const ID = idOf(req);
       const { comment } = req.data;
       // Expand the claimant's directory email so a final-approval notification can
-      // be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
+      // be addressed to the authoritative USERS_MASTER.Email (falls back to
       // createdBy inside notifyApproved when the association is unresolved).
       const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });
       if (!claim) return req.error(404, 'Expense claim not found.');
@@ -159,7 +160,7 @@ module.exports = class ApprovalService extends cds.ApplicationService {
       if (!comment?.trim()) return req.error(422, 'A rejection reason is required.');
 
       // Expand the claimant's directory email + name so the "returned" notification
-      // can be addressed to the authoritative EXP_EMPLOYEES.Email (falls back to
+      // can be addressed to the authoritative USERS_MASTER.Email (falls back to
       // createdBy inside notifyReturned when the association is unresolved) and the
       // email body / "email sent to X" toast can show the claimant's full name.
       const claim = await SELECT.one.from(CLAIMS, ID, (c) => { c('*'); c.employee((e) => { e('Email'); e('FName'); e('LName'); }); });

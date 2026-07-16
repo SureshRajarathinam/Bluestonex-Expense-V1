@@ -21,7 +21,6 @@ const FIELDS = [
   ['Country',               (r) => r.country],
   ['Currency',              (r) => r.currency],
   ['Claim Period',          (r) => ymd(r.claimPeriod)],
-  ['Period End',            (r) => ymd(r.periodEnd)],
   ['Status',                (r) => r.status],
   ['Payroll Area',          (r) => r.payrollArea],
   ['Net',                   (r) => money(r.totalNet, r.currency)],

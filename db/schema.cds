@@ -1,6 +1,10 @@
 namespace EXP;
 
 using { managed, cuid } from '@sap/cds/common';
+// Employee master is the org-wide USERS_MASTER table (external, cross-container in
+// production; a local seeded stand-in in dev/test — see db/external/users-master.cds
+// and db/init.js). CLAIMS.employee links to it.
+using { ext.UsersMaster } from './external/users-master';
 
 // ─── Code Lists ─────────────────────────────────────────────────────────────
 
@@ -31,35 +35,8 @@ entity COUNTRIES {
 }
 
 // ─── Master Data ─────────────────────────────────────────────────────────────
-
-// Employee master — an EXACT MIRROR of the classic USERS_MASTER table.
-// Column names/order match USERS_MASTER 1:1, so db/data/EXP-EMPLOYEES.csv (a copy
-// of Master_User_BSX.csv) imports directly on deploy. There is NO runtime
-// dependency on the external USERS_MASTER container — this table IS the master.
-//   • ID          — source BIGINT primary key (also the FK target for CLAIMS.employee)
-//   • Email       — join key to the logged-in $user (matched case-insensitively)
-//   • FName/LName — display name is FName + ' ' + LName (see service projections)
-//   • EmpID       — business employee number · BaseSiteKey — site code · IsActive — 'Y'/'N'
-entity EMPLOYEES {
-  key ID          : Integer64;      // USERS_MASTER.ID (BIGINT PK)
-      UserID      : String(50);
-      OrgID       : String(10);
-      FName       : String(100);
-      LName       : String(100);
-      Email       : String(255);
-      Mobile      : String(30);
-      EmpID       : String(50);
-      UserTypeKey : String(10);     // S | C
-      BaseSiteKey : String(50);     // UKOSW | INAUG | PLRMT | Apphaus
-      ManagerID   : String(50);
-      Pic         : LargeString;    // base64 data-URI photo
-      PicB        : LargeString;
-      IsActive    : String(1);      // Y | N
-      TargetUtilization : Integer;
-      TargetHrsPerWeek  : String(10);   // e.g. '40:00'
-      BonusPercent      : Integer;
-      PensionRate       : Integer;
-}
+// Employee master lives in the external org table USERS_MASTER (ext.UsersMaster).
+// No local mirror entity — CLAIMS.employee associates to ext.UsersMaster directly.
 
 // One policy row PER COUNTRY (UK | IN) — each country has its own rate and limits.
 @assert.unique.country: [country]
@@ -97,11 +74,10 @@ entity WORKFLOW : managed {
 entity CLAIMS : managed {
   key ID                  : UUID;
       claimNumber         : String(20);
-      employee            : Association to EMPLOYEES;  // auto-set from logged-in user
+      employee            : Association to UsersMaster;  // auto-set from logged-in user (org USERS_MASTER)
       country             : String(2);                 // UK | IN — set on Create; drives tax + routing
       payrollArea         : String(50);
-      claimPeriod         : Date @mandatory;   // period start (Excel: Date Start)
-      periodEnd           : Date;              // period end   (Excel: Date End)
+      claimPeriod         : Date @mandatory;   // single claim date
 
       // Workflow status (country-driven):
       //   Draft → Submitted → FirstApproved (UK only) → Approved

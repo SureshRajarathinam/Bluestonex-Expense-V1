@@ -1,4 +1,5 @@
 using EXP as db from '../db/schema';
+using ext from '../db/external/users-master';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ExpenseService — Employee app (My Expenses)
@@ -78,9 +79,9 @@ service ExpenseService {
   // Read-only so the UI can preview the net/VAT split live as gross is typed
   // (server before('SAVE') stays the source of truth for saved values).
   @readonly entity Policies     as projection on db.POLICY;
-  // Convenience aliases (email/fullName/employeeNumber) kept stable so the
-  // approval Workflow picker and any consumer keep working after the mirror.
-  @readonly entity Employees as projection on db.EMPLOYEES {
+  // Convenience aliases (email/fullName/employeeNumber) over the org USERS_MASTER,
+  // kept stable so the approval Workflow picker and any consumer keep working.
+  @readonly entity Employees as projection on ext.UsersMaster {
     ID,
     Email                                   as email          : String,
     FName || ' ' || LName                   as fullName       : String,

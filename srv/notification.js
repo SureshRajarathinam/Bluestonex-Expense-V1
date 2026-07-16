@@ -325,7 +325,7 @@ class NotificationService {
     });
 
     // Targeted email to the employee who owns the claim. Prefer the authoritative
-    // directory address (EXP_EMPLOYEES.Email, expanded by the reject handler) and
+    // directory address (USERS_MASTER.Email, expanded by the reject handler) and
     // fall back to createdBy (their login) when the association is unresolved.
     const employeeEmail = (claim.employee && claim.employee.Email) || claim.createdBy;
     await mailer.sendMail({
@@ -374,7 +374,7 @@ class NotificationService {
     });
 
     // Targeted email to the employee who owns the claim. Prefer the authoritative
-    // directory address (EXP_EMPLOYEES.Email, expanded by the approve handler) and
+    // directory address (USERS_MASTER.Email, expanded by the approve handler) and
     // fall back to createdBy (their login) when the association is unresolved.
     const employeeEmail = (claim.employee && claim.employee.Email) || claim.createdBy;
     await mailer.sendMail({

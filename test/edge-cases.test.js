@@ -3,8 +3,8 @@
 //
 //  Formal techniques: equivalence partitioning + boundary-value analysis on the
 //  pure calc helpers, a decision table over (country × vatType × rate), and the
-//  validation boundaries that the existing suite does NOT cover (exact £25
-//  receipt threshold, periodEnd<claimPeriod, at-limit meal spend).
+//  validation boundaries that the existing suite does NOT cover (per-type
+//  receipt requirement, at-limit meal spend).
 //
 //  Tests tagged "DEFECT Dx" are CHARACTERIZATION tests: they pin the CURRENT
 //  (defective) behaviour so the defect is traceable and any future fix will
@@ -129,14 +129,6 @@ test('rule 4: a non-receipt type needs no receipt at any amount (thresholds remo
     mileage: [], policy: POLICY, types: TYPES, today: TODAY
   });
   assert.ok(!hasErr(r, 'receipt'), 'TOLLS (requiresReceipt=false) never requires a receipt');
-});
-test('rule 2 header (previously untested): periodEnd before claimPeriod is an error', () => {
-  const r = validateClaim({
-    claim: { claimPeriod: '2026-02-28', periodEnd: '2026-02-27', totalGross: 24 },
-    items: [{ expenseDate: '2026-02-16', expenseType_code: 'TOLLS', reasonForTrip: 'X', grossAmount: 24, receiptAttached: false }],
-    mileage: [], policy: POLICY, types: TYPES, today: TODAY
-  });
-  assert.ok(hasErr(r, 'before the start') || hasErr(r, 'period end'), 'periodEnd<claimPeriod must error');
 });
 const hasFlag = (r, s) => (r.flags || []).some((f) => f.toLowerCase().includes(s.toLowerCase()));
 test('rule 5 BOUNDARY: meal spend exactly at the daily limit (£40) raises no flag (> not >=)', () => {

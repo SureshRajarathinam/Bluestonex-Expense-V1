@@ -25,7 +25,7 @@ sap.ui.define([
       this.getRouter().getRoute("detail").attachPatternMatched(this._onMatched, this);
     },
 
-    // Fetch the current user's employee master data (EXP_EMPLOYEES via whoami())
+    // Fetch the current user's employee master data (USERS_MASTER via whoami())
     // into the ui model. Resolved against the OData service URL so it works under
     // the Work Zone managed approuter (never a literal relative path).
     _loadEmployee: function () {
