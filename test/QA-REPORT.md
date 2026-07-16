@@ -179,7 +179,7 @@ Actual: Approver/Admin (who inherit the Employee scope) could approve/reject a c
 - **Optimistic concurrency (DEF-09)** — lost-update on simultaneous edits only mitigated by draft locks; true If-Match races are HANA-only and untested. *Risk: medium.*
 - **CSRF (DEF-10)** — only meaningful against the managed approuter; not in CI. *Risk: low–medium (approuter enforces).* 
 - **UI automation** — no executable OPA5/wdi5; UI regressions (validation popups, self-heal, data-driven defaults) are skeletoned, not run. *Risk: medium.*
-- **`whoami` USERS_MASTER branch** — HANA synonym path (`employee-source.js:27`) unreachable under SQLite; only the `EXP_EMPLOYEES` path is exercised. *Risk: low.*
+- **`whoami` cross-container branch** — the HANA synonym + wrapper-view path (`srv/lib/identity.js` → `ext.UsersMaster`) is unreachable under SQLite; local tests exercise the seeded `ext_UsersMaster` stand-in only. *Risk: low.*
 - **`@UI.Hidden` exposure / dead notification methods** — informational.
 
 ### Top 5 to fix before go-live (ranked)
@@ -192,3 +192,106 @@ Actual: Approver/Admin (who inherit the Employee scope) could approve/reject a c
 ---
 
 *Living deliverable. Backend logic and flows are covered by `npm test` (**151 pass**). UI rendering must be verified in a browser against `cds watch` until an OPA5/wdi5 runner is added.*
+
+---
+
+# 6. Adversarial re-test pass — 2026-07-14
+
+**Assumptions (context confirmed from the codebase, not asked):** App = **hybrid** (two freestyle SAPUI5 apps, not Fiori Elements). Model = **CAP CDS**, OData **V4**, **draft-enabled** (`MyClaims`/`Policies`/`WorkflowMembers`). Landscape = BTP CF (`bsx-tdd/TDD`, eu10) + HANA (prod) / SQLite (`cds.test`, CI). Roles = XSUAA `Employee`/`Approver`/`Admin` with `@restrict`. Process = create→submit→approve/return with UK VAT (2-level) / India GST (1-level). **HANA-only behaviours (FK enforcement, true `enqueue` locks, approuter CSRF) are NOT exercised by the SQLite test bed** — flagged where relevant.
+
+**Baseline:** `npm test` = **194 pass** / 0 fail / 1 skip / 1 todo (170 functional + the 24-check adversarial probe, which `node --test` globs in). New executable adversarial asset **`test/qa-probe.test.js`** — **24 checks · 0 hard defects · 20 PASS · 4 OBSERVE**. Techniques: EP/BVA (amounts), state-transition (draft/submit/approve), decision-table (owner × operation × role auth matrix), destructive/injection, boundary.
+
+## 6.1 Test strategy for this pass (risk-based)
+Tested hardest, in order of risk: **(1) authorization bypass via direct OData** — does the backend enforce what the UI hides (owner isolation, delete/approve guards, role gates)? **(2) the just-fixed amount pipeline** at boundaries (0.01, ~10M, negative, zero, 3-dp, IN rounding). **(3) injection / hostile input** persistence. **(4) invalid state transitions & double-submit.** **(5) contract hygiene** (status codes, paging, `$expand`, `$batch`, ETag, CSRF).
+
+## 6.2 Fixes shipped since the 2026-07-12 pass (all test-verified)
+| Ref | Sev | Fix | Evidence (file · test) |
+|---|---|---|---|
+| **FIX-A** | High | Large amounts rendered **£NaN / £0.00** (UK & IN) — a locale-grouped string (`"10,000.00"`) reached `money`/`split` → `NaN`. Hardened formatters (`num()` strips separators/symbols; Indian grouping too) + declared `sap.ui.model.odata.type.Decimal` on gross/miles/rate inputs. **Backend math was already correct** (proven by in-memory POST at 1k/10k UK+IN). | `my-expenses/model/formatter.js`, `view/Claim.view.xml` · probe CALC-01/02/06 |
+| **FIX-B** | Med | `visible` **FormatException** (`"image (1).png" is not a valid boolean`) on the receipt icon + list delete button — V4 coerced the raw `Edm.String`. Added `targetType:'any'`. | `Claim.view.xml:129`, `Claims.view.xml:112` |
+| **FIX-C** | Med | Receipt upload `fetch` threw **"String contains non ISO-8859-1 code point"** on a non-Latin-1 filename. ASCII-safe `Content-Disposition` + RFC 5987 `filename*`. | `Claim.controller.js _putReceipt` · probe SEC-09 (emoji/quotes persist) |
+| **FIX-D** | High | Save **"Cannot read properties of null (reading 'getPath')"** — `onSave` bound `draftActivate` to the view element-binding context with `$$inheritExpandSelect`. Now a fresh canonical draft context (pending edits flush via the `$auto` group; rebind with `$expand` after). | `Claim.controller.js onSave` |
+| **FIX-E** | Med | Approving gave the **employee no email**. Added `notifyApproved` fired only on FINAL approval (IN single / UK L2); UK L1 stays silent to the employee. | `notification.js`, `approval-service.js` · `test/approval.test.js` |
+| **FIX-F** | Low | Dashboard: donut centre = **total reimbursed (£/₹)** + multi-colour ring/right legend; category bars share the donut palette; trend semantic colours; wave & trend full-width; **new Policy Violation Rate KPI card** (flagged ÷ all claims, sparkline, period delta). | `Dashboard.controller.js/view/css` · `test/dashboard.test.js` |
+
+## 6.3 Adversarial probe — evidence (`test/qa-probe.test.js`)
+| ID | Area | Check | Expected | Observed | Verdict |
+|---|---|---|---|---|---|
+| SEC-01/02/03 | Security | Employee B READ/PATCH/DELETE employee A's claim (direct OData) | 403/404 | 404 / 403 / 403 | **PASS** |
+| SEC-04 | Security | `/expense/MyClaims` collection scoped to caller | 0 foreign rows | 0 foreign | **PASS** |
+| SEC-05 | Security | Direct DELETE of a **Submitted** claim | 409 | 409 | **PASS** |
+| SEC-06 | Security | Non-configured approver calls `approve` directly | 403 | 403 | **PASS** |
+| SEC-07 | Security | Employee-only on `/approval/Approvals` | 403 | 403 | **PASS** |
+| SEC-08 | Security | Malformed / injection `$filter` | 400 or safe, never 500 | 400 | **PASS** |
+| SEC-09 | Security | Quotes/unicode/emoji in text field | 201, stored | 201 | **PASS** |
+| CON-01/02/03/04 | Contract | `$metadata`; unknown key; bad `$top/$skip`; deep `$expand` | 200 / 404 / 400 / 200 | as expected | **PASS** |
+| CALC-01/02/06 | Calc | gross 0.01; 9,999,999.99; IN 100 (GST) | consistent, no NaN | 0.01; sum 9,999,999.99; net 84.75/vat 15.25 | **PASS** |
+| CALC-03/04 | Calc | negative / zero gross on submit | 422 | 422 | **PASS** |
+| STATE-01/02 | State | approve a never-submitted Draft; double-submit | 4xx | 404 / 409 | **PASS** |
+| **CON-05** | Contract | POST without CSRF token (`cds.test`, no approuter) | documented | **201** | **OBSERVE → DEF-10** |
+| **CON-06** | Contract | ETag emitted for optimistic concurrency | present if intended | **none** | **OBSERVE → DEF-09** |
+| **CALC-05** | Calc | 3-dp gross `10.005` (`Decimal(15,2)`) | rounded 2dp | item POST rejected → submit **422** | **OBSERVE** |
+| **BATCH-01** | Contract | `POST {country:'ZZ'}` (invalid) | reject | **201** (SQLite FKs off) | **OBSERVE → DEF-13** |
+
+## 6.4 Findings this pass
+**DEF-13 — `country` not validated against `Countries` at create/submit · Medium · Open (NEW)**
+Repro (probe BATCH-01): `POST /expense/MyClaims {"country":"ZZ"}` → **201** on the SQLite test bed (FKs are not enforced by `cds.test` in-memory). `srv/lib/calc.js taxRateFor` (`calc.js:9-12`) **silently defaults an unknown country to UK VAT**, and `validate.js` never checks `country ∈ {UK,IN}`. Impact: a mis-countried claim (reachable only via direct OData — the UI binds the picker to `/Countries`) would be taxed as UK and routed through the UK workflow. **Fix:** add an explicit guard in `before('SAVE','MyClaims')` / `submitClaim` (or `@assert.target` on the `country` association) and make `taxRateFor` **flag/throw** on an unknown country instead of defaulting. Confirm whether HANA's FK already rejects `ZZ` (likely, but the app must not depend on it).
+
+**DEF-09 — No ETag / optimistic concurrency · Medium · Open (reconfirmed).** Probe CON-06: no ETag. Lost-update is mitigated by draft locks + status guards (probe STATE-02 → 409 double-submit; SEC-05 → 409 delete-in-flight), but there is no `If-Match` protection on direct updates — highest value on **`Policies`** (admin config). Fix: add `@odata.etag`/a managed changed-at element and send `If-Match` from `BaseController.callAction`, or formally accept draft-lock+status-guard and document it.
+
+**DEF-10 — CSRF not enforced in CI · Low · Open (reconfirmed).** Probe CON-05: modifying POST without a token succeeds under `cds.test` (no approuter). The managed approuter enforces CSRF in the deployed env — **verify with a post-deploy smoke test** (HEAD to fetch token, POST without → expect 403).
+
+**OBSERVE — 3-decimal gross.** `Decimal(15,2)` correctly rejects `10.005` at the item POST; the net effect for a **raw API client** is a downstream "add at least one line" 422 (the item never persisted) rather than a scale error on the item. The UI's typed Decimal input rounds before send, so end-users are unaffected. Low.
+
+## 6.5 Executable assets added
+- **Backend probe:** `test/qa-probe.test.js` — `node --test test/qa-probe.test.js` (24 adversarial checks; prints a findings table).
+- **HTTP (add to `test/expense.http`):**
+  ```http
+  ### DEF-13 — invalid country accepted at create (should be rejected)
+  POST {{srv}}/expense/MyClaims
+  Authorization: Basic {{emp}}
+  Content-Type: application/json
+
+  { "country": "ZZ", "claimPeriod": "2026-02-28" }
+  # EXPECT (target): 400/422 with a "country must be UK or IN" message
+
+  ### SEC-01 — owner isolation (login as a DIFFERENT employee; expect 404)
+  GET {{srv}}/expense/MyClaims(ID={{othersClaimId}},IsActiveEntity=true)
+  Authorization: Basic {{priya}}
+  # EXPECT: 404
+  ```
+- **OPA5 skeleton (regression for FIX-A / FIX-D)** — `app/my-expenses/webapp/test/integration/ClaimJourney.js`:
+  ```js
+  opaTest("large gross shows real Net/Tax, not NaN, and Save persists", function (Given, When, Then) {
+    Given.iStartMyUIComponent({ componentConfig: { name: "com.bluestonex.expense.myexpenses" } });
+    When.onClaim.iEnterGross("itemsTable", 0, "10000");
+    Then.onClaim.iSeeItemNet("itemsTable", 0).not.toContain("NaN");      // FIX-A
+    When.onClaim.iPressSave();                                            // FIX-D: no "getPath" error
+    Then.onClaim.iSeeToast("msgSaved").and.iSeeStatus("Draft");
+    Then.iTeardownMyUIComponent();
+  });
+  ```
+- **QUnit skeleton (formatter units, FIX-A)** — `app/my-expenses/webapp/test/unit/formatter.js`:
+  ```js
+  QUnit.test("money() strips grouping, no NaN", function (assert) {
+    assert.equal(formatter.money("10,000.00", "GBP"), "£10000.00");
+    assert.equal(formatter.money("₹10,00,000.00", "INR"), "₹1000000.00");
+  });
+  QUnit.test("netPreview handles grouped gross", function (assert) {
+    assert.equal(formatter.netPreview(null, "10,000.00", "STD", 0.2, true, "GBP"), "£8333.33");
+  });
+  ```
+
+## 6.6 Coverage delta & Top-5 before deploy (updated)
+**Newly hardened evidence:** owner isolation + delete/approve guards + injection safety now have **executed** direct-OData proof (not just role tests); amount pipeline verified at boundaries incl. the FIX-A regression.
+**Residual gaps unchanged:** no executed UI automation (OPA5/wdi5 still skeletons); ETag (DEF-09); CSRF-in-CI (DEF-10); HANA-only paths (FKs, locks) untested locally.
+
+1. **DEF-13** — validate `country ∈ Countries` server-side + stop `taxRateFor` silently defaulting. *(low effort, medium risk — mis-tax/mis-route.)*
+2. **DEF-09** — ETag/`If-Match` (at least on `Policies`), or accept+document the draft-lock control. *(medium.)*
+3. **Wire an executable UI run** (OPA5/wdi5) for FIX-A/FIX-B/FIX-D + TC-01/02/06 — the highest-value flows are still skeletons. *(medium.)*
+4. **CSRF (DEF-10)** — post-deploy approuter smoke check. *(low.)*
+5. **Deployed `504` on Save** (seen in a screenshot) is an **infra** gateway timeout (HANA/approuter cold start), separate from FIX-D (which stops the client `getPath` crash). Add an srv health/scaling check to the runbook so it doesn't masquerade as an app bug. *(low.)*
+
+---
+
+*Updated 2026-07-14. Backend + flows: `npm test` (**194 pass** — 170 functional + the 24-check `test/qa-probe.test.js`, 0 hard defects). UI still needs a browser/OPA5 run for full verification.*
