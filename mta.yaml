@@ -44,6 +44,9 @@ modules:
       - name: expense-management-mail
         parameters:
           optional: true
+      # Cross-container read of the org USERS_MASTER (employee master). The runtime
+      # user needs SELECT on it via the synonym in db/src. See db/external/README.md.
+      - name: bsx-org-apps-db
     provides:
       - name: srv-api
         properties:
@@ -65,6 +68,10 @@ modules:
       HDI_DEPLOY_OPTIONS: '{ "auto_undeploy": true }'
     requires:
       - name: expense-management-db
+      # Grantor binding: the HDI deployer builds db/src/USERS_MASTER.hdbsynonym and
+      # applies db/src/USERS_MASTER.hdbgrants (SELECT for #OO + runtime user)
+      # against this cross-container service. See db/external/README.md.
+      - name: bsx-org-apps-db
 
   # ── HTML5 App Content Deployer ─────────────────────────────────────────────
   - name: expense-management-app-deployer
@@ -171,17 +178,18 @@ resources:
       service: hana
       service-plan: hdi-shared
 
-  # ── External org-apps HDI container (classic USERS_MASTER) — STAGED ────────
-  # Prepared for reusing the existing USERS_MASTER employee master, NOT active
-  # until the grantor is confirmed and a HANA deploy is approved. To activate,
-  # uncomment this resource, add it to both `expense-management-srv.requires`
-  # and `expense-management-db-deployer.requires`, set the real service-name,
-  # and fill db/src/USERS_MASTER.hdb{synonym,grants}. See db/external/README.md.
-  #
-  # - name: bsx-org-apps-db
-  #   type: org.cloudfoundry.existing-service
-  #   parameters:
-  #     service-name: <EXISTING_HDI_SERVICE_INSTANCE_FOR_hdi_bsx-org-apps-db>
+  # ── External org-apps HDI container (classic USERS_MASTER) ─────────────────
+  # Grantor service for the cross-container read of USERS_MASTER. The HDI deployer
+  # uses this binding to apply db/src/USERS_MASTER.hdbgrants (SELECT for our #OO +
+  # runtime user) and resolve db/src/USERS_MASTER.hdbsynonym at runtime.
+  # ⚠ ACTION REQUIRED before deploy: replace <SERVICE_NAME> with the real service
+  # instance for hdi_bsx-org-apps-db (must be able to grant SELECT on USERS_MASTER,
+  # and be shared into this space). Deploy WILL FAIL until this exists.
+  # See db/external/README.md.
+  - name: bsx-org-apps-db
+    type: org.cloudfoundry.existing-service
+    parameters:
+      service-name: <SERVICE_NAME>   # TODO: real hdi_bsx-org-apps-db service instance
 
   # ── XSUAA (Authentication & Authorization) ────────────────────────────────
   - name: expense-management-xsuaa

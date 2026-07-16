@@ -1,15 +1,25 @@
 # Reusing the classic `USERS_MASTER` employee master (cross-container)
 
-**Status: STAGED — prepared, not deployed.** Nothing here is active yet. Local dev
-and the test suite are unchanged (they keep the seeded `EXP_EMPLOYEES` on SQLite).
-Activating this requires a **grantor DB user** and an **approved HANA deploy** — both
-gated.
+**Status: WIRED, not yet deployable.** The HDI synonym + grants are in `db/src/` and
+the `bsx-org-apps-db` resource is wired in `mta.yaml`, but the deploy will FAIL until
+(a) the real `service-name` is filled in `mta.yaml` and (b) a **grantor** can grant
+`SELECT` on `USERS_MASTER` to this container. Prepared on branch `feat/users-master`;
+keep it off any deployed branch until (a)+(b) are ready. Dev/test are unaffected
+(they use a local seeded stand-in — see below).
 
-## Goal
-Read employee identity from the existing **`USERS_MASTER`** table that lives in a
-**different HDI container** (`hdi_bsx-org-apps-db`, runtime schema
-`DC573873CB504DC1BAE855BD389B1072`) instead of maintaining our own seed — in
-**production only**. Dev/test stay on the seed (hybrid).
+## Design
+`USERS_MASTER` is the **sole** employee master for the app (the old `EXP_EMPLOYEES`
+mirror was removed). One entity, `ext.UsersMaster` (`db/external/users-master.cds`,
+`@cds.persistence.exists` + `@cds.persistence.name: 'USERS_MASTER'`), is used everywhere:
+- **Production (HANA):** the cross-container synonym resolves `USERS_MASTER` to the
+  org container `hdi_bsx-org-apps-db` (runtime schema `DC573873CB504DC1BAE855BD389B1072`).
+  `exists` means the deployer never issues CREATE TABLE, so it binds to the synonym.
+- **Dev/test (SQLite):** the external table doesn't exist, so `db/init.js` creates a
+  local stand-in and seeds it. NOTE: SQLite ignores `@cds.persistence.name`, so the
+  physical table is `ext_UsersMaster` — that's the name `init.js` creates.
+- **Claim link:** `CLAIMS.employee : Association to ext.UsersMaster`; `employee_ID`
+  stores `USERS_MASTER.ID` (BIGINT). CAP emits no cross-container FK constraint (fine
+  — joins resolve through the synonym in prod / the local table in dev).
 
 ## Field mapping (USERS_MASTER → app identity)
 | App identity | USERS_MASTER | Notes |
@@ -19,62 +29,44 @@ Read employee identity from the existing **`USERS_MASTER`** table that lives in 
 | `employeeNumber` | `EmpID` | |
 | `site` | `BaseSiteKey` | UKOSW / INAUG / PLRMT / Apphaus |
 | `active` | `IsActive` | `'N'` → inactive |
-| (external id) | `ID` | BIGINT — **not** our UUID FK |
+| (id / FK value) | `ID` | BIGINT — stored as `CLAIMS.employee_ID` |
 
-`department`, `country`, `financeEmail`, and our `role` do **not** exist in
-`USERS_MASTER`. The **Spend-by-team** dashboard card was removed because it depended
-on `department`.
+`department`, `country`, `financeEmail`, and `role` do **not** exist in `USERS_MASTER`.
+Country is derived from `BaseSiteKey` (UK* → UK, IN* → IN).
 
-## Files in this change
-- `db/external/users-master.cds` — external entity `ext.UsersMaster`
-  (`@cds.persistence.exists`, `@cds.persistence.name: 'USERS_MASTER'`). Inert on
-  SQLite (never queried in dev/test).
-- `db/external/USERS_MASTER.hdbsynonym` — synonym → the external table. **Staged here
-  (NOT in `db/src/`)** so the HDI deployer does not process it while USERS_MASTER is
-  inactive — otherwise deploy fails with "service bsx-org-apps-db not found". Move it
-  into `db/src/` only when activating (step 3 below).
-- `db/external/USERS_MASTER.hdbgrants` — cross-container SELECT grant. Same staging rule
-  as the synonym: keep out of `db/src/` until the `bsx-org-apps-db` container is bound.
-- `srv/lib/employee-source.js` — the single cut-over point. `findByEmail(email)`
-  returns normalised identity; reads `ext.UsersMaster` when
-  `EMPLOYEE_SOURCE=USERS_MASTER`, else `EXP_EMPLOYEES`.
-- `mta.yaml` — a commented, staged `bsx-org-apps-db` resource.
+## Files
+- `db/external/users-master.cds` — the `ext.UsersMaster` entity (the model; stays here).
+- `db/src/USERS_MASTER.hdbsynonym` — synonym → the external table (in the deploy path).
+- `db/src/USERS_MASTER.hdbgrants` — cross-container `SELECT` grant for our container's
+  `object_owner` (deploy-time) + `application_user` (runtime), via the `bsx-org-apps-db`
+  grantor service.
+- `mta.yaml` — `bsx-org-apps-db` resource (`existing-service`) wired into the `requires:`
+  of both `expense-management-srv` and `expense-management-db-deployer`.
+- `db/init.js` — dev/test-only local stand-in create + seed.
 
-## Activation steps (when the grant + deploy are approved)
-1. **Confirm the grantor.** The technical user of `hdi_bsx-org-apps-db` (or a DBA)
-   must own `USERS_MASTER` or hold `SELECT ... WITH GRANT OPTION`.
-2. **Move the HDI files into the deploy path + fill the placeholders.** Move
-   `db/external/USERS_MASTER.hdb{synonym,grants}` into `db/src/` so the HDI deployer
-   picks them up, then set the real provider schema (or switch to a granted **role**
-   instead of the schema GUID, which is more portable across environments).
-3. **Wire the resource.** In `mta.yaml`, uncomment `bsx-org-apps-db`, set its real
-   `service-name`, and add it to the `requires:` of both `expense-management-srv`
-   and `expense-management-db-deployer`.
-4. **Deploy** (gated): `mbt build && cf deploy mta_archives/*.mtar`.
-5. **Verify read access** in the HDI container:
+## Activation (gated — needs a DBA / BTP admin)
+1. **Provide the grantor.** A service bound as `bsx-org-apps-db` whose user holds
+   `SELECT … WITH GRANT OPTION` on `USERS_MASTER` (so the HDI deployer can apply
+   `USERS_MASTER.hdbgrants`). Typically a service instance / SBSS on the org container.
+2. **Set the service name.** Replace `<SERVICE_NAME>` in `mta.yaml` (`bsx-org-apps-db`
+   → `service-name`) with the real instance, and ensure it is **shared into this space**.
+3. **Deploy** (gated): `mbt build && cf deploy mta_archives/*.mtar`. This also drops the
+   old `EXP_EMPLOYEES` table (auto_undeploy) — expected.
+4. **Verify** read access in our container:
    ```sql
    SELECT COUNT(*) FROM "USERS_MASTER";   -- via the deployed synonym
    ```
-6. **Flip the source:** set `EMPLOYEE_SOURCE=USERS_MASTER` on `expense-management-srv`
-   (`cf set-env expense-management-srv EMPLOYEE_SOURCE USERS_MASTER && cf restage …`).
+   Then open the app: the whoami greeting + claim `employeeName` resolve from the live
+   table. There is **no runtime flag** to flip — the app reads `USERS_MASTER` as soon
+   as the synonym + grant are in place.
 
-### DBA alternative to `.hdbgrants` (manual object grant)
+### DBA alternative to the grantor service (manual object grant)
+Fragile (HDI can recreate the technical users on redeploy), but quick:
 ```sql
 -- Run as the USERS_MASTER owner in hdi_bsx-org-apps-db.
 GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
-  TO "<expense-management-db#OO>";   -- object owner of our container
+  TO "<expense-management-db#OO>" WITH GRANT OPTION;
 GRANT SELECT ON "DC573873CB504DC1BAE855BD389B1072"."USERS_MASTER"
   TO "<expense-management-db runtime user>";
 ```
-
-## Deferred (deploy-time) decision — the claim↔employee FK
-`claim.employee` is a **UUID FK to `EXP_EMPLOYEES`**; `USERS_MASTER.ID` is a BIGINT in
-a different identity space. So the resolver is **identity/display only** and is **not**
-wired into the claim write-path. Before production cut-over, pick one:
-- **(A) Mirror** — keep a thin `EXP_EMPLOYEES` row per active user, synced from
-  `USERS_MASTER` by email (keeps the existing FK untouched); **or**
-- **(B) Denormalise** — store the employee email/identity on the claim and drop the
-  association, resolving display data from `USERS_MASTER` at read time.
-
-Recommendation: **(A) Mirror** — smallest blast radius, keeps every existing query and
-the association working.
+Prefer the grantor service (`.hdbgrants`) for anything long-lived.
