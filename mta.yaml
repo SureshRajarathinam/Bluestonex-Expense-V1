@@ -59,6 +59,11 @@ modules:
     parameters:
       buildpack: nodejs_buildpack
     properties:
+      # Two HDI containers are bound (our own + the org grantor), so the HDI
+      # deployer needs to be told which one to deploy INTO — otherwise it fails
+      # with "More than one HDI service found ... TARGET_CONTAINER". This is OUR
+      # container (the grantor is read-only, reached via the synonym/grants).
+      TARGET_CONTAINER: expense-management-db
       # Let HDI undeploy container artifacts that no longer exist in the source.
       # Needed because EXP-EMPLOYEES.csv/.hdbtabledata were removed (Model B: the
       # EXP_EMPLOYEES table now deploys empty and is loaded manually in HANA).
