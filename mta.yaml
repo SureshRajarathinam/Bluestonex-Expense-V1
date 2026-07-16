@@ -195,6 +195,8 @@ resources:
     type: org.cloudfoundry.existing-service
     parameters:
       service-name: hdi_bsx-org-apps-db   # org container holding USERS_MASTER (schema DC573…)
+    properties:
+      the-service-name: ${service-name}   # exposes the instance name (owner's role-consumption pattern)
 
   # ── XSUAA (Authentication & Authorization) ────────────────────────────────
   - name: expense-management-xsuaa

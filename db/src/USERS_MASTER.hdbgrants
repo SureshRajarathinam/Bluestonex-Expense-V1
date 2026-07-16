@@ -1,0 +1,10 @@
+{
+  "hdi_bsx-org-apps-db": {
+    "object_owner": {
+      "container_roles": ["ExpenseAppRole"]
+    },
+    "application_user": {
+      "container_roles": ["ExpenseAppRole"]
+    }
+  }
+}
