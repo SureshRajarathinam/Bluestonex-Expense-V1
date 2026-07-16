@@ -1,0 +1,14 @@
+VIEW EXT_USERSMASTER AS SELECT
+  "ID"          AS ID,
+  "UserID"      AS USERID,
+  "OrgID"       AS ORGID,
+  "FName"       AS FNAME,
+  "LName"       AS LNAME,
+  "Email"       AS EMAIL,
+  "Mobile"      AS MOBILE,
+  "EmpID"       AS EMPID,
+  "UserTypeKey" AS USERTYPEKEY,
+  "BaseSiteKey" AS BASESITEKEY,
+  "ManagerID"   AS MANAGERID,
+  "IsActive"    AS ISACTIVE
+FROM "USERS_MASTER_SYN"

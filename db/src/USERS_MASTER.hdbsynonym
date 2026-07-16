@@ -1,5 +1,5 @@
 {
-  "EXT_USERSMASTER": {
+  "USERS_MASTER_SYN": {
     "target": {
       "object": "USERS_MASTER",
       "schema": "DC573873CB504DC1BAE855BD389B1072"
