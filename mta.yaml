@@ -189,7 +189,7 @@ resources:
   - name: bsx-org-apps-db
     type: org.cloudfoundry.existing-service
     parameters:
-      service-name: <SERVICE_NAME>   # TODO: real hdi_bsx-org-apps-db service instance
+      service-name: hdi_bsx-org-apps-db   # org container holding USERS_MASTER (schema DC573…)
 
   # ── XSUAA (Authentication & Authorization) ────────────────────────────────
   - name: expense-management-xsuaa
