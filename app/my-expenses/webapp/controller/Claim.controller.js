@@ -109,11 +109,6 @@ sap.ui.define([
       oUi.setProperty("/live/total", r2(itemsGross + miles));
     },
 
-    _predicateOf: function (sPath) {
-      var m = /\(([^)]*)\)/.exec(sPath);
-      return m ? m[1] : "";
-    },
-
     _onMatched: function (oEvent) {
       var sPredicate = decodeURIComponent(oEvent.getParameter("arguments").key);
       this._bindClaim(sPredicate);
@@ -128,7 +123,12 @@ sap.ui.define([
       var that = this;
       this.getView().bindElement({
         path: "/MyClaims(" + sPredicate + ")",
-        parameters: { $expand: "items,mileageClaims" },
+        // status + rejectionReason are read imperatively in dataReceived (below), so
+        // they must be in $select — otherwise autoExpandSelect omits them (they are
+        // bound in no control) and getProperty('status') logs "Failed to drill-down
+        // into status" and returns undefined (breaking the Returned-claim banner and
+        // the canSubmit/canEdit gate).
+        parameters: { $expand: "items,mileageClaims", $select: "status,rejectionReason" },
         events: {
           dataReceived: function () {
             var oCtx = that.getView().getBindingContext();

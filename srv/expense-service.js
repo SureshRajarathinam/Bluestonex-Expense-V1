@@ -218,17 +218,21 @@ module.exports = class ExpenseService extends cds.ApplicationService {
         policyFlags: (flags && flags.length) ? flags.join(' • ') : null
       });
 
-      const employee = await resolveEmployee(req);
-      const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
-      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
-      // The notification goes to the first-level approver — resolve their full name
-      // so the email greeting and the client's "email sent to X" toast can name them.
-      const approverName = await fullNameForEmail(wf?.firstApprover);
-      // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
-      // slow/unreachable SMTP would otherwise block the awaited submit long enough for
-      // the approuter to 504. notifyClaimSubmitted is best-effort and self-logs.
-      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, { fullName: employeeName || req.user.id }, wf?.firstApprover, approverName)
-        .catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
+      // Notify the first-level approver — resolved + sent FULLY off the response
+      // critical path. The WORKFLOW read, the two employee-master lookups (approver
+      // + claimant name) and the email must NEVER add latency to submit nor risk a
+      // gateway 504; the client already shows the "email sent to X" toast from its
+      // own pre-resolved ui>/approverName, so the server needs these only for the
+      // email body. Detaching them means submit returns right after the DB write.
+      const claimForMail = { ...claim, status: 'Submitted' };
+      const loginId = req.user.id;
+      Promise.resolve().then(async () => {
+        const wf = await SELECT.one.from(WORKFLOW).where({ country: claimForMail.country });
+        const employee = await resolveEmployee(req);
+        const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
+        const approverName = await fullNameForEmail(wf?.firstApprover);
+        await notification.notifyClaimSubmitted(claimForMail, { fullName: employeeName || loginId }, wf?.firstApprover, approverName);
+      }).catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
       const sym = claim.currency === 'INR' ? '₹' : '£';
       // Distinguish a fresh submission from a rework resubmission so the History
       // timeline (and resubmitCount) can tell the two apart.
