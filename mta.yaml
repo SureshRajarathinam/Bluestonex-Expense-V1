@@ -25,8 +25,12 @@ modules:
     path: gen/srv
     parameters:
       buildpack: nodejs_buildpack
-      memory: 256M
-      disk-quota: 512M
+      # 256M was too tight: the CAP runtime + HANA driver + draft activation +
+      # nodemailer can briefly exceed it during submit, OOM-killing the container
+      # mid-request (browser sees "communication failure") and forcing a slow
+      # restart. 1G gives comfortable headroom.
+      memory: 1024M
+      disk-quota: 1024M
     build-parameters:
       builder: npm
     properties:
