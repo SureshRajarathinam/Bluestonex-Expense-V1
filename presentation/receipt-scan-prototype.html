@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt Scan — Desktop vs Mobile Prototype (field-aligned)</title>
+<style>
+  :root{
+    --blue:#0070f2; --blue-ink:#0057c2; --blue-deep:#00347a;
+    --ink:#16202c; --soft:#5a6b7d; --mut:#8595a6;
+    --line:#e6ebf2; --wash:#e9f2fe; --bg:#dbe3ee;
+    --amber:#c2610a; --amber-w:#fbeede; --green:#0f7d3c; --green-w:#e5f5ec;
+    --violet:#5b4b8a; --violet-w:#efeaf9;
+    --font:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --card-sh:0 1px 3px rgba(16,30,50,.08),0 1px 2px rgba(16,30,50,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:26px 18px 60px}
+
+  .head{max-width:1280px;margin:0 auto 22px;text-align:center}
+  .head h1{font-size:20px;font-weight:800;color:var(--blue-ink);letter-spacing:-.01em}
+  .head p{font-size:13.5px;color:var(--soft);margin-top:6px;max-width:780px;margin-inline:auto;line-height:1.5}
+  .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .badge{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--soft)}
+  .badge b{color:var(--blue-ink)}
+
+  .stage{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr auto 372px;gap:24px;align-items:start}
+  @media(max-width:1160px){.stage{grid-template-columns:1fr;justify-items:center}.connector{transform:rotate(90deg);margin:4px 0}}
+
+  .panel{width:100%}
+  .panel .cap{display:flex;align-items:center;gap:9px;margin-bottom:12px;justify-content:center}
+  .panel .cap .ico{font-size:17px}
+  .panel .cap .t{font-size:14px;font-weight:800;color:var(--ink)}
+  .panel .cap .role{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
+  .role.emp{background:var(--wash);color:var(--blue-ink)}
+  .role.desk{background:#eef1f6;color:var(--soft)}
+  .frozen{font-size:10.5px;color:var(--mut);text-align:center;margin-top:6px}
+
+  /* ===== DESKTOP FRAME (unchanged design — only columns aligned to real app) ===== */
+  .desktop{background:#fff;border-radius:12px;box-shadow:0 18px 44px rgba(16,30,50,.22);overflow:hidden;border:1px solid #cfd8e3}
+  .winbar{background:#eef2f7;border-bottom:1px solid var(--line);padding:9px 12px;display:flex;align-items:center;gap:7px}
+  .dotr{width:11px;height:11px;border-radius:50%}
+  .dotr.r{background:#ff5f57}.dotr.y{background:#febc2e}.dotr.g{background:#28c840}
+  .url{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:7px;font-size:11px;color:var(--mut);padding:4px 12px;flex:1;max-width:420px}
+  .toolpage{display:flex;height:548px}
+  .side{width:60px;background:var(--blue-deep);display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:6px;flex-shrink:0}
+  .side .navi{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;color:#bcd4f5;font-size:18px;cursor:pointer}
+  .side .navi.on{background:rgba(255,255,255,.16);color:#fff}
+  .maincol{flex:1;display:flex;flex-direction:column;min-width:0}
+  .dhdr{background:var(--blue-ink);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
+  .dhdr .av{margin-left:auto;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--blue-ink);display:grid;place-items:center;font-size:11px;font-weight:800}
+  .dbody{flex:1;overflow:auto;padding:18px 20px;background:#f4f7fb}
+  .dscreen{display:none}.dscreen.on{display:block}
+
+  .pgtitle{font-size:17px;font-weight:800;margin-bottom:2px}
+  .pgsub{font-size:12.5px;color:var(--soft);margin-bottom:14px}
+  table.claims{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--card-sh)}
+  table.claims th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:700}
+  table.claims td{padding:12px 14px;border-bottom:1px solid #f0f4f9;font-size:13px}
+  table.claims tr:last-child td{border-bottom:0}
+  table.claims tr.clickable{cursor:pointer}
+  table.claims tr.clickable:hover{background:var(--wash)}
+  .newflag{font-size:10px;font-weight:800;color:var(--blue-ink);background:var(--wash);padding:1px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+
+  .backrow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--blue-ink);font-weight:700;cursor:pointer;margin-bottom:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+  .field{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+  .field .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}
+  .field .v{font-size:13.5px;font-weight:600;margin-top:3px}
+  .sect{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:800;margin:16px 0 8px}
+  .tblscroll{overflow-x:auto;border-radius:10px;box-shadow:var(--card-sh)}
+  table.items{width:100%;border-collapse:collapse;background:#fff;min-width:640px}
+  table.items th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-weight:700;white-space:nowrap}
+  table.items td{padding:9px 10px;border-bottom:1px solid #f0f4f9;font-size:12px;white-space:nowrap}
+  table.items td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.items tr:last-child td{border-bottom:0}
+  .totbar{display:flex;justify-content:flex-end;gap:24px;padding:12px 2px;font-size:13px}
+  .totbar .lab{color:var(--soft)}.totbar b{font-variant-numeric:tabular-nums}
+  .desk-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .btn{border:0;border-radius:9px;padding:11px 20px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+  .btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--blue-ink)}
+  .btn.pri{background:var(--blue);color:#fff}
+  .attn{background:var(--green-w);color:var(--green);font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;display:inline-flex;gap:7px;align-items:center;margin-bottom:12px}
+
+  /* ===== CONNECTOR ===== */
+  .connector{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--blue-ink);min-width:60px}
+  .connector .arrow{font-size:30px;line-height:1}
+  .connector .lbl{font-size:11px;font-weight:800;text-align:center;line-height:1.35;color:var(--soft)}
+  .connector .lbl b{color:var(--blue-ink)}
+
+  /* ===== PHONE FRAME (redesigned — creative, card-based, ALL desktop fields) ===== */
+  .phonewrap{display:flex;justify-content:center}
+  .phone{width:340px;height:706px;background:#0b1220;border-radius:42px;padding:12px;box-shadow:0 20px 50px rgba(16,30,50,.32);position:relative}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:124px;height:22px;background:#0b1220;border-radius:0 0 16px 16px;z-index:6}
+  .screen-wrap{width:100%;height:100%;background:#f4f7fb;border-radius:32px;overflow:hidden;position:relative}
+  .pscreen{position:absolute;inset:0;display:none;flex-direction:column}
+  .pscreen.on{display:flex}
+
+  /* gradient app header — the "creative" lift, same brand blues */
+  .pbar{background:linear-gradient(135deg,var(--blue-deep),var(--blue-ink) 60%,var(--blue));color:#fff;padding:16px 16px 14px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
+  .pbar .av{margin-left:auto;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--blue-ink);display:grid;place-items:center;font-size:11px;font-weight:800}
+  .pbar.slim{padding:14px 16px}
+  .pbody{flex:1;overflow:auto;padding:14px;background:#eef2f8}
+
+  .greet{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--ink)}
+  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:700;margin:10px 2px 7px}
+  .mclaim{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;font-size:13px;box-shadow:var(--card-sh)}
+  .mclaim b{font-weight:700}
+  .tag{font-size:10.5px;padding:2px 8px;border-radius:99px;font-weight:700}
+  .tag.d{background:#eef1f6;color:var(--soft)} .tag.a{background:var(--green);color:#fff}
+  .pfoot{padding:0 14px 14px;background:#eef2f8}
+  .fab{width:100%;background:var(--blue);color:#fff;border:0;border-radius:15px;padding:15px;font:inherit;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 18px rgba(0,112,242,.28)}
+  .fab.ghost{background:#fff;color:var(--blue-ink);border:1.5px solid var(--line);font-weight:700;margin-top:9px;box-shadow:none}
+
+  .cam{flex:1;background:#0b0f16;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative}
+  .camtop{background:#0b0f16;color:#fff;padding:14px 16px;font-size:14px;font-weight:700}
+  .vf{width:206px;height:270px;border:2px dashed #4a6b9c;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:72px;background:#141b26}
+  .camhint{position:absolute;top:14px;color:#cfe0f2;font-size:12px}
+  .shutter{width:62px;height:62px;border-radius:50%;background:#fff;border:5px solid #9fb0c4;margin-top:20px;cursor:pointer}
+  .camopts{margin-top:12px;font-size:12px;color:#9fb0c4}
+
+  .sheet{position:absolute;inset:0;background:rgba(11,18,32,.5);display:none;align-items:flex-end;z-index:8}
+  .sheet.on{display:flex}
+  .sheet-inner{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:10px 12px 18px}
+  .sheet-h{font-size:12px;color:var(--mut);font-weight:700;text-align:center;padding:8px 0 6px}
+  .sheet-b{display:flex;width:100%;background:#f4f7fb;border:1px solid var(--line);border-radius:13px;padding:15px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;margin-top:8px;align-items:center;gap:10px;justify-content:center}
+  .sheet-cancel{background:none;border:0;color:var(--soft);font:inherit;font-weight:700;width:100%;padding:12px;cursor:pointer;margin-top:6px}
+
+  .proc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#eef2f8;text-align:center;padding:24px}
+  .spin{width:56px;height:56px;border-radius:50%;border:5px solid #dbe4f0;border-top-color:var(--blue);animation:sp .9s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .thumb{width:68px;height:90px;background:#fff;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;font-size:32px;box-shadow:var(--card-sh)}
+  .procsteps{font-size:11.5px;color:var(--mut);line-height:1.9;text-align:left}
+  .procsteps .ok{color:var(--green);font-weight:700}
+
+  /* ---- mobile DRAFT: card-per-section, every desktop field present ---- */
+  .flag{background:var(--amber-w);color:var(--amber);font-size:11.5px;font-weight:700;padding:9px 12px;border-radius:11px;margin-bottom:12px;display:flex;gap:7px;align-items:flex-start;line-height:1.35}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-bottom:11px;box-shadow:var(--card-sh)}
+  .mcard-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .mcard-h .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px;background:var(--wash)}
+  .mcard-h .ti{font-size:12.5px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+  .mcard-h .ct{margin-left:auto;font-size:10.5px;font-weight:700;color:var(--mut)}
+  .drow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1f6}
+  .drow:last-child{border-bottom:0}
+  .drow .k{font-size:11.5px;color:var(--soft);font-weight:600;flex-shrink:0}
+  .drow .v{font-size:13px;font-weight:700;text-align:right;color:var(--ink)}
+  .drow .v .prov{display:block;font-size:9px;font-weight:700;letter-spacing:.03em;margin-top:1px}
+  .prov.scan{color:var(--blue-ink)} .prov.dir{color:var(--violet)} .prov.calc{color:var(--green)} .prov.auto{color:var(--mut)}
+  .money{font-variant-numeric:tabular-nums}
+  .totstrip{display:flex;justify-content:space-between;background:linear-gradient(135deg,var(--blue-ink),var(--blue));color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:11px}
+  .totstrip .tc{text-align:center;flex:1}
+  .totstrip .tc .lab{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}
+  .totstrip .tc .num{font-size:14px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+  .totstrip .tc.big .num{font-size:16px}
+  .divv{width:1px;background:rgba(255,255,255,.25);margin:2px 0}
+  .attach{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--green);font-weight:700;background:var(--green-w);padding:5px 9px;border-radius:8px;margin-top:8px}
+  .emptym{font-size:12px;color:var(--mut);padding:6px 2px}
+  .addln{font-size:11.5px;color:var(--blue-ink);font-weight:700;margin-top:4px}
+
+  .prow{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:#fff}
+  .prow button{flex:1;border-radius:13px;padding:14px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;border:0}
+  .prow .edit{background:#fff;color:var(--blue-ink);border:1.5px solid var(--line)}
+  .prow .draft{background:var(--blue);color:#fff;box-shadow:0 8px 18px rgba(0,112,242,.28)}
+  .noapprove{font-size:10.5px;color:var(--mut);text-align:center;padding:8px 14px 0;line-height:1.4;background:#fff}
+  .noapprove b{color:var(--amber)}
+
+  .toast{position:absolute;left:14px;right:14px;bottom:14px;background:#0b1220;color:#fff;border-radius:13px;padding:13px 15px;font-size:13px;display:none;align-items:center;gap:8px;z-index:9}
+  .toast.on{display:flex}
+
+  .ovl{position:absolute;inset:0;background:rgba(11,18,32,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:10}
+  .ovl.on{display:flex}
+  .dlg{background:#fff;border-radius:14px;padding:22px;width:340px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  .dlg h3{font-size:16px;margin-bottom:8px}
+  .dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}
+  .dlg .who{font-weight:800;color:var(--blue-ink);font-size:14px}
+  .dlg .btns{display:flex;gap:10px;margin-top:18px}
+  .dlg button{flex:1;border-radius:10px;padding:11px;font:inherit;font-weight:700;cursor:pointer}
+  .dlg .c{background:#eef1f6;border:0;color:var(--soft)} .dlg .k{background:var(--blue);border:0;color:#fff}
+
+  /* ===== FIELD-MAP / HANDOFF SPEC ===== */
+  .spec{max-width:1280px;margin:30px auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:var(--card-sh)}
+  .spec h3{font-size:14px;font-weight:800;color:var(--blue-ink);margin-bottom:4px}
+  .spec .note{font-size:12px;color:var(--soft);margin-bottom:14px;line-height:1.5}
+  .maptbl{width:100%;border-collapse:collapse;font-size:12px}
+  .maptbl th{text-align:left;padding:8px 10px;background:#f4f7fb;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;font-size:10.5px;border-bottom:1px solid var(--line);position:sticky;top:0}
+  .maptbl td{padding:8px 10px;border-bottom:1px solid #f0f4f9;vertical-align:top}
+  .maptbl td.g{color:var(--mut)}
+  .maptbl code{background:#eef2f8;padding:1px 6px;border-radius:5px;font-size:11px;color:var(--blue-ink)}
+  .maptbl .grp{background:#eef2f8;font-weight:800;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .pill{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:99px}
+  .pill.scan{background:var(--wash);color:var(--blue-ink)} .pill.dir{background:var(--violet-w);color:var(--violet)}
+  .pill.calc{background:var(--green-w);color:var(--green)} .pill.auto{background:#eef1f6;color:var(--soft)}
+  .rules{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px 26px}
+  @media(max-width:720px){.rules{grid-template-columns:1fr}.maptbl{font-size:11px}}
+  .rules .li{font-size:12px;color:var(--soft);display:flex;gap:8px;line-height:1.45}
+  .rules .li b{color:var(--ink)}
+  .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--blue-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
+  .disclaimer{text-align:center;font-size:11.5px;color:var(--mut);margin-top:10px}
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <h1>📷 Receipt Scan — Desktop vs Mobile <span style="color:var(--mut);font-weight:700">(field-aligned)</span></h1>
+    <p>Desktop stays exactly as today. The <b>mobile draft carries every desktop field with the same labels</b>, so when the
+       claim is reopened on desktop for <b>Apply for Approval</b>, each value lands in its matching field. Fake data, no backend.</p>
+    <div class="badges">
+      <span class="badge">🖥️ Desktop <b>unchanged</b></span>
+      <span class="badge">📱 Mobile <b>redesigned</b>, card-based</span>
+      <span class="badge">🔗 <b>1:1 field mapping</b></span>
+      <span class="badge">📱 Scan &amp; Draft only · 🖥️ Submit only</span>
+    </div>
+  </div>
+
+  <div class="stage">
+
+    <!-- ================= DESKTOP PANEL (design frozen; columns = real app) ================= -->
+    <div class="panel">
+      <div class="cap"><span class="ico">🖥️</span><span class="t">Desktop ("Fiori") web app</span><span class="role desk">review &amp; submit</span></div>
+      <div class="desktop">
+        <div class="winbar">
+          <span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span>
+          <span class="url">bsx-tdd…/site/MyBSX &nbsp;›&nbsp; My Expenses</span>
+        </div>
+        <div class="toolpage">
+          <div class="side">
+            <div class="navi on" title="My Expenses">🧾</div>
+            <div class="navi" title="Dashboard">📊</div>
+            <div class="navi" title="Settings">⚙️</div>
+          </div>
+          <div class="maincol">
+            <div class="dhdr">My Expenses <span class="av">SR</span></div>
+            <div class="dbody">
+
+              <!-- D1: LIST -->
+              <div class="dscreen on" id="d1">
+                <div class="pgtitle">My Claims</div>
+                <div class="pgsub">Welcome back, Suresh. Your phone draft is waiting to be reviewed &amp; submitted.</div>
+                <table class="claims">
+                  <thead><tr><th>Claim</th><th>Claim Period</th><th>Country</th><th>Total Amount</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr class="clickable" onclick="dgo('d2')">
+                      <td><b>INEXP12</b><span class="newflag">from phone</span></td>
+                      <td>Jan 2026</td><td>India 🇮🇳</td><td>₹10,010.00</td>
+                      <td><span class="tag d">Draft</span></td>
+                    </tr>
+                    <tr><td><b>UKEXP08</b></td><td>Dec 2025</td><td>UK 🇬🇧</td><td>£180.00</td><td><span class="tag a">Approved</span></td></tr>
+                  </tbody>
+                </table>
+                <div class="disclaimer" style="text-align:left;margin-top:12px">↑ <b>INEXP12</b> was scanned &amp; drafted on the phone (right). Click it to review &amp; submit.</div>
+              </div>
+
+              <!-- D2: DETAIL (real header fields + real item/mileage columns) -->
+              <div class="dscreen" id="d2">
+                <div class="backrow" onclick="dgo('d1')">← My Claims</div>
+                <div class="pgtitle">Expense Claim — INEXP12</div>
+                <div class="pgsub">Draft created on mobile · every field arrived pre-filled.</div>
+                <div class="attn">✓ Country, Employee &amp; tax resolved by the same engine used on mobile.</div>
+                <div class="grid3">
+                  <div class="field"><div class="k">Country</div><div class="v">India</div></div>
+                  <div class="field"><div class="k">Claim Period</div><div class="v">Jan 2026</div></div>
+                  <div class="field"><div class="k">Site Currency</div><div class="v">INR (₹)</div></div>
+                  <div class="field"><div class="k">Employee</div><div class="v">Suresh Rajarathinam</div></div>
+                  <div class="field"><div class="k">Employee Number</div><div class="v">100234</div></div>
+                  <div class="field"><div class="k">Payroll Area</div><div class="v">IN01</div></div>
+                </div>
+                <div class="sect">Expense Items</div>
+                <div class="tblscroll">
+                  <table class="items">
+                    <thead><tr>
+                      <th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th>
+                      <th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th>
+                    </tr></thead>
+                    <tbody><tr>
+                      <td>16 Jan 2026</td><td>Taxi / Cab</td><td>Bengaluru</td><td>Client visit</td><td>GST Standard</td>
+                      <td class="num">₹10,010.00</td><td class="num">₹8,483.05</td><td class="num">₹1,526.95</td><td>📎 receipt.jpg</td>
+                    </tr></tbody>
+                  </table>
+                </div>
+                <div class="sect">Mileage Claims</div>
+                <div class="tblscroll">
+                  <table class="items">
+                    <thead><tr><th>Trip Date</th><th>Destination</th><th>Reason</th><th>Engine Type</th><th style="text-align:right">Miles</th><th style="text-align:right">Rate / mile</th></tr></thead>
+                    <tbody><tr><td colspan="6" style="color:var(--mut);white-space:normal">No mileage on this claim.</td></tr></tbody>
+                  </table>
+                </div>
+                <div class="totbar"><span class="lab">Net</span><b>₹8,483.05</b><span class="lab">Tax</span><b>₹1,526.95</b><span class="lab">Total</span><b>₹10,010.00</b></div>
+                <div class="desk-actions">
+                  <button class="btn sec">Edit</button>
+                  <button class="btn sec">Save Draft</button>
+                  <button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        <div class="ovl" id="dovl">
+          <div class="dlg">
+            <h3>Send for approval?</h3>
+            <p>This claim will be routed to</p>
+            <p class="who">Suresh R. — India · Level 1</p>
+            <div class="btns"><button class="c" onclick="dovl(false)">Cancel</button><button class="k" onclick="dfinish()">Confirm</button></div>
+          </div>
+        </div>
+        <div class="toast" id="dtoast" style="left:20px;right:20px;bottom:20px">✓ Submitted for approval — approver notified by email</div>
+      </div>
+      <div class="frozen">Design frozen — only the visible columns/labels are shown to match the live app 1:1.</div>
+    </div>
+
+    <!-- ================= CONNECTOR ================= -->
+    <div class="connector">
+      <div class="arrow">⇆</div>
+      <div class="lbl">SAME<br><b>Draft</b><br>phone → desktop</div>
+    </div>
+
+    <!-- ================= PHONE PANEL (redesigned) ================= -->
+    <div class="panel">
+      <div class="cap"><span class="ico">📱</span><span class="t">Mobile (responsive)</span><span class="role emp">scan &amp; draft</span></div>
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="screen-wrap">
+
+            <!-- P1: LIST -->
+            <div class="pscreen on" id="p1">
+              <div class="pbar">☰ &nbsp;My Expenses <span class="av">SR</span></div>
+              <div class="pbody">
+                <div class="greet">Hi, Suresh 👋</div>
+                <div class="lbl">My Claims (1)</div>
+                <div class="mclaim"><span><b>UKEXP08</b><br><span style="color:var(--mut);font-size:11px">Dec 2025 · UK</span></span><span style="text-align:right">£180<br><span class="tag a">Approved</span></span></div>
+              </div>
+              <div class="pfoot">
+                <button class="fab" onclick="sheet(true)">📷 Scan receipt</button>
+                <button class="fab ghost" onclick="pgo('p4')">＋ New claim</button>
+              </div>
+              <div class="sheet" id="sheet">
+                <div class="sheet-inner">
+                  <div class="sheet-h">Add receipt</div>
+                  <button class="sheet-b" onclick="sheet(false);pgo('p2')">📸 &nbsp;Take a photo</button>
+                  <button class="sheet-b" onclick="sheet(false);pgo('p3')">🖼️ &nbsp;Choose from gallery</button>
+                  <button class="sheet-cancel" onclick="sheet(false)">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- P2: CAMERA -->
+            <div class="pscreen" id="p2">
+              <div class="camtop">← Scan receipt</div>
+              <div class="cam">
+                <div class="camhint">Aim at the receipt, then tap the shutter</div>
+                <div class="vf">🧾</div>
+                <div class="shutter" onclick="pgo('p3')"></div>
+                <div class="camopts">Gallery · Retake</div>
+              </div>
+            </div>
+
+            <!-- P3: PROCESSING -->
+            <div class="pscreen" id="p3">
+              <div class="pbar slim">Reading receipt…</div>
+              <div class="proc">
+                <div class="spin"></div>
+                <div style="font-weight:700;color:var(--ink)">Reading your receipt…</div>
+                <div class="thumb">🧾</div>
+                <div class="procsteps">
+                  <div class="ok">✓ Vendor &amp; date</div>
+                  <div class="ok">✓ Amount &amp; currency</div>
+                  <div>… deriving tax &amp; validating</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- P4: DRAFT (mobile) — card per section, ALL desktop fields -->
+            <div class="pscreen" id="p4">
+              <div class="pbar slim">← New Expense Claim</div>
+              <div class="pbody">
+                <div class="flag">⚠ Scanned draft — please double-check the amount &amp; date before you save.</div>
+
+                <!-- CLAIM HEADER card = desktop SimpleForm fields -->
+                <div class="mcard">
+                  <div class="mcard-h"><span class="ic">🧾</span><span class="ti">Claim</span></div>
+                  <div class="drow"><span class="k">Country</span><span class="v">India<span class="prov scan">DETECTED</span></span></div>
+                  <div class="drow"><span class="k">Claim Period</span><span class="v">Jan 2026<span class="prov scan">FROM RECEIPT</span></span></div>
+                  <div class="drow"><span class="k">Employee</span><span class="v">Suresh Rajarathinam<span class="prov dir">DIRECTORY</span></span></div>
+                  <div class="drow"><span class="k">Employee Number</span><span class="v">100234<span class="prov dir">DIRECTORY</span></span></div>
+                  <div class="drow"><span class="k">Site Currency</span><span class="v">INR (₹)<span class="prov auto">AUTO</span></span></div>
+                </div>
+
+                <!-- live totals = desktop Net / Tax / Total -->
+                <div class="totstrip">
+                  <div class="tc"><div class="lab">Net</div><div class="num money">₹8,483.05</div></div>
+                  <div class="divv"></div>
+                  <div class="tc"><div class="lab">Tax</div><div class="num money">₹1,526.95</div></div>
+                  <div class="divv"></div>
+                  <div class="tc big"><div class="lab">Total</div><div class="num money">₹10,010.00</div></div>
+                </div>
+
+                <!-- EXPENSE ITEMS card = every desktop item column -->
+                <div class="lbl">Expense Items</div>
+                <div class="mcard">
+                  <div class="mcard-h"><span class="ic">🚕</span><span class="ti">Item 1</span><span class="ct">1 of 1</span></div>
+                  <div class="drow"><span class="k">Date</span><span class="v">16 Jan 2026<span class="prov scan">SCANNED</span></span></div>
+                  <div class="drow"><span class="k">Type</span><span class="v">Taxi / Cab<span class="prov scan">SCANNED</span></span></div>
+                  <div class="drow"><span class="k">Destination</span><span class="v">Bengaluru<span class="prov scan">SCANNED</span></span></div>
+                  <div class="drow"><span class="k">Reason</span><span class="v">Client visit<span class="prov scan">SCANNED</span></span></div>
+                  <div class="drow"><span class="k">Tax Type</span><span class="v">GST Standard<span class="prov auto">AUTO</span></span></div>
+                  <div class="drow"><span class="k">Gross</span><span class="v money">₹10,010.00<span class="prov scan">SCANNED</span></span></div>
+                  <div class="drow"><span class="k">Net</span><span class="v money">₹8,483.05<span class="prov calc">CALCULATED</span></span></div>
+                  <div class="drow"><span class="k">Tax</span><span class="v money">₹1,526.95<span class="prov calc">CALCULATED</span></span></div>
+                  <div class="drow"><span class="k">Attachment</span><span class="v"><span class="attach">📎 receipt.jpg</span></span></div>
+                </div>
+
+                <!-- MILEAGE card = desktop mileage columns (empty state) -->
+                <div class="lbl">Mileage Claims</div>
+                <div class="mcard">
+                  <div class="mcard-h"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div>
+                  <div class="emptym">No mileage on this claim.</div>
+                  <div class="addln">＋ Add mileage (Trip Date · Destination · Reason · Engine Type · Miles · Rate / mile)</div>
+                </div>
+              </div>
+              <div class="prow">
+                <button class="edit" onclick="alert('(Prototype) every field is editable here — same rules as desktop')">Edit</button>
+                <button class="draft" onclick="pfinish()">💾 Save Draft</button>
+              </div>
+              <div class="noapprove"><b>No “Apply for Approval” on mobile.</b> Submit from the desktop app.</div>
+              <div class="toast" id="ptoast">✓ Draft saved — open it on desktop to submit</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="frozen">Tables become cards on mobile — <b>same fields, same labels, same order</b> as desktop.</div>
+    </div>
+
+  </div>
+
+  <!-- ================= FIELD-MAP / HANDOFF SPEC ================= -->
+  <div class="spec">
+    <h3>Field mapping &amp; handoff notes — mobile draft → desktop → backend</h3>
+    <p class="note">Every mobile field maps 1:1 to a desktop field and a backend column. The mobile view uses the
+      <b>identical labels</b> from <code>i18n.properties</code> so nothing is renamed. Provenance:
+      <span class="pill scan">SCANNED</span> from receipt (AI) ·
+      <span class="pill dir">DIRECTORY</span> from user_master ·
+      <span class="pill calc">CALCULATED</span> by the tax engine ·
+      <span class="pill auto">AUTO</span> derived by rule.</p>
+    <div class="tblscroll" style="box-shadow:none;border:1px solid var(--line)">
+      <table class="maptbl">
+        <thead><tr><th>Mobile field (card)</th><th>Desktop field</th><th>Backend column</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td class="grp" colspan="4">Claim (header)</td></tr>
+          <tr><td>Country</td><td>Country</td><td class="g"><code>CLAIMS.country</code></td><td><span class="pill scan">SCANNED</span> currency→country, editable</td></tr>
+          <tr><td>Claim Period</td><td>Claim Period</td><td class="g"><code>CLAIMS.claimPeriod</code></td><td><span class="pill scan">SCANNED</span> receipt date</td></tr>
+          <tr><td>Employee</td><td>Employee</td><td class="g"><code>CLAIMS.employeeName</code></td><td><span class="pill dir">DIRECTORY</span> whoami()</td></tr>
+          <tr><td>Employee Number</td><td>Employee Number</td><td class="g"><code>CLAIMS.employeeNumber</code></td><td><span class="pill dir">DIRECTORY</span></td></tr>
+          <tr><td>Site Currency</td><td>Site Currency</td><td class="g"><code>CLAIMS.currency</code></td><td><span class="pill auto">AUTO</span> from country</td></tr>
+          <tr><td>Net / Tax / Total</td><td>Net / Tax / Total</td><td class="g"><code>totalNet / totalVAT / totalGross</code></td><td><span class="pill calc">CALCULATED</span> before('SAVE')</td></tr>
+          <tr><td class="grp" colspan="4">Expense Items</td></tr>
+          <tr><td>Date</td><td>Date</td><td class="g"><code>ITEMS.expenseDate</code></td><td><span class="pill scan">SCANNED</span></td></tr>
+          <tr><td>Type</td><td>Type</td><td class="g"><code>ITEMS.expenseType</code></td><td><span class="pill scan">SCANNED</span>→map, else OTHER</td></tr>
+          <tr><td>Destination</td><td>Destination</td><td class="g"><code>ITEMS.destination</code></td><td><span class="pill scan">SCANNED</span></td></tr>
+          <tr><td>Reason</td><td>Reason</td><td class="g"><code>ITEMS.reasonForTrip</code></td><td><span class="pill scan">SCANNED</span> / user</td></tr>
+          <tr><td>Tax Type</td><td>Tax Type</td><td class="g"><code>ITEMS.vatType</code> (STD/ZR/EX)</td><td><span class="pill auto">AUTO</span> default STD</td></tr>
+          <tr><td>Gross</td><td>Gross</td><td class="g"><code>ITEMS.grossAmount</code></td><td><span class="pill scan">SCANNED</span></td></tr>
+          <tr><td>Net</td><td>Net</td><td class="g"><code>ITEMS.netAmount</code></td><td><span class="pill calc">CALCULATED</span> splitVAT</td></tr>
+          <tr><td>Tax</td><td>Tax</td><td class="g"><code>ITEMS.vatAmount</code></td><td><span class="pill calc">CALCULATED</span> splitVAT</td></tr>
+          <tr><td>Attachment</td><td>Attachment</td><td class="g"><code>ITEMS.receipt / receiptFileName</code></td><td>the scanned photo (media PUT)</td></tr>
+          <tr><td class="grp" colspan="4">Mileage Claims (phase 1: empty; add on either device)</td></tr>
+          <tr><td>Trip Date</td><td>Trip Date</td><td class="g"><code>MILEAGE.tripDate</code></td><td class="g">manual</td></tr>
+          <tr><td>Destination</td><td>Destination</td><td class="g"><code>MILEAGE.destination</code></td><td class="g">manual</td></tr>
+          <tr><td>Reason</td><td>Reason</td><td class="g"><code>MILEAGE.reasonForTrip</code></td><td class="g">manual</td></tr>
+          <tr><td>Engine Type</td><td>Engine Type</td><td class="g"><code>MILEAGE.engineType</code></td><td class="g">default Petrol</td></tr>
+          <tr><td>Miles</td><td>Miles</td><td class="g"><code>MILEAGE.milesCount</code></td><td class="g">manual</td></tr>
+          <tr><td>Rate / mile</td><td>Rate / mile</td><td class="g"><code>MILEAGE.ratePerMile</code></td><td class="g">Policy.mileageRate</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rules">
+      <div class="li"><span>1.</span><span><b>No new fields.</b> Mobile shows only fields that already exist on desktop — nothing is invented, so the draft opens cleanly on desktop.</span></div>
+      <div class="li"><span>2.</span><span><b>Same validation &amp; tax engine.</b> Net/Tax and all rules come from <code>calc.js</code> / <code>before('SAVE')</code> — mobile never computes money itself.</span></div>
+      <div class="li"><span>3.</span><span><b>Draft is one server record.</b> Mobile creates it via the normal draft-create flow; desktop reopens the same row — no export/import, no sync.</span></div>
+      <div class="li"><span>4.</span><span><b>Submit is desktop-only.</b> Mobile hides Apply-for-Approval; the identical <code>submitClaim</code> path runs on desktop.</span></div>
+    </div>
+    <button class="restart" onclick="resetAll()">↺ Restart both flows</button>
+    <div class="disclaimer">Prototype only — fake data, no backend or AI. For direction &amp; field-alignment sign-off before development.</div>
+  </div>
+
+<script>
+  function dgo(id){
+    ['d1','d2'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
+    document.getElementById('dovl').classList.remove('on');
+    document.getElementById('dtoast').classList.remove('on');
+  }
+  function dovl(on){document.getElementById('dovl').classList.toggle('on', on);}
+  function dfinish(){dovl(false);document.getElementById('dtoast').classList.add('on');}
+
+  function pgo(id){
+    ['p1','p2','p3','p4'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
+    document.getElementById('ptoast').classList.remove('on');
+    if(id==='p3'){ setTimeout(function(){ if(document.getElementById('p3').classList.contains('on')) pgo('p4'); }, 1900); }
+  }
+  function sheet(on){document.getElementById('sheet').classList.toggle('on', on);}
+  function pfinish(){
+    document.getElementById('ptoast').classList.add('on');
+    var c=document.querySelector('.connector .arrow'); if(c){c.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
+  }
+  function resetAll(){ dgo('d1'); pgo('p1'); sheet(false); }
+</script>
+</body>
+</html>
