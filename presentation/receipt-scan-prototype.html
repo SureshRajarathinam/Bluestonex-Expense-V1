@@ -3,190 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt Scan — 3 Mobile Concepts</title>
+<title>Receipt Scan — Premium Mobile + Desktop</title>
 <style>
   :root{
-    --blue:#0070f2; --blue-ink:#0057c2; --blue-deep:#00347a;
-    --ink:#16202c; --soft:#5a6b7d; --mut:#8595a6; --line:#e6ebf2; --wash:#e9f2fe; --bg:#dbe3ee;
-    --green:#0f7d3c; --green-w:#e5f5ec; --amber:#c2610a;
-    --violet:#6d5ef0; --violet-w:#eeecfe; --teal:#0ea5a5;
-    --cyan:#22d3ee; --paper:#fffdf7; --paperbg:#efe7d9; --paperink:#3a3327;
+    --blue:#0070f2; --blue-ink:#0057c2; --indigo:#5566f6; --peri:#7c8cff;
+    --grad1:#5b6ef5; --grad2:#3d8bff;
+    --ink:#1a2233; --soft:#69748c; --mut:#98a2b6; --line:#e9edf7; --wash:#eef2ff;
+    --bg:#eef1fb; --card:#ffffff;
+    --green:#0f9d58; --green-w:#e7f7ee; --amber:#d97706; --amber-w:#fdf1e0; --violet:#6d5ef0;
     --font:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
-    --mono:"SF Mono",ui-monospace,"Cascadia Mono","Consolas",monospace;
-    --sh:0 1px 3px rgba(16,30,50,.08),0 1px 2px rgba(16,30,50,.06);
+    --sh:0 12px 30px rgba(56,78,175,.12); --shsm:0 4px 14px rgba(56,78,175,.09);
+    --clay:0 6px 14px rgba(56,78,175,.16),inset 0 1px 1px rgba(255,255,255,.7);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:24px 16px 60px}
-  .head{max-width:1180px;margin:0 auto 16px;text-align:center}
+  .head{max-width:1200px;margin:0 auto 20px;text-align:center}
   .head h1{font-size:20px;font-weight:800;color:var(--blue-ink)}
   .head p{font-size:13px;color:var(--soft);margin-top:6px;max-width:760px;margin-inline:auto;line-height:1.5}
+  .head .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .head .badge{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--soft)}
+  .head .badge b{color:var(--blue-ink)}
 
-  /* selector */
-  .selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px auto 22px}
-  .selector button{border:1px solid var(--line);background:#fff;color:var(--soft);font:inherit;font-size:13px;font-weight:700;
-    padding:9px 16px;border-radius:99px;cursor:pointer;transition:all .15s}
-  .selector button.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 6px 14px rgba(0,112,242,.28)}
+  .stage{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr auto 380px;gap:24px;align-items:start}
+  @media(max-width:1160px){.stage{grid-template-columns:1fr;justify-items:center}.connector{transform:rotate(90deg);margin:4px 0}}
+  .panel{width:100%}
+  .panel .cap{display:flex;align-items:center;gap:9px;margin-bottom:12px;justify-content:center}
+  .panel .cap .ico{font-size:17px}.panel .cap .t{font-size:14px;font-weight:800}
+  .panel .cap .role{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
+  .role.emp{background:var(--wash);color:var(--indigo)} .role.desk{background:#eef1f6;color:var(--soft)}
+  .frozen{font-size:10.5px;color:var(--mut);text-align:center;margin-top:6px}
 
-  /* stage / concept panels */
-  .stage{max-width:1180px;margin:0 auto;display:flex;gap:22px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
-  .concept{width:340px;transition:opacity .2s}
-  body[data-view="a"] .concept:not(.cpt-a),
-  body[data-view="b"] .concept:not(.cpt-b),
-  body[data-view="c"] .concept:not(.cpt-c){display:none}
-  .concept .cap{text-align:center;margin-bottom:12px}
-  .concept .cap .badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 12px;border-radius:99px;margin-bottom:7px}
-  .cpt-a .badge{background:#0b1220;color:var(--cyan)}
-  .cpt-b .badge{background:var(--paperbg);color:var(--paperink)}
-  .cpt-c .badge{background:var(--violet-w);color:var(--violet)}
-  .concept .cap .name{font-size:15px;font-weight:800}
-  .concept .cap .why{font-size:12px;color:var(--soft);margin-top:4px;line-height:1.45;min-height:34px}
-  .proscons{font-size:11.5px;margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:var(--sh)}
-  .proscons .p{color:var(--green);font-weight:700}.proscons .m{color:var(--amber);font-weight:700}
-  .proscons div{margin:2px 0;line-height:1.4}
-
-  /* phone frame */
-  .phone{width:340px;height:690px;background:#0b1220;border-radius:42px;padding:11px;box-shadow:0 20px 48px rgba(16,30,50,.3);position:relative}
-  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:20px;background:#0b1220;border-radius:0 0 15px 15px;z-index:20}
-  .sw{width:100%;height:100%;border-radius:32px;overflow:hidden;position:relative;background:#f4f7fb}
-  .scr{position:absolute;inset:0;display:none;flex-direction:column}
-  .scr.on{display:flex}
-  .body{flex:1;overflow:auto}
-  .cta{border:0;border-radius:14px;padding:15px;font:inherit;font-size:15px;font-weight:800;cursor:pointer;width:100%;
-    background:var(--blue);color:#fff;box-shadow:0 8px 18px rgba(0,112,242,.3);display:flex;align-items:center;justify-content:center;gap:8px}
-  .cta.ghost{background:#fff;color:var(--blue-ink);border:1.5px solid var(--line);box-shadow:none}
-  .noap{font-size:10px;color:var(--mut);text-align:center;padding:7px 12px;line-height:1.35}
-  .noap b{color:var(--amber)}
-  .toast{position:absolute;left:12px;right:12px;bottom:12px;background:#0b1220;color:#fff;border-radius:12px;padding:12px 14px;font-size:12.5px;display:none;align-items:center;gap:8px;z-index:30}
-  .toast.on{display:flex}
-
-  /* shared field rows (all concepts) */
-  .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef1f6}
-  .kv:last-child{border-bottom:0}
-  .kv .k{font-size:11px;color:var(--soft);font-weight:600;flex-shrink:0}
-  .kv .v{font-size:12.5px;font-weight:700;text-align:right;color:var(--ink)}
-  .kv .v.mono{font-family:var(--mono)}
-  .pv{display:block;font-size:8.5px;font-weight:800;letter-spacing:.03em;margin-top:1px;font-style:normal}
-  .pv.scan{color:var(--blue-ink)} .pv.calc{color:var(--green)} .pv.auto{color:var(--mut)} .pv.dir{color:var(--violet)}
-  .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:var(--green-w);padding:4px 8px;border-radius:7px}
-
-  /* ============ CONCEPT A — camera hero / swipe deck (electric, dark) ============ */
-  .a-hero{background:radial-gradient(120% 90% at 50% 0%,#12233f,#0b1220 70%);color:#fff;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:22px}
-  .a-top{position:absolute;top:0;left:0;right:0;padding:16px 18px;display:flex;align-items:center;color:#cfe0f2;font-size:14px;font-weight:700}
-  .a-top .av{margin-left:auto;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;font-size:11px;font-weight:800;color:#04223a}
-  .a-scanbtn{width:170px;height:170px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 50% 40%,var(--cyan),var(--blue) 70%);
-    color:#04223a;font-weight:800;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    box-shadow:0 0 0 10px rgba(34,211,238,.12),0 0 40px rgba(34,211,238,.45);animation:pulseA 2.2s ease-in-out infinite}
-  .a-scanbtn .ci{font-size:52px;line-height:1}
-  @keyframes pulseA{0%,100%{box-shadow:0 0 0 10px rgba(34,211,238,.12),0 0 40px rgba(34,211,238,.4)}50%{box-shadow:0 0 0 18px rgba(34,211,238,.05),0 0 60px rgba(34,211,238,.65)}}
-  .a-sub{color:#9fc3e6;font-size:13px;margin-top:26px;text-align:center}
-  .a-recent{position:absolute;bottom:18px;left:0;right:0;display:flex;gap:8px;justify-content:center}
-  .a-chip{background:rgba(255,255,255,.08);color:#cfe0f2;font-size:11px;font-weight:700;padding:7px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.12)}
-  .a-read{background:#0b1220;color:#fff;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
-  .a-spin{width:56px;height:56px;border-radius:50%;border:5px solid rgba(34,211,238,.18);border-top-color:var(--cyan);animation:sp .8s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
-  .a-deckwrap{flex:1;background:#0b1220;display:flex;flex-direction:column;padding:16px 16px 12px;color:#fff}
-  .a-dhead{display:flex;align-items:center;color:#cfe0f2;font-size:13px;font-weight:700;margin-bottom:4px}
-  .a-progress{display:flex;gap:5px;margin:10px 0 14px}
-  .a-dot{flex:1;height:4px;border-radius:99px;background:rgba(255,255,255,.15)}
-  .a-dot.done{background:var(--cyan)} .a-dot.cur{background:#fff}
-  .a-deck{position:relative;flex:1}
-  .a-card{position:absolute;inset:0;background:#12233f;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:16px;
-    box-shadow:0 18px 40px rgba(0,0,0,.45);display:flex;flex-direction:column}
-  .a-card .ttl{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .a-card .ttl .ic{width:34px;height:34px;border-radius:10px;background:rgba(34,211,238,.15);display:grid;place-items:center;font-size:18px}
-  .a-card .ttl .rc{font-size:14px;font-weight:800;color:#fff}
-  .a-card .ttl .of{font-size:10.5px;color:#9fc3e6;font-weight:700}
-  .a-card .rows{flex:1;overflow:auto}
-  .a-card .kv{border-color:rgba(255,255,255,.08)}
-  .a-card .kv .k{color:#9fc3e6}.a-card .kv .v{color:#fff}
-  .a-card .pv.scan{color:var(--cyan)}.a-card .pv.calc{color:#6ee7a8}.a-card .pv.auto{color:#8ea6bf}
-  .a-swipe{display:flex;gap:10px;margin-top:12px}
-  .a-swipe button{flex:1;border:0;border-radius:13px;padding:13px;font:inherit;font-weight:800;font-size:14px;cursor:pointer}
-  .a-swipe .edit{background:rgba(255,255,255,.1);color:#cfe0f2}
-  .a-swipe .ok{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04223a}
-  .a-hint{text-align:center;color:#6f8bab;font-size:10.5px;margin-top:8px}
-  .a-sum{flex:1;background:#0b1220;color:#fff;padding:16px;overflow:auto}
-  .a-sumcard{background:#12233f;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px;margin-bottom:12px}
-  .a-sumcard h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9fc3e6;margin-bottom:8px}
-  .a-sumcard .kv{border-color:rgba(255,255,255,.08)}.a-sumcard .kv .k{color:#9fc3e6}.a-sumcard .kv .v{color:#fff}
-  .a-tot{display:flex;justify-content:space-between;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04223a;border-radius:16px;padding:13px 14px;margin-bottom:12px;font-weight:800}
-  .a-tot .tc{text-align:center;flex:1}.a-tot .tc .l{font-size:9.5px;opacity:.8;text-transform:uppercase}.a-tot .tc .n{font-size:14px;margin-top:2px;font-family:var(--mono)}
-  .a-foot{padding:12px 16px;background:#0b1220}
-
-  /* ============ CONCEPT B — receipt wallet / timeline (tactile paper) ============ */
-  .b-wrap{flex:1;background:var(--paperbg);display:flex;flex-direction:column}
-  .b-top{background:var(--paperink);color:var(--paper);padding:16px 16px 14px;display:flex;align-items:center;font-size:14px;font-weight:700}
-  .b-top .av{margin-left:auto;width:26px;height:26px;border-radius:50%;background:var(--paper);color:var(--paperink);display:grid;place-items:center;font-size:11px;font-weight:800}
-  .b-feed{flex:1;overflow:auto;padding:16px 14px}
-  .b-scan{width:100%;background:var(--blue);color:#fff;border:0;border-radius:14px;padding:14px;font:inherit;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 8px 18px rgba(0,112,242,.28);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px}
-  .b-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--paperink);opacity:.6;font-weight:800;margin:6px 2px 10px}
-  .receipt{background:var(--paper);border-radius:6px;padding:14px 15px 10px;margin-bottom:14px;box-shadow:0 6px 16px rgba(58,51,39,.16);position:relative;
-    -webkit-mask:radial-gradient(6px at 6px 50%,transparent 98%,#000) -6px 0/100% 100%, linear-gradient(#000 0 0);cursor:pointer}
-  .receipt.torn::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:8px;
-    background:radial-gradient(6px at 6px -2px,var(--paper) 60%,transparent 62%) 0 0/12px 8px repeat-x}
-  .receipt .rtop{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px dashed #d8cdb6;padding-bottom:8px;margin-bottom:8px}
-  .receipt .vendor{font-weight:800;font-size:14px;color:var(--paperink);font-family:var(--mono)}
-  .receipt .when{font-size:10.5px;color:#a9997c;font-family:var(--mono)}
-  .receipt .line{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--paperink);padding:2px 0}
-  .receipt .tot{display:flex;justify-content:space-between;font-family:var(--mono);font-weight:800;font-size:13px;color:var(--paperink);border-top:1.5px dashed #d8cdb6;margin-top:8px;padding-top:8px}
-  .receipt .newtag{position:absolute;top:-9px;left:12px;background:var(--blue);color:#fff;font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:99px}
-  .receipt.faded{opacity:.6}
-  /* bottom sheet review */
-  .b-sheet{position:absolute;inset:0;z-index:25;display:none;flex-direction:column;justify-content:flex-end;background:rgba(58,51,39,.45)}
-  .b-sheet.on{display:flex}
-  .b-sheetc{background:var(--paper);border-radius:20px 20px 0 0;max-height:88%;display:flex;flex-direction:column;animation:upB .3s ease}
-  @keyframes upB{from{transform:translateY(30px);opacity:.6}to{transform:translateY(0);opacity:1}}
-  .b-handle{width:40px;height:4px;border-radius:99px;background:#d8cdb6;margin:9px auto 4px}
-  .b-sheetb{overflow:auto;padding:6px 16px 4px}
-  .b-hd{font-weight:800;font-family:var(--mono);font-size:15px;color:var(--paperink);text-align:center;margin:4px 0 2px}
-  .b-hdsub{text-align:center;font-size:11px;color:#a9997c;font-family:var(--mono);margin-bottom:10px}
-  .b-itemblock{border-top:1.5px dashed #d8cdb6;padding:9px 0}
-  .b-itemblock .bh{display:flex;justify-content:space-between;font-family:var(--mono);font-weight:800;font-size:12.5px;color:var(--paperink);cursor:pointer}
-  .b-itemblock .bd{display:none;padding-top:6px}
-  .b-itemblock.open .bd{display:block}
-  .b-itemblock .kv{border-color:#ece3d0}.b-itemblock .kv .k{color:#a9997c}.b-itemblock .kv .v{color:var(--paperink)}
-  .b-foot{padding:12px 16px;border-top:1.5px dashed #d8cdb6;background:var(--paper)}
-
-  /* ============ CONCEPT C — AI assistant chat (conversational) ============ */
-  .c-wrap{flex:1;background:linear-gradient(180deg,#f6f4ff,#f4f7fb);display:flex;flex-direction:column}
-  .c-top{background:#fff;border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:10px}
-  .c-top .bot{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--teal));display:grid;place-items:center;color:#fff;font-size:16px}
-  .c-top .nm{font-size:13.5px;font-weight:800}.c-top .st{font-size:10.5px;color:var(--green);font-weight:700}
-  .c-chat{flex:1;overflow:auto;padding:14px 12px;display:flex;flex-direction:column;gap:9px}
-  .bub{max-width:86%;padding:10px 12px;border-radius:16px;font-size:12.5px;line-height:1.4;animation:popC .25s ease}
-  @keyframes popC{from{transform:translateY(6px);opacity:0}to{transform:translateY(0);opacity:1}}
-  .bub.ai{background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px;align-self:flex-start;color:var(--ink);box-shadow:var(--sh)}
-  .bub.me{background:linear-gradient(135deg,var(--violet),#5a6ef0);color:#fff;border-bottom-right-radius:5px;align-self:flex-end;font-weight:600}
-  .typing{display:flex;gap:4px;align-items:center}
-  .typing span{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:ty 1s infinite}
-  .typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
-  @keyframes ty{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-  .c-card{align-self:flex-start;max-width:92%;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--sh)}
-  .c-card .ch{display:flex;align-items:center;gap:9px;cursor:pointer}
-  .c-card .ch .ic{width:30px;height:30px;border-radius:9px;background:var(--violet-w);display:grid;place-items:center;font-size:15px}
-  .c-card .ch .rc{font-size:12.5px;font-weight:800}.c-card .ch .of{font-size:10px;color:var(--mut);font-weight:700}
-  .c-card .ch .amt{margin-left:auto;font-weight:800;font-size:13px;font-family:var(--mono)}
-  .c-card .cf{display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
-  .c-card.open .cf{display:block}
-  .c-card .showf{font-size:10.5px;color:var(--violet);font-weight:700;margin-top:6px;cursor:pointer}
-  .c-quick{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line);background:#fff}
-  .c-quick button{border:1.5px solid var(--violet);background:#fff;color:var(--violet);font:inherit;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:99px;cursor:pointer}
-  .c-quick button.solid{background:var(--blue);border-color:var(--blue);color:#fff}
-
-  /* ============ SHARED DESKTOP ANCHOR ============ */
-  .deskrow{max-width:1180px;margin:26px auto 0}
-  .deskcap{text-align:center;font-size:13px;font-weight:800;color:var(--soft);margin-bottom:12px}
-  .desktop{background:#fff;border-radius:12px;box-shadow:0 14px 36px rgba(16,30,50,.18);overflow:hidden;border:1px solid #cfd8e3}
-  .winbar{background:#eef2f7;border-bottom:1px solid var(--line);padding:8px 12px;display:flex;align-items:center;gap:7px}
-  .dotr{width:10px;height:10px;border-radius:50%}.dotr.r{background:#ff5f57}.dotr.y{background:#febc2e}.dotr.g{background:#28c840}
-  .url{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:6px;font-size:11px;color:var(--mut);padding:3px 12px}
-  .dpad{padding:18px 22px;background:#f4f7fb}
+  /* ===== DESKTOP FRAME (kept as anchor) ===== */
+  .desktop{background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(16,30,50,.2);overflow:hidden;border:1px solid #cfd8e3;position:relative}
+  .winbar{background:#eef2f7;border-bottom:1px solid var(--line);padding:9px 12px;display:flex;align-items:center;gap:7px}
+  .dotr{width:11px;height:11px;border-radius:50%}.dotr.r{background:#ff5f57}.dotr.y{background:#febc2e}.dotr.g{background:#28c840}
+  .url{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:7px;font-size:11px;color:var(--mut);padding:4px 12px;flex:1;max-width:420px}
+  .toolpage{display:flex;height:560px}
+  .side{width:58px;background:#00347a;display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:6px;flex-shrink:0}
+  .side .navi{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#bcd4f5;font-size:17px;cursor:pointer}
+  .side .navi.on{background:rgba(255,255,255,.16);color:#fff}
+  .maincol{flex:1;display:flex;flex-direction:column;min-width:0}
+  .dhdr{background:var(--blue-ink);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}
+  .dhdr .av{margin-left:auto;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--blue-ink);display:grid;place-items:center;font-size:11px;font-weight:800}
+  .dbody{flex:1;overflow:auto;padding:18px 20px;background:#f4f7fb}
+  .dscreen{display:none}.dscreen.on{display:block}
   .pgtitle{font-size:16px;font-weight:800}.pgsub{font-size:12px;color:var(--soft);margin:2px 0 12px}
-  .attn{background:var(--green-w);color:var(--green);font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;display:inline-flex;gap:7px;margin-bottom:12px}
+  table.claims{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shsm)}
+  table.claims th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:700}
+  table.claims td{padding:12px 14px;border-bottom:1px solid #f0f4f9;font-size:13px}
+  table.claims tr:last-child td{border-bottom:0}
+  table.claims tr.clickable{cursor:pointer} table.claims tr.clickable:hover{background:var(--wash)}
+  .newflag{font-size:10px;font-weight:800;color:var(--indigo);background:var(--wash);padding:1px 6px;border-radius:5px;margin-left:6px}
+  .backrow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--blue-ink);font-weight:700;cursor:pointer;margin-bottom:14px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:6px}
-  .field{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
-  .field .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}
-  .field .v{font-size:13px;font-weight:600;margin-top:2px}
+  .dfield{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+  .dfield .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}
+  .dfield .v{font-size:13px;font-weight:600;margin-top:2px}
   .sect{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:800;margin:14px 0 7px}
   .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
   table.items{width:100%;border-collapse:collapse;background:#fff;min-width:640px}
@@ -196,230 +68,338 @@
   table.items tr:last-child td{border-bottom:0}
   .totbar{display:flex;justify-content:flex-end;gap:22px;padding:11px 2px;font-size:13px}
   .totbar .lab{color:var(--soft)}.totbar b{font-variant-numeric:tabular-nums}
+  .attn{background:var(--green-w);color:var(--green);font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;display:inline-flex;gap:7px;margin-bottom:12px}
   .dact{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
   .btn{border:0;border-radius:9px;padding:10px 18px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
   .btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--blue-ink)}.btn.pri{background:var(--blue);color:#fff}
   .ovl{position:absolute;inset:0;background:rgba(11,18,32,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:10}
   .ovl.on{display:flex}
   .dlg{background:#fff;border-radius:14px;padding:22px;width:330px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
-  .dlg h3{font-size:15px;margin-bottom:8px}.dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}
-  .dlg .who{font-weight:800;color:var(--blue-ink)}.dlg .btns{display:flex;gap:10px;margin-top:16px}
-  .dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}
+  .dlg h3{font-size:15px;margin-bottom:8px}.dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}.dlg .who{font-weight:800;color:var(--blue-ink)}
+  .dlg .btns{display:flex;gap:10px;margin-top:16px}.dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}
   .dlg .c{background:#eef1f6;border:0;color:var(--soft)}.dlg .k{background:var(--blue);border:0;color:#fff}
-  .desktop{position:relative}
-  .restart{display:block;margin:20px auto 0;background:none;border:0;color:var(--blue-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
+  .dtoast{position:absolute;left:20px;right:20px;bottom:20px;background:#0b1220;color:#fff;border-radius:12px;padding:12px 15px;font-size:13px;display:none;align-items:center;gap:8px;z-index:11}
+  .dtoast.on{display:flex}
+
+  /* ===== CONNECTOR ===== */
+  .connector{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--indigo);min-width:56px}
+  .connector .arrow{font-size:28px}.connector .lbl{font-size:11px;font-weight:800;text-align:center;line-height:1.35;color:var(--soft)}
+  .connector .lbl b{color:var(--indigo)}
+
+  /* ===== PREMIUM MOBILE ===== */
+  .phonewrap{display:flex;justify-content:center}
+  .phone{width:346px;height:718px;background:#111a2e;border-radius:46px;padding:12px;box-shadow:0 26px 60px rgba(40,55,140,.32);position:relative}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#111a2e;border-radius:0 0 18px 18px;z-index:30}
+  .sw{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;background:var(--bg)}
+  .scr{position:absolute;inset:0;display:none;flex-direction:column}
+  .scr.on{display:flex;animation:fade .25s ease}
+  @keyframes fade{from{opacity:.4}to{opacity:1}}
+  .mbody{flex:1;overflow:auto;padding:20px 16px 96px}
+  .statusbar{height:34px;flex-shrink:0}
+
+  .mtop{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+  .mtop .hi{font-size:12.5px;color:var(--soft);font-weight:600}
+  .mtop .h1{font-size:23px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+  .mtop .av{margin-left:auto;width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;box-shadow:var(--clay)}
+
+  .hero{border-radius:22px;padding:18px;color:#fff;background:linear-gradient(135deg,var(--grad1),var(--grad2));box-shadow:0 14px 30px rgba(61,110,245,.4);position:relative;overflow:hidden;margin-bottom:18px}
+  .hero::after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .hero .lab{font-size:12px;opacity:.9;font-weight:600}
+  .hero .big{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:3px}
+  .hero .meta{font-size:11.5px;opacity:.92;margin-top:6px;display:flex;gap:14px}
+  .hero .meta b{font-weight:800}
+
+  .qrow{display:flex;gap:12px;margin-bottom:20px}
+  .qtile{flex:1;border-radius:20px;padding:16px 14px;cursor:pointer;transition:transform .12s;border:0;font:inherit;text-align:left}
+  .qtile:active{transform:scale(.96)}
+  .qtile.scan{background:linear-gradient(135deg,#0f1830,#1c2b52);color:#fff;box-shadow:0 12px 26px rgba(20,30,70,.35)}
+  .qtile.newc{background:#fff;color:var(--ink);box-shadow:var(--shsm)}
+  .qtile .qic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;margin-bottom:12px}
+  .qtile.scan .qic{background:linear-gradient(135deg,var(--peri),var(--grad2));box-shadow:var(--clay)}
+  .qtile.newc .qic{background:var(--wash);box-shadow:var(--clay)}
+  .qtile .ql{font-size:15px;font-weight:800}
+  .qtile .qs{font-size:11px;opacity:.8;margin-top:2px}
+  .qtile.scan .qs{color:#b9c6ee}
+
+  .seclbl{display:flex;align-items:center;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:800;margin:4px 2px 10px}
+  .seclbl .more{margin-left:auto;color:var(--indigo);font-size:11px;text-transform:none;letter-spacing:0}
+  .rcard{background:#fff;border-radius:18px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:var(--shsm)}
+  .rcard .ric{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:20px;background:var(--wash);box-shadow:var(--clay);flex-shrink:0}
+  .rcard .rmid{min-width:0}.rcard .rt{font-size:14px;font-weight:800}.rcard .rs{font-size:11.5px;color:var(--mut);margin-top:1px}
+  .rcard .ramt{margin-left:auto;text-align:right}.rcard .ramt .a{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pill{font-size:10px;padding:2px 9px;border-radius:99px;font-weight:800;display:inline-block;margin-top:3px}
+  .pill.appr{background:var(--green-w);color:var(--green)} .pill.draft{background:#eef1f6;color:var(--soft)}
+
+  /* bottom nav + FAB */
+  .nav{position:absolute;left:0;right:0;bottom:0;height:76px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-around;padding:0 22px 14px;z-index:20}
+  .nav .n{font-size:20px;color:var(--mut);cursor:pointer}.nav .n.on{color:var(--indigo)}
+  .fab{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);width:60px;height:60px;border-radius:20px;border:0;cursor:pointer;
+    background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#fff;font-size:26px;box-shadow:0 12px 26px rgba(61,110,245,.5);z-index:21;transition:transform .12s}
+  .fab:active{transform:translateX(-50%) scale(.92)}
+
+  /* capture sheet */
+  .sheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:40}
+  .sheet.on{display:flex}
+  .sheetc{background:#fff;width:100%;border-radius:26px 26px 0 0;padding:12px 16px 20px;animation:up .3s ease}
+  @keyframes up{from{transform:translateY(30px)}to{transform:translateY(0)}}
+  .sheeth{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 12px}
+  .sheett{font-size:14px;font-weight:800;text-align:center;margin-bottom:12px}
+  .sheetb{display:flex;width:100%;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:15px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;border:0;margin-top:9px}
+  .sheetb .si{width:40px;height:40px;border-radius:12px;background:var(--wash);display:grid;place-items:center;font-size:19px;box-shadow:var(--clay)}
+  .sheetcancel{background:none;border:0;color:var(--soft);font:inherit;font-weight:700;width:100%;padding:13px;cursor:pointer;margin-top:8px}
+
+  /* camera */
+  .cam{flex:1;background:#0b0f16;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative}
+  .camtop{position:absolute;top:0;left:0;right:0;padding:16px;color:#fff;font-size:14px;font-weight:700}
+  .vf{width:210px;height:274px;border:2px dashed #5b6ef5;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:72px;background:#141b26}
+  .camhint{position:absolute;top:60px;color:#b9c6ee;font-size:12px}
+  .shutter{width:64px;height:64px;border-radius:50%;background:#fff;border:5px solid #7c8cff;margin-top:22px;cursor:pointer}
+
+  /* reading */
+  .reading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center}
+  .rclay{width:96px;height:96px;border-radius:28px;background:linear-gradient(135deg,var(--peri),var(--grad2));display:grid;place-items:center;font-size:44px;box-shadow:var(--clay);animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+  .rprog{width:170px;height:6px;border-radius:99px;background:#dfe4f5;overflow:hidden}
+  .rprog i{display:block;height:100%;width:40%;border-radius:99px;background:linear-gradient(90deg,var(--grad1),var(--grad2));animation:load 1.6s ease-in-out infinite}
+  @keyframes load{0%{margin-left:-45%}100%{margin-left:105%}}
+
+  /* draft */
+  .mback{display:flex;align-items:center;gap:10px;padding:6px 4px 14px}
+  .mback .b{font-size:20px;color:var(--indigo);cursor:pointer}.mback .ttl{font-size:18px;font-weight:800}
+  .fbanner{background:var(--amber-w);color:var(--amber);font-size:11.5px;font-weight:700;padding:10px 12px;border-radius:14px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;line-height:1.35}
+  .mcard{background:#fff;border-radius:20px;padding:15px;margin-bottom:13px;box-shadow:var(--shsm)}
+  .mcard-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .mcard-h .ic{width:34px;height:34px;border-radius:12px;background:var(--wash);display:grid;place-items:center;font-size:16px;box-shadow:var(--clay)}
+  .mcard-h .ti{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+  .mcard-h .ct{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--mut)}
+  .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px dashed #eef1f6}
+  .kv:last-child{border-bottom:0}
+  .kv .k{font-size:11.5px;color:var(--soft);font-weight:600;flex-shrink:0}
+  .kv .v{font-size:13px;font-weight:700;text-align:right}
+  .kv .v.mono{font-variant-numeric:tabular-nums}
+  .pv{display:block;font-size:9px;font-weight:800;letter-spacing:.03em;margin-top:1px}
+  .pv.scan{color:var(--indigo)}.pv.calc{color:var(--green)}.pv.auto{color:var(--mut)}.pv.dir{color:var(--violet)}
+  .att{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--green);font-weight:700;background:var(--green-w);padding:5px 9px;border-radius:9px}
+  .htot{border-radius:20px;padding:16px;color:#fff;background:linear-gradient(135deg,var(--grad1),var(--grad2));box-shadow:0 14px 30px rgba(61,110,245,.38);display:flex;justify-content:space-between;margin-bottom:14px}
+  .htot .tc{text-align:center;flex:1}.htot .tc .l{font-size:10px;opacity:.9;text-transform:uppercase;letter-spacing:.04em}
+  .htot .tc .n{font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .htot .tc.big .n{font-size:18px}.htot .dv{width:1px;background:rgba(255,255,255,.28)}
+  .itemsum{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:var(--soft);margin:2px 2px 10px}
+  .itemsum .ea{color:var(--indigo);cursor:pointer;font-size:11.5px}
+  .acc{background:#fff;border-radius:18px;margin-bottom:9px;box-shadow:var(--shsm);overflow:hidden}
+  .acc-h{display:flex;align-items:center;gap:11px;padding:13px;cursor:pointer}
+  .acc-h .n{width:26px;height:26px;border-radius:9px;background:var(--wash);color:var(--indigo);font-size:12px;font-weight:800;display:grid;place-items:center;flex-shrink:0;box-shadow:var(--clay)}
+  .acc-h .ic2{font-size:18px}
+  .acc-h .lead{min-width:0}.acc-h .ty{font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acc-h .sub{font-size:10.5px;color:var(--mut)}
+  .acc-h .amt{margin-left:auto;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+  .acc-h .chev{color:var(--mut);font-size:11px;transition:transform .2s}
+  .acc.open .acc-h .chev{transform:rotate(180deg)}
+  .acc-b{display:none;padding:0 13px 12px;border-top:1px solid #f2f5fb}
+  .acc.open .acc-b{display:block}
+  .emptym{font-size:12px;color:var(--mut);padding:4px 0}
+  .savebar{position:absolute;left:0;right:0;bottom:0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);z-index:20}
+  .savebtn{width:100%;border:0;border-radius:16px;padding:16px;font:inherit;font-size:15px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--grad1),var(--grad2));box-shadow:0 12px 26px rgba(61,110,245,.42);display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s}
+  .savebtn:active{transform:scale(.97)}
+  .noap{font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.35}.noap b{color:var(--amber)}
+  .single-link{text-align:center;margin-top:6px}
+  .single-link span{font-size:11.5px;color:var(--indigo);font-weight:700;cursor:pointer;text-decoration:underline}
+  .toast{position:absolute;left:14px;right:14px;bottom:88px;background:#0b1220;color:#fff;border-radius:14px;padding:13px 15px;font-size:12.5px;display:none;align-items:center;gap:8px;z-index:35}
+  .toast.on{display:flex}
+
+  /* handoff note */
+  .spec{max-width:1200px;margin:26px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 20px;box-shadow:var(--shsm)}
+  .spec h3{font-size:13.5px;font-weight:800;color:var(--blue-ink);margin-bottom:8px}
+  .spec .rows{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}
+  @media(max-width:720px){.spec .rows{grid-template-columns:1fr}}
+  .spec .li{font-size:12px;color:var(--soft);display:flex;gap:8px;line-height:1.45}.spec .li b{color:var(--ink)}
+  .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--blue-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
   .disc{text-align:center;font-size:11px;color:var(--mut);margin-top:8px}
 </style>
 </head>
-<body data-view="all">
+<body>
 
   <div class="head">
-    <h1>📷 Receipt Scan — 3 Mobile Concepts</h1>
-    <p>Same job (scan → AI draft → Save Draft), three bold directions. All carry every desktop field (1:1),
-       N items → N cards, and Save-Draft-only. Pick one — the shared desktop below is where any draft is submitted.</p>
-  </div>
-
-  <div class="selector">
-    <button class="on" data-v="all" onclick="setView('all')">▦ Compare all</button>
-    <button data-v="a" onclick="setView('a')">A · Camera-hero</button>
-    <button data-v="b" onclick="setView('b')">B · Receipt wallet</button>
-    <button data-v="c" onclick="setView('c')">C · AI assistant</button>
+    <h1>📷 Receipt Scan — Premium Mobile</h1>
+    <p>Same field-aligned flow you liked, restyled premium (soft cards, hero stat, claymorphism icons, floating +).
+       Every desktop field is carried 1:1 · N items → N cards · Save-Draft-only · desktop unchanged.</p>
+    <div class="badges">
+      <span class="badge">✨ <b>Premium</b> restyle</span>
+      <span class="badge">🔗 1:1 field mapping</span>
+      <span class="badge">📱 Scan &amp; Draft · 🖥️ Submit</span>
+    </div>
   </div>
 
   <div class="stage">
 
-    <!-- ============ CONCEPT A ============ -->
-    <div class="concept cpt-a">
-      <div class="cap">
-        <span class="badge">Concept A</span>
-        <div class="name">⚡ Camera-hero · swipe deck</div>
-        <div class="why">Opens straight into scanning. Review each extracted line as a swipeable card — accept or edit, one at a time.</div>
-      </div>
-      <div class="phone"><div class="notch"></div><div class="sw" id="A">
-        <!-- a1 hero -->
-        <div class="scr on" id="a1">
-          <div class="a-hero">
-            <div class="a-top">Expenses <span class="av">SR</span></div>
-            <button class="a-scanbtn" onclick="aStart()"><span class="ci">📷</span>Scan</button>
-            <div class="a-sub">Point at any bill —<br>we'll build the claim for you.</div>
-            <div class="a-recent"><span class="a-chip">Recent · UKEXP08 ✓</span></div>
-          </div>
-        </div>
-        <!-- a2 reading -->
-        <div class="scr" id="a2">
-          <div class="a-read">
-            <div class="a-spin"></div>
-            <div style="font-weight:800">Reading your receipt…</div>
-            <div style="font-size:12px;color:#9fc3e6">Found 5 items · deriving tax</div>
-          </div>
-        </div>
-        <!-- a3 deck -->
-        <div class="scr" id="a3">
-          <div class="a-deckwrap">
-            <div class="a-dhead">← Review items <span style="margin-left:auto;color:#9fc3e6" id="aCount">1 / 5</span></div>
-            <div class="a-progress" id="aProg"></div>
-            <div class="a-deck" id="aDeck"></div>
-            <div class="a-swipe">
-              <button class="edit" onclick="alert('(Prototype) edit fields inline')">✎ Edit</button>
-              <button class="ok" onclick="aAccept()">✓ Looks good</button>
-            </div>
-            <div class="a-hint">Swipe → accept · Swipe ← edit</div>
-          </div>
-        </div>
-        <!-- a4 summary -->
-        <div class="scr" id="a4">
-          <div class="a-sum">
-            <div style="font-weight:800;margin-bottom:12px">Almost done — review &amp; save</div>
-            <div class="a-tot">
-              <div class="tc"><div class="l">Net</div><div class="n">₹4,000.00</div></div>
-              <div class="tc"><div class="l">Tax</div><div class="n">₹720.00</div></div>
-              <div class="tc"><div class="l">Total</div><div class="n">₹4,720.00</div></div>
-            </div>
-            <div class="a-sumcard"><h4>Claim</h4><div id="aHdr"></div></div>
-            <div class="a-sumcard"><h4>5 items · 0 mileage</h4>
-              <div style="font-size:11.5px;color:#9fc3e6">All 5 lines accepted. Mileage: none (add on desktop).</div>
-            </div>
-          </div>
-          <div class="a-foot"><button class="cta" onclick="tst('A')">💾 Save Draft</button></div>
-        </div>
-        <div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>
-        <div class="toast" id="tA">✓ Draft (5 items) saved — submit on desktop</div>
-      </div></div>
-      <div class="proscons">
-        <div><span class="p">＋</span> Fastest to capture; feels modern &amp; fun; one-item-at-a-time = high accuracy.</div>
-        <div><span class="m">－</span> Swipe review adds taps for big bills; dark theme is a departure from the desktop look.</div>
-      </div>
-    </div>
-
-    <!-- ============ CONCEPT B ============ -->
-    <div class="concept cpt-b">
-      <div class="cap">
-        <span class="badge">Concept B</span>
-        <div class="name">🧾 Receipt wallet · timeline</div>
-        <div class="why">Scanned bills stack like real receipts in a feed. Tap one to pull up an itemised review sheet.</div>
-      </div>
-      <div class="phone"><div class="notch"></div><div class="sw" id="B">
-        <!-- b1 wallet -->
-        <div class="scr on" id="b1">
-          <div class="b-wrap">
-            <div class="b-top">My Receipts <span class="av">SR</span></div>
-            <div class="b-feed">
-              <button class="b-scan" onclick="bScan()">📷 Scan a receipt</button>
-              <div class="b-lbl">This month</div>
-              <div id="bNew"></div>
-              <div class="receipt torn faded">
-                <div class="rtop"><span class="vendor">UKEXP08</span><span class="when">Dec 2025</span></div>
-                <div class="line"><span>Approved</span><span>£180.00</span></div>
+    <!-- ============ DESKTOP ANCHOR ============ -->
+    <div class="panel">
+      <div class="cap"><span class="ico">🖥️</span><span class="t">Desktop ("Fiori")</span><span class="role desk">review &amp; submit</span></div>
+      <div class="desktop">
+        <div class="winbar"><span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span><span class="url">bsx-tdd…/site/MyBSX › My Expenses</span></div>
+        <div class="toolpage">
+          <div class="side"><div class="navi on">🧾</div><div class="navi">📊</div><div class="navi">⚙️</div></div>
+          <div class="maincol">
+            <div class="dhdr">My Expenses <span class="av">SR</span></div>
+            <div class="dbody">
+              <!-- d1 list -->
+              <div class="dscreen on" id="d1">
+                <div class="pgtitle">My Claims</div>
+                <div class="pgsub">Your phone drafts are waiting to be reviewed &amp; submitted.</div>
+                <table class="claims"><thead><tr><th>Claim</th><th>Period</th><th>Country</th><th>Total</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr class="clickable" onclick="dgo('d3')"><td><b>INEXP13</b><span class="newflag">from phone · 5 items</span></td><td>Jan 2026</td><td>India 🇮🇳</td><td>₹4,720.00</td><td><span class="pill draft">Draft</span></td></tr>
+                    <tr class="clickable" onclick="dgo('d2')"><td><b>INEXP12</b><span class="newflag">from phone · 1 item</span></td><td>Jan 2026</td><td>India 🇮🇳</td><td>₹10,010.00</td><td><span class="pill draft">Draft</span></td></tr>
+                    <tr><td><b>UKEXP08</b></td><td>Dec 2025</td><td>UK 🇬🇧</td><td>£180.00</td><td><span class="pill appr">Approved</span></td></tr>
+                  </tbody></table>
+                <div class="disc" style="text-align:left;margin-top:12px">Click either draft — <b>INEXP12</b> = 1-item receipt · <b>INEXP13</b> = one bill with 5 items.</div>
+              </div>
+              <!-- d2 single -->
+              <div class="dscreen" id="d2">
+                <div class="backrow" onclick="dgo('d1')">← My Claims</div>
+                <div class="pgtitle">Expense Claim — INEXP12</div><div class="pgsub">1-item receipt scanned on mobile.</div>
+                <div class="attn">✓ Country, Employee &amp; tax resolved by the shared engine.</div>
+                <div class="grid3">
+                  <div class="dfield"><div class="k">Country</div><div class="v">India</div></div>
+                  <div class="dfield"><div class="k">Claim Period</div><div class="v">Jan 2026</div></div>
+                  <div class="dfield"><div class="k">Site Currency</div><div class="v">INR (₹)</div></div>
+                  <div class="dfield"><div class="k">Employee</div><div class="v">Suresh Rajarathinam</div></div>
+                  <div class="dfield"><div class="k">Employee Number</div><div class="v">100234</div></div>
+                  <div class="dfield"><div class="k">Payroll Area</div><div class="v">IN01</div></div>
+                </div>
+                <div class="sect">Expense Items</div>
+                <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead>
+                  <tbody><tr><td>16 Jan 2026</td><td>Taxi / Cab</td><td>Bengaluru</td><td>Client visit</td><td>GST Standard</td><td class="num">₹10,010.00</td><td class="num">₹8,483.05</td><td class="num">₹1,526.95</td><td>📎 receipt.jpg</td></tr></tbody></table></div>
+                <div class="totbar"><span class="lab">Net</span><b>₹8,483.05</b><span class="lab">Tax</span><b>₹1,526.95</b><span class="lab">Total</span><b>₹10,010.00</b></div>
+                <div class="dact"><button class="btn sec">Edit</button><button class="btn sec">Save Draft</button><button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button></div>
+              </div>
+              <!-- d3 5-item -->
+              <div class="dscreen" id="d3">
+                <div class="backrow" onclick="dgo('d1')">← My Claims</div>
+                <div class="pgtitle">Expense Claim — INEXP13</div><div class="pgsub">One 5-line hotel bill · loaded as 5 rows.</div>
+                <div class="attn">✓ All 5 items arrived pre-filled — one row per line, same fields.</div>
+                <div class="grid3">
+                  <div class="dfield"><div class="k">Country</div><div class="v">India</div></div>
+                  <div class="dfield"><div class="k">Claim Period</div><div class="v">Jan 2026</div></div>
+                  <div class="dfield"><div class="k">Site Currency</div><div class="v">INR (₹)</div></div>
+                  <div class="dfield"><div class="k">Employee</div><div class="v">Suresh Rajarathinam</div></div>
+                  <div class="dfield"><div class="k">Employee Number</div><div class="v">100234</div></div>
+                  <div class="dfield"><div class="k">Payroll Area</div><div class="v">IN01</div></div>
+                </div>
+                <div class="sect">Expense Items (5)</div>
+                <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead>
+                  <tbody id="deskItems"></tbody></table></div>
+                <div class="totbar"><span class="lab">Net</span><b>₹4,000.00</b><span class="lab">Tax</span><b>₹720.00</b><span class="lab">Total</span><b>₹4,720.00</b></div>
+                <div class="dact"><button class="btn sec">Edit</button><button class="btn sec">Save Draft</button><button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button></div>
               </div>
             </div>
           </div>
         </div>
-        <!-- b2 reading -->
-        <div class="scr" id="b2">
-          <div class="b-wrap" style="align-items:center;justify-content:center">
-            <div style="text-align:center;color:var(--paperink)">
-              <div class="a-spin" style="border-color:rgba(58,51,39,.15);border-top-color:var(--blue);margin:0 auto 14px"></div>
-              <div style="font-weight:800;font-family:var(--mono)">Reading receipt…</div>
-              <div style="font-size:11.5px;color:#a9997c;margin-top:4px">5 items found</div>
-            </div>
-          </div>
-        </div>
-        <div class="b-sheet" id="bSheet">
-          <div class="b-sheetc">
-            <div class="b-handle"></div>
-            <div class="b-sheetb">
-              <div class="b-hd">TAJ RESIDENCY · BENGALURU</div>
-              <div class="b-hdsub">Jan 2026 · India · ₹ · Suresh (100234)</div>
-              <div id="bItems"></div>
-            </div>
-            <div class="b-foot"><button class="cta" onclick="tst('B')">💾 Save Draft</button>
-              <div class="noap" style="padding-bottom:0"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>
-            </div>
-          </div>
-        </div>
-        <div class="toast" id="tB">✓ Draft (5 items) saved — submit on desktop</div>
-      </div></div>
-      <div class="proscons">
-        <div><span class="p">＋</span> Familiar &amp; tactile; the whole bill is visible at once; great for records/audit feel.</div>
-        <div><span class="m">－</span> Denser to read on small phones; skeuomorphism needs careful, consistent styling.</div>
+        <div class="ovl" id="dovl"><div class="dlg"><h3>Send for approval?</h3><p>This claim will be routed to</p><p class="who">Suresh R. — India · Level 1</p><div class="btns"><button class="c" onclick="dovl(false)">Cancel</button><button class="k" onclick="dfin()">Confirm</button></div></div></div>
+        <div class="dtoast" id="dtoast">✓ Submitted — approver notified by email</div>
       </div>
+      <div class="frozen">Design frozen — the shared review &amp; submit surface.</div>
     </div>
 
-    <!-- ============ CONCEPT C ============ -->
-    <div class="concept cpt-c">
-      <div class="cap">
-        <span class="badge">Concept C</span>
-        <div class="name">💬 AI assistant · guided</div>
-        <div class="why">A friendly assistant confirms what it read and walks you through, one question at a time.</div>
-      </div>
-      <div class="phone"><div class="notch"></div><div class="sw" id="C">
-        <div class="scr on" id="c1">
-          <div class="c-wrap">
-            <div class="c-top"><span class="bot">🤖</span><span><div class="nm">Expense Assistant</div><div class="st">● online</div></span></div>
-            <div class="c-chat" id="cChat">
-              <div class="bub ai">Hi Suresh 👋 Snap a receipt and I'll turn it into a draft claim for you.</div>
+    <!-- ============ CONNECTOR ============ -->
+    <div class="connector"><div class="arrow">⇆</div><div class="lbl">SAME<br><b>Draft</b><br>phone → desktop</div></div>
+
+    <!-- ============ PREMIUM MOBILE ============ -->
+    <div class="panel">
+      <div class="cap"><span class="ico">📱</span><span class="t">Mobile — premium</span><span class="role emp">scan &amp; draft</span></div>
+      <div class="phonewrap"><div class="phone"><div class="notch"></div><div class="sw" id="M">
+
+        <!-- m1 HOME -->
+        <div class="scr on" id="m1">
+          <div class="statusbar"></div>
+          <div class="mbody">
+            <div class="mtop"><div><div class="hi">Welcome back,</div><div class="h1">Your Expenses</div></div><div class="av">SR</div></div>
+            <div class="hero">
+              <div class="lab">Reimbursed this month</div>
+              <div class="big">₹14,730</div>
+              <div class="meta"><span><b>3</b> claims</span><span><b>1</b> draft pending</span><span><b>UK</b>+<b>IN</b></span></div>
             </div>
-            <div class="c-quick" id="cQuick"><button class="solid" onclick="cScan()">📷 Scan a receipt</button></div>
+            <div class="qrow">
+              <button class="qtile scan" onclick="openSheet()"><div class="qic">📷</div><div class="ql">Scan receipt</div><div class="qs">Snap a bill → instant draft</div></button>
+              <button class="qtile newc" onclick="scanTo('single')"><div class="qic">✏️</div><div class="ql">New claim</div><div class="qs">Enter manually</div></button>
+            </div>
+            <div class="seclbl">Recent claims <span class="more">See all</span></div>
+            <div class="rcard"><div class="ric">🧾</div><div class="rmid"><div class="rt">UKEXP08</div><div class="rs">Dec 2025 · UK</div></div><div class="ramt"><div class="a">£180.00</div><span class="pill appr">Approved</span></div></div>
+            <div class="rcard"><div class="ric">🍽️</div><div class="rmid"><div class="rt">INEXP11</div><div class="rs">Dec 2025 · India</div></div><div class="ramt"><div class="a">₹9,540</div><span class="pill appr">Approved</span></div></div>
+          </div>
+          <button class="fab" onclick="openSheet()">＋</button>
+          <div class="nav"><span class="n on">🏠</span><span class="n">🗂️</span><span style="width:60px"></span><span class="n">📊</span><span class="n">👤</span></div>
+          <!-- capture sheet -->
+          <div class="sheet" id="sheet"><div class="sheetc">
+            <div class="sheeth"></div><div class="sheett">Add a receipt</div>
+            <button class="sheetb" onclick="closeSheet();scanTo('multi','cam')"><span class="si">📸</span>Take a photo</button>
+            <button class="sheetb" onclick="closeSheet();scanTo('multi','read')"><span class="si">🖼️</span>Choose from gallery</button>
+            <button class="sheetcancel" onclick="closeSheet()">Cancel</button>
+          </div></div>
+        </div>
+
+        <!-- m2 CAMERA -->
+        <div class="scr" id="m2">
+          <div class="cam"><div class="camtop">← Scan receipt</div><div class="camhint">Fit the receipt in the frame</div><div class="vf">🧾</div><div class="shutter" onclick="scanTo(_mode,'read')"></div></div>
+        </div>
+
+        <!-- m3 READING -->
+        <div class="scr" id="m3">
+          <div class="statusbar"></div>
+          <div class="reading">
+            <div class="rclay">🧾</div>
+            <div style="font-weight:800;font-size:16px">Reading your receipt…</div>
+            <div style="font-size:12px;color:var(--soft)" id="readSub">Extracting items, amounts &amp; tax</div>
+            <div class="rprog"><i></i></div>
           </div>
         </div>
-        <div class="toast" id="tC">✓ Draft (5 items) saved — submit on desktop</div>
-      </div></div>
-      <div class="proscons">
-        <div><span class="p">＋</span> Most approachable; explains what it did; confirmations reduce mistakes; feels premium.</div>
-        <div><span class="m">－</span> More screens/turns than a form; chat can feel slow for power users on routine bills.</div>
-      </div>
-    </div>
 
+        <!-- m4 DRAFT -->
+        <div class="scr" id="m4">
+          <div class="statusbar"></div>
+          <div class="mbody" id="draftBody"></div>
+          <div class="savebar">
+            <button class="savebtn" onclick="saveDraft()">💾 Save Draft</button>
+            <div class="noap"><b>No “Apply for Approval” on mobile.</b> Submit from the desktop app.</div>
+          </div>
+          <div class="toast" id="mtoast">✓ Draft saved — open it on desktop to submit</div>
+        </div>
+
+      </div></div></div>
+      <div class="frozen">Premium restyle — tables become soft cards; same fields, labels &amp; order as desktop.</div>
+    </div>
   </div>
 
-  <!-- ============ SHARED DESKTOP ANCHOR ============ -->
-  <div class="deskrow">
-    <div class="deskcap">🖥️ Shared desktop ("Fiori") — unchanged · where any concept's draft is reviewed &amp; submitted</div>
-    <div class="desktop">
-      <div class="winbar"><span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span><span class="url">bsx-tdd…/site/MyBSX › My Expenses › INEXP13</span></div>
-      <div class="dpad">
-        <div class="pgtitle">Expense Claim — INEXP13</div>
-        <div class="pgsub">Scanned on mobile · loaded as 5 rows, same fields.</div>
-        <div class="attn">✓ Every field arrived pre-filled from the mobile draft.</div>
-        <div class="grid3">
-          <div class="field"><div class="k">Country</div><div class="v">India</div></div>
-          <div class="field"><div class="k">Claim Period</div><div class="v">Jan 2026</div></div>
-          <div class="field"><div class="k">Site Currency</div><div class="v">INR (₹)</div></div>
-          <div class="field"><div class="k">Employee</div><div class="v">Suresh Rajarathinam</div></div>
-          <div class="field"><div class="k">Employee Number</div><div class="v">100234</div></div>
-          <div class="field"><div class="k">Payroll Area</div><div class="v">IN01</div></div>
-        </div>
-        <div class="sect">Expense Items (5)</div>
-        <div class="tscroll"><table class="items">
-          <thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead>
-          <tbody id="deskItems"></tbody>
-        </table></div>
-        <div class="sect">Mileage Claims</div>
-        <div class="tscroll"><table class="items">
-          <thead><tr><th>Trip Date</th><th>Destination</th><th>Reason</th><th>Engine Type</th><th style="text-align:right">Miles</th><th style="text-align:right">Rate / mile</th></tr></thead>
-          <tbody><tr><td colspan="6" style="color:var(--mut);white-space:normal">No mileage on this claim.</td></tr></tbody>
-        </table></div>
-        <div class="totbar"><span class="lab">Net</span><b>₹4,000.00</b><span class="lab">Tax</span><b>₹720.00</b><span class="lab">Total</span><b>₹4,720.00</b></div>
-        <div class="dact"><button class="btn sec">Edit</button><button class="btn sec">Save Draft</button><button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button></div>
-      </div>
-      <div class="ovl" id="dovl"><div class="dlg"><h3>Send for approval?</h3><p>This claim will be routed to</p><p class="who">Suresh R. — India · Level 1</p><div class="btns"><button class="c" onclick="dovl(false)">Cancel</button><button class="k" onclick="dovl(false)">Confirm</button></div></div></div>
+  <!-- ============ HANDOFF NOTES ============ -->
+  <div class="spec">
+    <h3>What stays true under the new look</h3>
+    <div class="rows">
+      <div class="li"><span>1.</span><span><b>No new fields.</b> Every mobile field maps to a desktop field &amp; backend column (Country, Claim Period, Employee, Employee Number, Site Currency; item: Date/Type/Destination/Reason/Tax Type/Gross/Net/Tax/Attachment; mileage columns).</span></div>
+      <div class="li"><span>2.</span><span><b>Same tax &amp; validation engine.</b> Net/Tax show as CALCULATED (server truth); gross/date as SCANNED; tax type AUTO. Mobile never computes money.</span></div>
+      <div class="li"><span>3.</span><span><b>One server draft.</b> Mobile creates it; desktop reopens the same row — no export/sync.</span></div>
+      <div class="li"><span>4.</span><span><b>Submit is desktop-only.</b> Mobile = Scan + Save Draft; N items → N cards; 1 item → 1 card.</span></div>
     </div>
-    <button class="restart" onclick="resetAll()">↺ Restart all concepts</button>
-    <div class="disc">Prototype only — fake data, no backend/AI. Pick a direction and I'll build the final single-concept prototype.</div>
+    <button class="restart" onclick="resetAll()">↺ Restart both flows</button>
+    <div class="disc">Prototype only — fake data, no backend/AI. Premium restyle for your sign-off before development.</div>
   </div>
 
 <script>
-  // ---- one shared dataset: 1 India hotel bill, 5 items, GST 18% ----
   var CUR='₹', TAX='GST Standard';
-  var ITEMS=[
+  var MULTI=[
     {ic:'🏨',type:'Hotel', date:'15 Jan 2026',dest:'Bengaluru',reason:'Hotel — room night',gross:'1,770.00',net:'1,500.00',vat:'270.00'},
     {ic:'🍽️',type:'Meals', date:'15 Jan 2026',dest:'Bengaluru',reason:'Dinner',           gross:'1,180.00',net:'1,000.00',vat:'180.00'},
     {ic:'🍽️',type:'Meals', date:'16 Jan 2026',dest:'Bengaluru',reason:'Breakfast',        gross:'590.00',  net:'500.00',  vat:'90.00'},
     {ic:'🧺',type:'Other', date:'16 Jan 2026',dest:'Bengaluru',reason:'Laundry',          gross:'295.00',  net:'250.00',  vat:'45.00'},
     {ic:'🅿️',type:'Travel',date:'15 Jan 2026',dest:'Bengaluru',reason:'Parking',          gross:'885.00',  net:'750.00',  vat:'135.00'}
   ];
+  var SINGLE=[{ic:'🚕',type:'Taxi / Cab',date:'16 Jan 2026',dest:'Bengaluru',reason:'Client visit',gross:'10,010.00',net:'8,483.05',vat:'1,526.95'}];
+
+  function num(s){ return parseFloat(String(s).replace(/,/g,'')); }
+  function inr(n){ return CUR+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function sum(list,f){ return list.reduce(function(a,it){return a+num(it[f]);},0); }
   function kv(k,v,prov,mono){ return '<div class="kv"><span class="k">'+k+'</span><span class="v'+(mono?' mono':'')+'">'+v+
-      (prov?'<span class="pv '+({SCANNED:'scan',CALCULATED:'calc',AUTO:'auto',DIRECTORY:'dir'}[prov])+'">'+prov+'</span>':'')+'</span></div>'; }
+    (prov?'<span class="pv '+({SCANNED:'scan',CALCULATED:'calc',AUTO:'auto',DIRECTORY:'dir'}[prov])+'">'+prov+'</span>':'')+'</span></div>'; }
   function itemRows(it){
     return kv('Date',it.date,'SCANNED')+kv('Type',it.type,'SCANNED')+kv('Destination',it.dest,'SCANNED')+
       kv('Reason',it.reason,'SCANNED')+kv('Tax Type',TAX,'AUTO')+kv('Gross',CUR+it.gross,'SCANNED',1)+
@@ -432,103 +412,69 @@
       kv('Site Currency','INR (₹)','AUTO');
   }
 
-  // ---- selector ----
-  function setView(v){
-    document.body.setAttribute('data-view',v);
-    document.querySelectorAll('.selector button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-v')===v);});
+  var _mode='multi';
+  function renderDraft(mode){
+    _mode=mode;
+    var list = mode==='single'?SINGLE:MULTI, N=list.length;
+    var acc = list.map(function(it,i){
+      return '<div class="acc'+(i===0?' open':'')+'" id="acc'+i+'"><div class="acc-h" onclick="tacc('+i+')">'+
+        '<span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span>'+
+        '<span class="lead"><div class="ty">'+it.reason+'</div><div class="sub">Item '+(i+1)+' of '+N+' · '+it.type+'</div></span>'+
+        '<span class="amt">'+CUR+it.gross+'</span><span class="chev">▾</span></div>'+
+        '<div class="acc-b">'+itemRows(it)+'</div></div>';
+    }).join('');
+    var body=
+      '<div class="mback"><span class="b" onclick="go(\'m1\')">←</span><span class="ttl">New Expense Claim</span></div>'+
+      '<div class="fbanner">⚠ Scanned draft — please double-check the amount &amp; date before saving.</div>'+
+      '<div class="mcard"><div class="mcard-h"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
+      '<div class="htot">'+
+        '<div class="tc"><div class="l">Net</div><div class="n" id="tN">₹0</div></div><div class="dv"></div>'+
+        '<div class="tc"><div class="l">Tax</div><div class="n" id="tT">₹0</div></div><div class="dv"></div>'+
+        '<div class="tc big"><div class="l">Total</div><div class="n" id="tG">₹0</div></div></div>'+
+      '<div class="itemsum"><span>Expense Items ('+N+')'+(N>1?' — from one bill':'')+'</span>'+(N>1?'<span class="ea" id="eaBtn" onclick="tall()">Expand all</span>':'')+'</div>'+
+      acc+
+      '<div class="itemsum" style="margin-top:12px">Mileage Claims</div>'+
+      '<div class="mcard"><div class="mcard-h"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div class="emptym">No mileage — add on desktop if needed.</div></div>'+
+      '<div class="single-link">'+(mode==='multi'
+          ? '<span onclick="renderDraft(\'single\');go(\'m4\')">▶ See a single-item receipt (1 of 1)</span>'
+          : '<span onclick="renderDraft(\'multi\');go(\'m4\')">▶ See a 5-item bill</span>')+'</div>';
+    document.getElementById('draftBody').innerHTML=body;
+    animateMoney('tN',sum(list,'net')); animateMoney('tT',sum(list,'vat')); animateMoney('tG',sum(list,'gross'));
   }
+  function animateMoney(id,target){
+    var el=document.getElementById(id); if(!el)return; var start=0, t0=null, dur=650;
+    function step(ts){ if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/dur); var v=target*(1-Math.pow(1-p,3)); el.textContent=inr(v); if(p<1)requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  function tacc(i){ document.getElementById('acc'+i).classList.toggle('open'); }
+  var _all=false;
+  function tall(){ _all=!_all; (_mode==='single'?SINGLE:MULTI).forEach(function(_,i){var e=document.getElementById('acc'+i); if(e)e.classList.toggle('open',_all);}); var b=document.getElementById('eaBtn'); if(b)b.textContent=_all?'Collapse all':'Expand all'; }
 
-  // ---- screen helper ----
-  function show(container, id){
-    document.querySelectorAll('#'+container+' .scr').forEach(function(s){s.classList.toggle('on', s.id===id);});
+  function go(id){ document.querySelectorAll('#M .scr').forEach(function(s){s.classList.toggle('on',s.id===id);}); }
+  function openSheet(){ document.getElementById('sheet').classList.add('on'); }
+  function closeSheet(){ document.getElementById('sheet').classList.remove('on'); }
+  // scanTo(mode, stage): stage 'cam' → camera; 'read' → reading→draft; default reading→draft
+  function scanTo(mode, stage){
+    renderDraft(mode);
+    if(stage==='cam'){ go('m2'); return; }
+    document.getElementById('readSub').textContent = mode==='single'?'Extracting 1 item · amount &amp; tax':'Extracting 5 items · amounts &amp; tax';
+    go('m3');
+    setTimeout(function(){ if(document.getElementById('m3').classList.contains('on')){ renderDraft(mode); go('m4'); } },1700);
   }
-  function tst(x){ document.getElementById('t'+x).classList.add('on'); }
+  function saveDraft(){ document.getElementById('mtoast').classList.add('on'); var a=document.querySelector('.connector .arrow'); if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3}); }
 
-  // ---- Concept A: camera hero + deck ----
-  var aIdx=0;
-  function aStart(){ aIdx=0; show('A','a2'); setTimeout(function(){ if(document.getElementById('a2').classList.contains('on')){ show('A','a3'); aRender(); } },1500); }
-  function aRender(){
-    var prog=ITEMS.map(function(_,i){return '<div class="a-dot '+(i<aIdx?'done':(i===aIdx?'cur':''))+'"></div>';}).join('');
-    document.getElementById('aProg').innerHTML=prog;
-    document.getElementById('aCount').textContent=(aIdx+1)+' / '+ITEMS.length;
-    var it=ITEMS[aIdx];
-    document.getElementById('aDeck').innerHTML=
-      '<div class="a-card"><div class="ttl"><span class="ic">'+it.ic+'</span><span><div class="rc">'+it.reason+'</div>'+
-      '<div class="of">Item '+(aIdx+1)+' of '+ITEMS.length+' · '+it.type+'</div></span></div>'+
-      '<div class="rows">'+itemRows(it)+'</div></div>';
-  }
-  function aAccept(){ aIdx++; if(aIdx>=ITEMS.length){ document.getElementById('aHdr').innerHTML=headerRows(); show('A','a4'); } else { aRender(); } }
-
-  // ---- Concept B: receipt wallet ----
-  function bScan(){
-    show('B','b2');
-    setTimeout(function(){
-      show('B','b1');
-      document.getElementById('bNew').innerHTML=
-        '<div class="receipt torn" onclick="bReview()"><span class="newtag">NEW · tap to review</span>'+
-        '<div class="rtop"><span class="vendor">TAJ RESIDENCY</span><span class="when">Jan 2026</span></div>'+
-        ITEMS.map(function(it){return '<div class="line"><span>'+it.reason+'</span><span>'+CUR+it.gross+'</span></div>';}).join('')+
-        '<div class="tot"><span>TOTAL (5 items)</span><span>₹4,720.00</span></div></div>';
-    },1400);
-  }
-  function bReview(){
-    document.getElementById('bItems').innerHTML=
-      headerBlockB()+
-      ITEMS.map(function(it,i){
-        return '<div class="b-itemblock'+(i===0?' open':'')+'" id="bib'+i+'">'+
-          '<div class="bh" onclick="document.getElementById(\'bib'+i+'\').classList.toggle(\'open\')">'+
-          '<span>'+(i+1)+'. '+it.reason+'</span><span>'+CUR+it.gross+' ▾</span></div>'+
-          '<div class="bd">'+itemRows(it)+'</div></div>';
-      }).join('')+
-      '<div class="b-itemblock"><div class="bh"><span>NET / TAX / TOTAL</span><span>₹4,720.00</span></div>'+
-      '<div class="bd">'+kv('Net','₹4,000.00','CALCULATED',1)+kv('Tax (GST)','₹720.00','CALCULATED',1)+kv('Total','₹4,720.00',null,1)+'</div></div>';
-    document.getElementById('bSheet').classList.add('on');
-  }
-  function headerBlockB(){ return '<div class="b-itemblock" style="border-top:0"><div class="bd" style="display:block">'+headerRows()+'</div></div>'; }
-
-  // ---- Concept C: assistant chat ----
-  var cStep=0;
-  function push(html){ var d=document.getElementById('cChat'); d.insertAdjacentHTML('beforeend',html); d.scrollTop=d.scrollHeight; }
-  function setQuick(html){ document.getElementById('cQuick').innerHTML=html; }
-  function cScan(){
-    push('<div class="bub me">📷 Sent a receipt</div>');
-    setQuick('');
-    push('<div class="bub ai"><div class="typing"><span></span><span></span><span></span></div></div>');
-    setTimeout(function(){
-      var t=document.getElementById('cChat').lastChild; if(t) t.remove();
-      push('<div class="bub ai">Done! I read your <b>hotel bill</b> — I found <b>5 items</b> totalling <b>₹4,720.00</b> 🎉</div>');
-      push('<div class="bub ai">It looks like <b>India 🇮🇳</b>, currency <b>₹</b>, for <b>Suresh (100234)</b>. Correct?</div>');
-      setQuick('<button onclick="cConfirm()">✓ Yes, correct</button><button onclick="alert(\'(Prototype) change country\')">Change</button>');
-    },1300);
-  }
-  function cConfirm(){
-    push('<div class="bub me">Yes, correct</div>'); setQuick('');
-    push('<div class="bub ai">Great. Here are the 5 items — tap any to see all fields:</div>');
-    ITEMS.forEach(function(it,i){
-      push('<div class="c-card" id="cc'+i+'"><div class="ch" onclick="document.getElementById(\'cc'+i+'\').classList.toggle(\'open\')">'+
-        '<span class="ic">'+it.ic+'</span><span><div class="rc">'+it.reason+'</div><div class="of">Item '+(i+1)+' of 5 · '+it.type+'</div></span>'+
-        '<span class="amt">'+CUR+it.gross+'</span></div><div class="cf">'+itemRows(it)+'</div>'+
-        '<div class="showf" onclick="document.getElementById(\'cc'+i+'\').classList.toggle(\'open\')">Show all fields ▾</div></div>');
-    });
-    push('<div class="bub ai">Net <b>₹4,000</b> · Tax <b>₹720</b> · Total <b>₹4,720</b>. Save as a draft?</div>');
-    setQuick('<button class="solid" onclick="tst(\'C\')">💾 Save Draft</button>');
-  }
-
-  // ---- desktop rows ----
-  document.getElementById('deskItems').innerHTML=ITEMS.map(function(it){
+  // desktop
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){
     return '<tr><td>'+it.date+'</td><td>'+it.type+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>'+TAX+'</td>'+
       '<td class="num">'+CUR+it.gross+'</td><td class="num">'+CUR+it.net+'</td><td class="num">'+CUR+it.vat+'</td><td>📎 receipt.jpg</td></tr>';
   }).join('');
+  function dgo(id){ document.querySelectorAll('.dscreen').forEach(function(s){s.classList.toggle('on',s.id===id);}); document.getElementById('dovl').classList.remove('on'); document.getElementById('dtoast').classList.remove('on'); }
   function dovl(on){ document.getElementById('dovl').classList.toggle('on',on); }
+  function dfin(){ dovl(false); document.getElementById('dtoast').classList.add('on'); }
 
-  function resetAll(){
-    show('A','a1'); show('B','b1'); show('C','c1');
-    document.getElementById('bSheet').classList.remove('on'); document.getElementById('bNew').innerHTML='';
-    ['tA','tB','tC'].forEach(function(t){document.getElementById(t).classList.remove('on');});
-    document.getElementById('cChat').innerHTML='<div class="bub ai">Hi Suresh 👋 Snap a receipt and I\'ll turn it into a draft claim for you.</div>';
-    setQuick('<button class="solid" onclick="cScan()">📷 Scan a receipt</button>');
-    setView('all');
-  }
+  function resetAll(){ closeSheet(); go('m1'); dgo('d1'); document.getElementById('mtoast').classList.remove('on'); }
+
+  renderDraft('multi'); // preload
 </script>
 </body>
 </html>
