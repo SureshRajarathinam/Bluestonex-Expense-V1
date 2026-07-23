@@ -196,6 +196,22 @@
   .rules .li b{color:var(--ink)}
   .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--blue-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
   .disclaimer{text-align:center;font-size:11.5px;color:var(--mut);margin-top:10px}
+
+  /* ---- multi-item accordion (mobile, for 10-item receipts) ---- */
+  .itemsum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--soft);font-weight:700;margin:2px 2px 8px}
+  .itemsum .ea{color:var(--blue-ink);cursor:pointer}
+  .acc{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;box-shadow:var(--card-sh);overflow:hidden}
+  .acc-h{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer}
+  .acc-h .n{width:22px;height:22px;border-radius:7px;background:var(--wash);color:var(--blue-ink);font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+  .acc-h .ic2{font-size:15px}
+  .acc-h .lead{min-width:0}
+  .acc-h .ty{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acc-h .sub{font-size:10.5px;color:var(--mut)}
+  .acc-h .amt{margin-left:auto;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+  .acc-h .chev{color:var(--mut);transition:transform .2s;font-size:11px;flex-shrink:0}
+  .acc.open .acc-h .chev{transform:rotate(180deg)}
+  .acc-b{display:none;padding:2px 12px 11px;border-top:1px solid #f0f4f9}
+  .acc.open .acc-b{display:block}
 </style>
 </head>
 <body>
@@ -244,10 +260,15 @@
                       <td>Jan 2026</td><td>India 🇮🇳</td><td>₹10,010.00</td>
                       <td><span class="tag d">Draft</span></td>
                     </tr>
+                    <tr class="clickable" onclick="dgo('d3')">
+                      <td><b>UKEXP15</b><span class="newflag">from phone · 10 items</span></td>
+                      <td>Dec 2025</td><td>UK 🇬🇧</td><td>£397.20</td>
+                      <td><span class="tag d">Draft</span></td>
+                    </tr>
                     <tr><td><b>UKEXP08</b></td><td>Dec 2025</td><td>UK 🇬🇧</td><td>£180.00</td><td><span class="tag a">Approved</span></td></tr>
                   </tbody>
                 </table>
-                <div class="disclaimer" style="text-align:left;margin-top:12px">↑ <b>INEXP12</b> was scanned &amp; drafted on the phone (right). Click it to review &amp; submit.</div>
+                <div class="disclaimer" style="text-align:left;margin-top:12px">↑ Both drafts were scanned on the phone (right). <b>INEXP12</b> = 1 item · <b>UKEXP15</b> = a 10-item hotel bill. Click either to review &amp; submit.</div>
               </div>
 
               <!-- D2: DETAIL (real header fields + real item/mileage columns) -->
@@ -285,6 +306,45 @@
                   </table>
                 </div>
                 <div class="totbar"><span class="lab">Net</span><b>₹8,483.05</b><span class="lab">Tax</span><b>₹1,526.95</b><span class="lab">Total</span><b>₹10,010.00</b></div>
+                <div class="desk-actions">
+                  <button class="btn sec">Edit</button>
+                  <button class="btn sec">Save Draft</button>
+                  <button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button>
+                </div>
+              </div>
+
+              <!-- D3: DETAIL — 10-item hotel bill (same table, 10 rows) -->
+              <div class="dscreen" id="d3">
+                <div class="backrow" onclick="dgo('d1')">← My Claims</div>
+                <div class="pgtitle">Expense Claim — UKEXP15</div>
+                <div class="pgsub">Scanned from a 10-line hotel invoice on mobile · loaded as 10 rows.</div>
+                <div class="attn">✓ All 10 items arrived pre-filled — one row per receipt line, same fields.</div>
+                <div class="grid3">
+                  <div class="field"><div class="k">Country</div><div class="v">United Kingdom</div></div>
+                  <div class="field"><div class="k">Claim Period</div><div class="v">Dec 2025</div></div>
+                  <div class="field"><div class="k">Site Currency</div><div class="v">GBP (£)</div></div>
+                  <div class="field"><div class="k">Employee</div><div class="v">Sabarinathan Chandrasekar</div></div>
+                  <div class="field"><div class="k">Employee Number</div><div class="v">100128</div></div>
+                  <div class="field"><div class="k">Payroll Area</div><div class="v">UK01</div></div>
+                </div>
+                <div class="sect">Expense Items (10)</div>
+                <div class="tblscroll">
+                  <table class="items">
+                    <thead><tr>
+                      <th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th>
+                      <th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th>
+                    </tr></thead>
+                    <tbody id="deskItems"></tbody>
+                  </table>
+                </div>
+                <div class="sect">Mileage Claims</div>
+                <div class="tblscroll">
+                  <table class="items">
+                    <thead><tr><th>Trip Date</th><th>Destination</th><th>Reason</th><th>Engine Type</th><th style="text-align:right">Miles</th><th style="text-align:right">Rate / mile</th></tr></thead>
+                    <tbody><tr><td colspan="6" style="color:var(--mut);white-space:normal">No mileage on this claim.</td></tr></tbody>
+                  </table>
+                </div>
+                <div class="totbar"><span class="lab">Net</span><b>£331.00</b><span class="lab">Tax</span><b>£66.20</b><span class="lab">Total</span><b>£397.20</b></div>
                 <div class="desk-actions">
                   <button class="btn sec">Edit</button>
                   <button class="btn sec">Save Draft</button>
@@ -333,12 +393,15 @@
               <div class="pfoot">
                 <button class="fab" onclick="sheet(true)">📷 Scan receipt</button>
                 <button class="fab ghost" onclick="pgo('p4')">＋ New claim</button>
+                <div style="text-align:center;margin-top:10px">
+                  <span onclick="scanMulti()" style="font-size:11.5px;color:var(--blue-ink);font-weight:700;cursor:pointer;text-decoration:underline">▶ Demo: scan a 10-item hotel bill</span>
+                </div>
               </div>
               <div class="sheet" id="sheet">
                 <div class="sheet-inner">
                   <div class="sheet-h">Add receipt</div>
-                  <button class="sheet-b" onclick="sheet(false);pgo('p2')">📸 &nbsp;Take a photo</button>
-                  <button class="sheet-b" onclick="sheet(false);pgo('p3')">🖼️ &nbsp;Choose from gallery</button>
+                  <button class="sheet-b" onclick="_procTarget='p4';sheet(false);pgo('p2')">📸 &nbsp;Take a photo</button>
+                  <button class="sheet-b" onclick="_procTarget='p4';sheet(false);pgo('p3')">🖼️ &nbsp;Choose from gallery</button>
                   <button class="sheet-cancel" onclick="sheet(false)">Cancel</button>
                 </div>
               </div>
@@ -426,6 +489,47 @@
               <div class="toast" id="ptoast">✓ Draft saved — open it on desktop to submit</div>
             </div>
 
+            <!-- P5: DRAFT (mobile) — 10-item receipt, collapsible cards -->
+            <div class="pscreen" id="p5">
+              <div class="pbar slim">← New Expense Claim</div>
+              <div class="pbody">
+                <div class="flag">⚠ 10 items detected on this receipt — tap any item to review before saving.</div>
+
+                <div class="mcard">
+                  <div class="mcard-h"><span class="ic">🏨</span><span class="ti">Claim</span></div>
+                  <div class="drow"><span class="k">Country</span><span class="v">United Kingdom<span class="prov scan">DETECTED</span></span></div>
+                  <div class="drow"><span class="k">Claim Period</span><span class="v">Dec 2025<span class="prov scan">FROM RECEIPT</span></span></div>
+                  <div class="drow"><span class="k">Employee</span><span class="v">Sabarinathan C.<span class="prov dir">DIRECTORY</span></span></div>
+                  <div class="drow"><span class="k">Employee Number</span><span class="v">100128<span class="prov dir">DIRECTORY</span></span></div>
+                  <div class="drow"><span class="k">Site Currency</span><span class="v">GBP (£)<span class="prov auto">AUTO</span></span></div>
+                </div>
+
+                <div class="totstrip">
+                  <div class="tc"><div class="lab">Net</div><div class="num money">£331.00</div></div>
+                  <div class="divv"></div>
+                  <div class="tc"><div class="lab">Tax</div><div class="num money">£66.20</div></div>
+                  <div class="divv"></div>
+                  <div class="tc big"><div class="lab">Total</div><div class="num money">£397.20</div></div>
+                </div>
+
+                <div class="itemsum"><span>Expense Items (10)</span><span class="ea" id="eaBtn" onclick="toggleAll()">Expand all</span></div>
+                <div id="itemsList"></div>
+
+                <div class="lbl">Mileage Claims</div>
+                <div class="mcard">
+                  <div class="mcard-h"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div>
+                  <div class="emptym">No mileage on this claim.</div>
+                </div>
+                <div style="font-size:10.5px;color:var(--mut);text-align:center;margin-top:6px">On desktop these load as <b>10 rows</b> in the Expense Items table — same fields.</div>
+              </div>
+              <div class="prow">
+                <button class="edit" onclick="alert('(Prototype) any item expands to editable fields — same rules as desktop')">Edit</button>
+                <button class="draft" onclick="pfinishM()">💾 Save Draft</button>
+              </div>
+              <div class="noapprove"><b>No “Apply for Approval” on mobile.</b> Submit from the desktop app.</div>
+              <div class="toast" id="ptoast2">✓ Draft with 10 items saved — open it on desktop to submit</div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -485,8 +589,53 @@
   </div>
 
 <script>
+  // ---- ONE dataset → renders BOTH the desktop rows and the mobile cards ----
+  var MULTI = [
+    {ic:'🏨',type:'Hotel',      date:'12 Dec 2025',dest:'London',reason:'Hotel — night 1', gross:'120.00',net:'100.00',vat:'20.00'},
+    {ic:'🏨',type:'Hotel',      date:'13 Dec 2025',dest:'London',reason:'Hotel — night 2', gross:'120.00',net:'100.00',vat:'20.00'},
+    {ic:'🍽️',type:'Meals',      date:'12 Dec 2025',dest:'London',reason:'Breakfast',       gross:'18.00', net:'15.00', vat:'3.00'},
+    {ic:'🍽️',type:'Meals',      date:'12 Dec 2025',dest:'London',reason:'Dinner',          gross:'42.00', net:'35.00', vat:'7.00'},
+    {ic:'🅿️',type:'Travel',     date:'12 Dec 2025',dest:'London',reason:'Parking',         gross:'24.00', net:'20.00', vat:'4.00'},
+    {ic:'📶',type:'Other',      date:'12 Dec 2025',dest:'London',reason:'WiFi',            gross:'9.60',  net:'8.00',  vat:'1.60'},
+    {ic:'🧺',type:'Other',      date:'13 Dec 2025',dest:'London',reason:'Laundry',         gross:'15.60', net:'13.00', vat:'2.60'},
+    {ic:'🍸',type:'Meals',      date:'12 Dec 2025',dest:'London',reason:'Bar',             gross:'12.00', net:'10.00', vat:'2.00'},
+    {ic:'🏛️',type:'Other',      date:'12 Dec 2025',dest:'London',reason:'City tax',        gross:'6.00',  net:'5.00',  vat:'1.00'},
+    {ic:'⏰',type:'Other',      date:'13 Dec 2025',dest:'London',reason:'Late checkout',   gross:'30.00', net:'25.00', vat:'5.00'}
+  ];
+  function drow(k,v,prov){ return '<div class="drow"><span class="k">'+k+'</span><span class="v'+(prov==='CALCULATED'||prov==='SCANNED'?' money':'')+'">'+v+
+      (prov?'<span class="prov '+({SCANNED:'scan',CALCULATED:'calc',AUTO:'auto'}[prov])+'">'+prov+'</span>':'')+'</span></div>'; }
+  function renderMulti(){
+    // mobile accordion
+    var m = MULTI.map(function(it,i){
+      var body = drow('Date',it.date,'SCANNED')+drow('Type',it.type,'SCANNED')+drow('Destination',it.dest,'SCANNED')+
+        drow('Reason',it.reason,'SCANNED')+drow('Tax Type','VAT Standard','AUTO')+
+        drow('Gross','£'+it.gross,'SCANNED')+drow('Net','£'+it.net,'CALCULATED')+drow('Tax','£'+it.vat,'CALCULATED')+
+        '<div class="drow"><span class="k">Attachment</span><span class="v"><span class="attach">📎 receipt.jpg</span></span></div>';
+      return '<div class="acc'+(i===0?' open':'')+'" id="acc'+i+'">'+
+        '<div class="acc-h" onclick="toggle('+i+')"><span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span>'+
+        '<span class="lead"><div class="ty">'+it.type+'</div><div class="sub">'+it.reason+'</div></span>'+
+        '<span class="amt">£'+it.gross+'</span><span class="chev">▼</span></div>'+
+        '<div class="acc-b">'+body+'</div></div>';
+    }).join('');
+    document.getElementById('itemsList').innerHTML = m;
+    // desktop rows
+    var d = MULTI.map(function(it){
+      return '<tr><td>'+it.date+'</td><td>'+it.type+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>VAT Standard</td>'+
+        '<td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£'+it.vat+'</td><td>📎 receipt.jpg</td></tr>';
+    }).join('');
+    document.getElementById('deskItems').innerHTML = d;
+  }
+  function toggle(i){ document.getElementById('acc'+i).classList.toggle('open'); }
+  var _allOpen=false;
+  function toggleAll(){
+    _allOpen=!_allOpen;
+    MULTI.forEach(function(_,i){ document.getElementById('acc'+i).classList.toggle('open',_allOpen); });
+    document.getElementById('eaBtn').textContent=_allOpen?'Collapse all':'Expand all';
+  }
+
+  var _procTarget='p4';
   function dgo(id){
-    ['d1','d2'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
+    ['d1','d2','d3'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
     document.getElementById('dovl').classList.remove('on');
     document.getElementById('dtoast').classList.remove('on');
   }
@@ -494,16 +643,18 @@
   function dfinish(){dovl(false);document.getElementById('dtoast').classList.add('on');}
 
   function pgo(id){
-    ['p1','p2','p3','p4'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
-    document.getElementById('ptoast').classList.remove('on');
-    if(id==='p3'){ setTimeout(function(){ if(document.getElementById('p3').classList.contains('on')) pgo('p4'); }, 1900); }
+    ['p1','p2','p3','p4','p5'].forEach(function(s){document.getElementById(s).classList.toggle('on', s===id);});
+    ['ptoast','ptoast2'].forEach(function(t){var e=document.getElementById(t);if(e)e.classList.remove('on');});
+    if(id==='p3'){ setTimeout(function(){ if(document.getElementById('p3').classList.contains('on')) pgo(_procTarget); }, 1900); }
   }
   function sheet(on){document.getElementById('sheet').classList.toggle('on', on);}
-  function pfinish(){
-    document.getElementById('ptoast').classList.add('on');
-    var c=document.querySelector('.connector .arrow'); if(c){c.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
-  }
-  function resetAll(){ dgo('d1'); pgo('p1'); sheet(false); }
+  function scanMulti(){ _procTarget='p5'; pgo('p3'); }
+  function flashArrow(){ var c=document.querySelector('.connector .arrow'); if(c){c.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});} }
+  function pfinish(){ document.getElementById('ptoast').classList.add('on'); flashArrow(); }
+  function pfinishM(){ document.getElementById('ptoast2').classList.add('on'); flashArrow(); }
+  function resetAll(){ _procTarget='p4'; dgo('d1'); pgo('p1'); sheet(false); }
+
+  renderMulti();
 </script>
 </body>
 </html>
