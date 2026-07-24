@@ -215,12 +215,9 @@
             <div class="rec"><span class="ic">🧾</span><span><div class="t">UKEXP08</div><div class="s">Dec 2025 · UK</div></span><span class="r"><div class="a">£180</div><span class="stat ap">Approved</span></span></div>
             <div class="rec"><span class="ic">🍽️</span><span><div class="t">INEXP11</div><div class="s">Dec 2025 · India</div></span><span class="r"><div class="a">₹9,540</div><span class="stat ap">Approved</span></span></div>
           </div>
-          <!-- radial + FAB only -->
-          <div class="radial" id="rad">
-            <button class="rbtn center" onclick="radClose();startScan('multi',true)">📷<span class="lbl">Scan</span></button>
-          </div>
+          <!-- FAB only: one tap opens the camera -->
           <div class="dock"><div class="homeline"></div></div>
-          <button class="cfab" id="fab" onclick="radTog()">＋</button>
+          <button class="cfab" id="fab" onclick="startScan('multi',true)">＋</button>
         </div>
 
         <!-- camera -->
