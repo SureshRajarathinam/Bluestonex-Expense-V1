@@ -9,29 +9,33 @@
     --ink:#17171c; --card:#ffffff; --bg:#e9ebf1; --lav:#e9ecfb; --line:#ececf2; --mut:#9a9aa8; --soft:#6c6c78;
     --brand:#0070f2; --brand-ink:#0057c2; --brand-deep:#00347a; --g1:#0f6fe6; --g2:#3d8bff;
     --green:#12a150; --amber:#c77700; --violet:#6d5ef0; --red:#e5352b;
-    --font:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --font:"72","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
     --sh:0 10px 26px rgba(30,40,80,.10); --shsm:0 4px 12px rgba(30,40,80,.08); --shblue:0 14px 30px rgba(0,90,220,.42);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:26px 16px 60px}
+  .svic{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle}
+  .svic svg{width:1em;height:1em;display:block}
   .head{max-width:1000px;margin:0 auto 18px;text-align:center}
-  .head h1{font-size:20px;font-weight:800;color:var(--brand-ink)}
+  .head h1{font-size:20px;font-weight:800;color:var(--brand-ink);display:flex;align-items:center;justify-content:center;gap:9px}
+  .head h1 .svic{font-size:22px;color:var(--brand)}
   .head p{font-size:13px;color:var(--soft);margin-top:6px;max-width:720px;margin-inline:auto;line-height:1.5}
   .head .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
-  .head .badge{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--soft)}
+  .head .badge{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:99px;background:#fff;border:1px solid var(--line);color:var(--soft);display:inline-flex;align-items:center;gap:6px}
+  .head .badge .svic{font-size:14px;color:var(--brand)}
   .head .badge b{color:var(--brand-ink)}
 
   .stage{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr auto 330px;gap:24px;align-items:start}
   @media(max-width:1000px){.stage{grid-template-columns:1fr;justify-items:center}.connector{transform:rotate(90deg);margin:4px 0}}
   .panel{width:100%}
   .panel .cap{display:flex;align-items:center;gap:9px;margin-bottom:12px;justify-content:center}
-  .panel .cap .ico{font-size:17px}.panel .cap .t{font-size:14px;font-weight:800}
+  .panel .cap .ico{font-size:16px;color:var(--brand)}.panel .cap .t{font-size:14px;font-weight:800}
   .panel .cap .role{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
   .role.emp{background:var(--lav);color:var(--brand-ink)}.role.desk{background:#eef1f6;color:var(--soft)}
   .frozen{font-size:10.5px;color:var(--mut);text-align:center;margin-top:6px}
 
   .connector{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--brand-ink);min-width:56px}
-  .connector .arrow{font-size:28px}.connector .lbl{font-size:11px;font-weight:800;text-align:center;line-height:1.35;color:var(--soft)}
+  .connector .arrow{font-size:26px;color:var(--brand-ink)}.connector .lbl{font-size:11px;font-weight:800;text-align:center;line-height:1.35;color:var(--soft)}
   .connector .lbl b{color:var(--brand-ink)}
 
   /* phone */
@@ -50,82 +54,77 @@
   .hero .meta{font-size:11.5px;opacity:.94;margin-top:7px;position:relative;display:flex;gap:14px}.hero .meta b{font-weight:800}
   .seclbl{display:flex;align-items:center;font-size:12px;font-weight:800;margin:18px 2px 10px}.seclbl .more{margin-left:auto;color:var(--mut);font-size:11px;font-weight:700}
   .rec{background:#fff;border-radius:18px;padding:12px 13px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:var(--shsm)}
-  .rec .ic{width:40px;height:40px;border-radius:13px;background:var(--lav);display:grid;place-items:center;font-size:18px;flex-shrink:0}
+  .rec .ic{width:40px;height:40px;border-radius:13px;background:var(--lav);display:grid;place-items:center;font-size:20px;flex-shrink:0;color:var(--brand)}
   .rec .t{font-size:13.5px;font-weight:800}.rec .s{font-size:11px;color:var(--mut)}.rec .r{margin-left:auto;text-align:right}.rec .r .a{font-size:13.5px;font-weight:800}
   .stat{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:99px;margin-top:2px;display:inline-block}.stat.ap{background:#e7f7ee;color:var(--green)}
 
   .dock{position:absolute;left:0;right:0;bottom:0;height:74px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-top:1px solid var(--line);z-index:20}
   .dock .homeline{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);width:120px;height:4px;border-radius:99px;background:#c9cdda}
-  .cfab{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;border:4px solid var(--bg);cursor:pointer;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:27px;box-shadow:var(--shblue);z-index:22;transition:transform .15s}
+  .cfab{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;border:4px solid var(--bg);cursor:pointer;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;box-shadow:var(--shblue);z-index:22;transition:transform .15s;display:grid;place-items:center}
+  .cfab .svic{font-size:26px}
   .cfab:active{transform:translateX(-50%) scale(.92)}
 
   .cam{flex:1;background:#0b0b0f;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative}
-  .camtop{position:absolute;top:0;left:0;right:0;padding:16px;font-size:13px;font-weight:700;display:flex;align-items:center}.camtop .gal{margin-left:auto;font-size:18px;cursor:pointer;opacity:.85}
-  .vf{width:196px;height:256px;border:2px dashed rgba(120,160,255,.6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:68px;background:#141824}
+  .camtop{position:absolute;top:0;left:0;right:0;padding:16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}.camtop .svic{font-size:18px}.camtop .gal{margin-left:auto;font-size:20px;cursor:pointer;opacity:.85}
+  .vf{width:196px;height:256px;border:2px dashed rgba(120,160,255,.6);border-radius:16px;display:flex;align-items:center;justify-content:center;background:#141824;color:rgba(160,190,255,.75)}.vf .svic{font-size:64px}
   .shutter{width:62px;height:62px;border-radius:50%;background:#fff;border:5px solid var(--g2);margin-top:22px;cursor:pointer}
   .reading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
-  .rc{width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-size:42px;color:#fff;box-shadow:var(--shblue);animation:bob 1.4s ease-in-out infinite}
+  .rc{width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;color:#fff;box-shadow:var(--shblue);animation:bob 1.4s ease-in-out infinite}.rc .svic{font-size:42px}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
   .rprog{width:160px;height:6px;border-radius:99px;background:#d3ddf3;overflow:hidden}.rprog i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--g1),var(--g2));border-radius:99px;animation:load 1.5s ease-in-out infinite}
   @keyframes load{0%{margin-left:-45%}100%{margin-left:105%}}
 
-  .mback{display:flex;align-items:center;gap:10px;margin-bottom:12px}.mback .b{font-size:19px;cursor:pointer;color:var(--brand-ink)}.mback .ttl{font-size:17px;font-weight:800}
+  .mback{display:flex;align-items:center;gap:10px;margin-bottom:12px}.mback .b{font-size:20px;cursor:pointer;color:var(--brand-ink);display:inline-flex}.mback .ttl{font-size:17px;font-weight:800}
   .mcard{background:#fff;border-radius:18px;padding:13px;margin-bottom:11px;box-shadow:var(--shsm)}
-  .mch{display:flex;align-items:center;gap:9px;margin-bottom:6px}.mch .ic{width:32px;height:32px;border-radius:11px;background:var(--lav);display:grid;place-items:center;font-size:15px}.mch .ti{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.mch .ct{margin-left:auto;font-size:10px;font-weight:800;color:var(--mut)}
+  .mch{display:flex;align-items:center;gap:9px;margin-bottom:6px}.mch .ic{width:32px;height:32px;border-radius:11px;background:var(--lav);display:grid;place-items:center;font-size:16px;color:var(--brand)}.mch .ti{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.mch .ct{margin-left:auto;font-size:10px;font-weight:800;color:var(--mut)}
+  .iconbtn{margin-left:8px;width:28px;height:28px;border-radius:9px;border:1.5px solid var(--brand);background:#fff;color:var(--brand);display:grid;place-items:center;cursor:pointer}.iconbtn .svic{font-size:15px}.iconbtn:active{background:var(--lav)}
+  .mch .ct + .iconbtn{margin-left:8px}
   .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef0f6}.kv:last-child{border-bottom:0}
   .kv .k{font-size:11px;color:var(--soft);font-weight:600;flex-shrink:0}.kv .v{font-size:12.5px;font-weight:700;text-align:right}.kv .v.mono{font-variant-numeric:tabular-nums}
-  .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px;cursor:pointer}
+  .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px;cursor:pointer}.att .svic{font-size:13px}
   .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:12px;box-shadow:var(--shblue)}
-  .datefield{position:relative;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand);border-radius:8px;padding:4px 10px;color:var(--brand-ink);font-weight:700;font-size:12px;cursor:pointer}
+  .datefield{position:relative;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand);border-radius:8px;padding:4px 10px;color:var(--brand-ink);font-weight:700;font-size:12px;cursor:pointer}.datefield .svic{font-size:14px}
   .datefield input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
   .htot .tc{text-align:center;flex:1;position:relative;padding:0 6px;min-width:0}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
   .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}.htot .tc.big .n{font-size:14.5px}
   .htot .dv{width:1px;background:rgba(255,255,255,.28);margin:3px 0;flex-shrink:0}
-  .fxnote{font-size:10.5px;color:var(--soft);text-align:center;margin:0 2px 12px;line-height:1.4}
-  .fxnote b{color:var(--brand-ink)}
   .isum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--soft);margin:2px 2px 9px}.isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
   .acc{background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shsm);overflow:hidden}
   .ach{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer}
   .ach .n{position:relative;width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
-  .ach .ic2{font-size:16px}.ach .lead{min-width:0}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ach .ic2{font-size:18px;color:var(--brand);display:inline-flex}.ach .lead{min-width:0}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ach .amt{margin-left:auto;text-align:right}.ach .amt .g{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}.ach .amt .o{font-size:9.5px;color:var(--mut);font-weight:700}
-  .ach .cv{color:var(--mut);font-size:11px;transition:transform .2s;margin-left:8px}.acc.open .ach .cv{transform:rotate(180deg)}
+  .ach .cv{color:var(--mut);font-size:14px;transition:transform .2s;margin-left:8px;display:inline-flex}.acc.open .ach .cv{transform:rotate(180deg)}
   .ab{display:none;padding:0 11px 11px;border-top:1px solid #f2f3f8}.acc.open .ab{display:block}
-  .fbadge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:var(--brand-ink);background:var(--lav);padding:4px 9px;border-radius:99px;margin:9px 0 4px}
   .conv{width:104px;text-align:right;font:inherit;font-size:12.5px;font-weight:800;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
   .rate{font-size:10px;color:var(--mut);font-weight:600}
-  .frlink{font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;margin-top:8px;display:inline-block}
-  .frnote{font-size:11px;color:var(--soft);background:#f5f7fd;border:1px dashed #cdd8f0;border-radius:9px;padding:7px 9px;margin-top:8px}
-  .frnote b{color:var(--ink)}.frnote .undo{color:var(--brand);font-weight:700;cursor:pointer;margin-left:6px}
   .needdot{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;font-style:normal}
   .acc.need .ach{background:#fff5f4}
   .needline{font-size:10.5px;color:var(--red);font-weight:700;margin:-2px 2px 9px;display:flex;align-items:center}
   .reddot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--red);margin-right:7px;box-shadow:0 0 0 3px rgba(229,53,43,.15)}
-  .warnpill{font-size:10px;font-weight:800;color:var(--red);background:#fdeceb;padding:2px 8px;border-radius:99px}
+  .warnpill{font-size:10px;font-weight:800;color:var(--red);background:#fdeceb;padding:2px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:4px}.warnpill .svic{font-size:11px}
   .pickbox{background:#fdf6ea;border:1px dashed #e7c98f;border-radius:12px;padding:10px;margin:7px 0 3px}.pickbox .ph{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:8px;line-height:1.35}
-  .chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}.chip.more{border-color:var(--line);color:var(--soft)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}.chip.more{border-color:var(--line);color:var(--soft);display:inline-flex;align-items:center;gap:5px}.chip.more .svic{font-size:13px}
   .picknote{font-size:10px;color:var(--mut);margin-top:8px}
-  .pickedok{font-size:10px;color:var(--green);font-weight:800}
-  .dinp{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
-  .savebtn{width:100%;border:0;border-radius:15px;padding:15px;font:inherit;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;box-shadow:var(--shblue);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:transform .12s}.savebtn:active{transform:scale(.97)}
+  .pickedok{font-size:10px;color:var(--green);font-weight:800;display:inline-flex;align-items:center;gap:3px}
+  .savebtn{width:100%;border:0;border-radius:15px;padding:15px;font:inherit;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;box-shadow:var(--shblue);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:transform .12s}.savebtn:active{transform:scale(.97)}.savebtn .svic{font-size:18px}
   .noap{font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.3}.noap b{color:var(--amber)}
-  .toast{position:absolute;left:12px;right:12px;bottom:14px;background:var(--brand-deep);color:#fff;border-radius:13px;padding:12px 14px;font-size:12px;display:none;align-items:center;gap:8px;z-index:35}.toast.on{display:flex}
   /* receipt viewer */
   .rcptv{position:absolute;inset:0;background:rgba(17,26,46,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.rcptv.on{display:flex}
   .rcptc{background:#fffdf7;width:100%;max-height:84%;overflow:auto;border-radius:14px;padding:16px 18px;box-shadow:0 20px 50px rgba(0,0,0,.4);color:#3a3327;font-family:"SF Mono",ui-monospace,Consolas,monospace;position:relative}
-  .rcptc .x{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:#efe7d9;border:0;font-size:15px;cursor:pointer;color:#3a3327}
+  .rcptc .x{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:#efe7d9;border:0;cursor:pointer;color:#3a3327;display:grid;place-items:center}.rcptc .x .svic{font-size:14px}
   .rcptc .rv{text-align:center;font-weight:800;font-size:14px}.rcptc .radr{text-align:center;font-size:10px;color:#a9997c;margin-bottom:10px}
   .rcptc .rln{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px dotted #e3d9c3}
   .rcptc .rtot{display:flex;justify-content:space-between;font-weight:800;font-size:13px;border-top:1.5px dashed #d8cdb6;margin-top:8px;padding-top:8px}.rcptc .rfoot{text-align:center;font-size:10px;color:#a9997c;margin-top:12px}
   .rcptcap{position:absolute;top:-26px;left:0;right:0;text-align:center;color:#fff;font-family:var(--font);font-size:11px;font-weight:700;opacity:.9}
-  /* type picker */
-  .tsheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:55}.tsheet.on{display:flex}
+  /* bottom sheets (type picker / add / mileage) */
+  .tsheet,.asheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:55}.tsheet.on,.asheet.on{display:flex}
   .tsc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 14px 18px;max-height:82%;display:flex;flex-direction:column;animation:up .28s ease}
   @keyframes up{from{transform:translateY(24px)}to{transform:translateY(0)}}
   .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}.tst{font-size:14px;font-weight:800;text-align:center;margin-bottom:3px}.tstsub{font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px}
   .tsearch{border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:13px;margin-bottom:10px;outline:none}.tsearch:focus{border-color:var(--brand)}
   .tslist{overflow:auto}.trow{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;cursor:pointer;transition:background .12s}.trow:active,.trow:hover{background:var(--lav)}
-  .trow .tic{width:40px;height:40px;border-radius:12px;background:var(--lav);display:grid;place-items:center;font-size:19px;flex-shrink:0}.trow .tnm{font-size:13.5px;font-weight:700}.trow .tcode{font-size:10px;color:var(--mut);margin-top:1px}.trow .go{margin-left:auto;color:var(--brand);font-weight:800;font-size:18px}
+  .trow .tic{width:40px;height:40px;border-radius:12px;background:var(--lav);display:grid;place-items:center;font-size:20px;flex-shrink:0;color:var(--brand)}.trow .tnm{font-size:13.5px;font-weight:700}.trow .tcode{font-size:10px;color:var(--mut);margin-top:1px}.trow .go{margin-left:auto;color:var(--brand);font-weight:800;font-size:16px;display:inline-flex}
 
   /* desktop */
   .desktop{background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(16,30,50,.2);overflow:hidden;border:1px solid #cfd8e3;position:relative}
@@ -133,7 +132,7 @@
   .dotr{width:11px;height:11px;border-radius:50%}.dotr.r{background:#ff5f57}.dotr.y{background:#febc2e}.dotr.g{background:#28c840}
   .url{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:7px;font-size:11px;color:var(--mut);padding:4px 12px}
   .dpad{padding:18px 20px;background:#f4f7fb}.pgtitle{font-size:16px;font-weight:800}.pgsub{font-size:12px;color:var(--soft);margin:2px 0 12px}
-  .attn{background:#e7f7ee;color:var(--green);font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;display:inline-flex;gap:7px;margin-bottom:12px}
+  .attn{background:#e7f7ee;color:var(--green);font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;display:inline-flex;gap:7px;align-items:center;margin-bottom:12px}.attn .svic{font-size:14px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:6px}.dfield{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}.dfield .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}.dfield .v{font-size:13px;font-weight:600;margin-top:2px}
   .sect{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:800;margin:14px 0 7px}
   .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
@@ -146,13 +145,11 @@
   .ovl{position:absolute;inset:0;background:rgba(11,18,32,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:10}.ovl.on{display:flex}
   .dlg{background:#fff;border-radius:14px;padding:20px;width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}.dlg h3{font-size:15px;margin-bottom:8px}.dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}.dlg .who{font-weight:800;color:var(--brand-ink)}
   .dlg .btns{display:flex;gap:10px;margin-top:16px}.dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}.dlg .c{background:#eef1f6;border:0;color:var(--soft)}.dlg .k{background:var(--brand);border:0;color:#fff}
-  .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--brand-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
-  .disc{text-align:center;font-size:11px;color:var(--mut);margin-top:8px}
-  /* manual add / new claim / save panel */
-  .newclaimbtn{width:100%;margin-top:12px;background:#fff;border:1.5px solid var(--line);color:var(--brand-ink);font:inherit;font-weight:800;font-size:13px;padding:12px;border-radius:14px;cursor:pointer;box-shadow:var(--shsm)}
-  .addbtn{width:100%;margin:2px 0;background:var(--lav);border:1.5px dashed var(--brand);color:var(--brand-ink);font:inherit;font-weight:800;font-size:13px;padding:12px;border-radius:14px;cursor:pointer}
+  .dcur{color:var(--brand-ink);font-weight:700;display:inline-flex;align-items:center;gap:4px}.dcur .svic{font-size:12px}
+  .datt{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-weight:600}.datt .svic{font-size:13px}
+  /* manual add / mileage / save panel */
+  .addbtn{width:100%;margin:2px 0;background:var(--lav);border:1.5px dashed var(--brand);color:var(--brand-ink);font:inherit;font-weight:800;font-size:13px;padding:12px;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.addbtn .svic{font-size:16px}
   .emptyhint{text-align:center;color:var(--mut);font-size:12px;margin:6px 0 8px}
-  .asheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:56}.asheet.on{display:flex}
   .asc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 16px 18px;max-height:90%;overflow:auto;animation:up .28s ease}
   .asc .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}
   .asc h3{font-size:14px;font-weight:800;text-align:center;margin-bottom:12px}
@@ -160,36 +157,45 @@
   .afield input,.afield select{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;font-size:13px;outline:none;background:#fff;color:var(--ink)}
   .afield input:focus,.afield select:focus{border-color:var(--brand)}
   .arow2{display:flex;gap:10px}.arow2 .afield{flex:1}
+  .reqmark{color:var(--red);font-weight:800}
+  .uploadbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1.5px dashed var(--brand);background:var(--lav);color:var(--brand-ink);font:inherit;font-weight:700;font-size:12.5px;padding:11px 12px;border-radius:11px;cursor:pointer}.uploadbtn .svic{font-size:15px}
+  .uploadbtn.ok{border-style:solid;border-color:var(--green);background:#e7f7ee;color:var(--green)}
+  .fname{font-size:11px;color:var(--green);font-weight:700;margin-top:6px;display:none;align-items:center;gap:5px}.fname.on{display:flex}.fname .svic{font-size:13px}
+  .aerr{color:var(--red);font-size:11.5px;font-weight:700;margin:0 0 8px;display:none;align-items:center;gap:6px}.aerr.on{display:flex}.aerr .svic{font-size:14px}
   .aadd{width:100%;border:0;border-radius:14px;padding:14px;font:inherit;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-top:4px}
   .acancel{width:100%;border:0;background:none;color:var(--soft);font:inherit;font-weight:700;padding:11px;cursor:pointer}
   .savepanel{position:absolute;inset:0;background:rgba(17,26,46,.55);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.savepanel.on{display:flex}
   .spc{background:#fff;border-radius:18px;padding:22px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35)}
-  .spc .okc{width:56px;height:56px;border-radius:50%;background:#e7f7ee;color:var(--green);display:grid;place-items:center;font-size:26px;margin:0 auto 12px}
+  .spc .okc{width:56px;height:56px;border-radius:50%;background:#e7f7ee;color:var(--green);display:grid;place-items:center;margin:0 auto 12px}.spc .okc .svic{font-size:26px}
   .spc h3{font-size:16px;margin-bottom:4px}.spc p{font-size:12.5px;color:var(--soft);margin-bottom:16px}
-  .spc .b1{width:100%;border:0;border-radius:13px;padding:13px;font:inherit;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-bottom:9px}
+  .spc .b1{width:100%;border:0;border-radius:13px;padding:13px;font:inherit;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:7px}.spc .b1 .svic{font-size:15px}
   .spc .b2{width:100%;border:1.5px solid var(--line);border-radius:13px;padding:12px;font:inherit;font-weight:700;font-size:13px;color:var(--soft);background:#fff;cursor:pointer}
-  .curcell{color:var(--brand-ink);font-weight:700}
+  .milerow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef0f6;font-size:11.5px}.milerow:last-child{border-bottom:0}.milerow .mk{color:var(--soft);font-weight:600}.milerow .mv{font-weight:800;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
 
   <div class="head">
-    <h1>📷 Receipt Scan — Foreign Currency <span style="color:var(--mut);font-weight:700">(UK employee · France €)</span></h1>
+    <h1><span class="svic" data-ic="camera"></span> Receipt Scan — Foreign Currency <span style="color:var(--mut);font-weight:700">(UK employee · France €)</span></h1>
     <p>A UK employee scans a France hotel bill. It stays a <b>UK / GBP</b> claim: each € item is <b>auto-converted to £ (editable)</b>,
        foreign VAT isn't reclaimed so <b>Tax = £0</b>, and France TVA can optionally be recorded to Notes.</p>
-    <div class="badges"><span class="badge">🌍 <b>€ → £</b> auto, editable</span><span class="badge">🧾 Tax £0 (foreign)</span><span class="badge">📝 TVA → Notes (optional)</span></div>
+    <div class="badges">
+      <span class="badge"><span class="svic" data-ic="world"></span> <b>€ → £</b> auto, editable</span>
+      <span class="badge"><span class="svic" data-ic="receipt"></span> Tax £0 (foreign)</span>
+      <span class="badge"><span class="svic" data-ic="doc"></span> TVA → Notes (optional)</span>
+    </div>
   </div>
 
   <div class="stage">
 
     <!-- DESKTOP ANCHOR -->
     <div class="panel">
-      <div class="cap"><span class="ico">🖥️</span><span class="t">Desktop ("Fiori")</span><span class="role desk">review &amp; submit</span></div>
+      <div class="cap"><span class="ico svic" data-ic="desktop"></span><span class="t">Desktop ("Fiori")</span><span class="role desk">review &amp; submit</span></div>
       <div class="desktop">
         <div class="winbar"><span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span><span class="url">bsx-tdd…/site/MyBSX › My Expenses › UKEXP19</span></div>
         <div class="dpad">
           <div class="pgtitle">Expense Claim — UKEXP19</div><div class="pgsub">France trip · € receipt scanned on mobile · converted to £.</div>
-          <div class="attn">✓ Converted amounts + original € arrived from the mobile draft.</div>
+          <div class="attn"><span class="svic" data-ic="accept"></span> Converted amounts + original € arrived from the mobile draft.</div>
           <div class="grid3">
             <div class="dfield"><div class="k">Country</div><div class="v">United Kingdom</div></div>
             <div class="dfield"><div class="k">Claim Period</div><div class="v">12 Jun 2026</div></div>
@@ -208,11 +214,11 @@
       <div class="frozen">Same claim, £ values + original € — routed to UK approvers.</div>
     </div>
 
-    <div class="connector"><div class="arrow">⇆</div><div class="lbl">SAME<br><b>Draft</b><br>phone → desktop</div></div>
+    <div class="connector"><div class="arrow svic" data-ic="sync"></div><div class="lbl">SAME<br><b>Draft</b><br>phone → desktop</div></div>
 
     <!-- PREMIUM MOBILE -->
     <div class="panel">
-      <div class="cap"><span class="ico">📱</span><span class="t">Mobile</span><span class="role emp">scan &amp; draft</span></div>
+      <div class="cap"><span class="ico svic" data-ic="phone"></span><span class="t">Mobile</span><span class="role emp">scan &amp; draft</span></div>
       <div style="display:flex;justify-content:center"><div class="phone"><div class="notch"></div><div class="sw" id="M">
 
         <div class="scr on" data-s="home">
@@ -220,22 +226,21 @@
             <div class="top"><div><div class="sub">Welcome back,</div><div class="h2">Your Expenses</div></div><span class="avatar">SC</span></div>
             <div class="hero"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>
               <div class="hi">Reimbursed this month</div><div class="big">£2,180</div><div class="meta"><span><b>4</b> claims</span><span><b>1</b> draft pending</span></div></div>
-            <button class="newclaimbtn" onclick="newClaim()">＋ New claim (manual — no scan)</button>
             <div class="seclbl">Recent <span class="more">See all</span></div>
-            <div class="rec"><span class="ic">🧾</span><span><div class="t">UKEXP08</div><div class="s">Dec 2025 · UK</div></span><span class="r"><div class="a">£180</div><span class="stat ap">Approved</span></span></div>
-            <div class="rec"><span class="ic">✈️</span><span><div class="t">UKEXP05</div><div class="s">Nov 2025 · UK</div></span><span class="r"><div class="a">£640</div><span class="stat ap">Approved</span></span></div>
+            <div class="rec"><span class="ic svic" data-ic="receipt"></span><span><div class="t">UKEXP08</div><div class="s">Dec 2025 · UK</div></span><span class="r"><div class="a">£180</div><span class="stat ap">Approved</span></span></div>
+            <div class="rec"><span class="ic svic" data-ic="plane"></span><span><div class="t">UKEXP05</div><div class="s">Nov 2025 · UK</div></span><span class="r"><div class="a">£640</div><span class="stat ap">Approved</span></span></div>
           </div>
           <div class="dock"><div class="homeline"></div></div>
-          <button class="cfab" onclick="startScan(true)">＋</button>
+          <button class="cfab" onclick="startScan(true)"><span class="svic" data-ic="camera"></span></button>
         </div>
 
-        <div class="scr" data-s="cam"><div class="cam"><div class="camtop">← Scan<span class="gal" onclick="startScan()">🖼️</span></div><div class="vf">🧾</div><div class="shutter" onclick="startScan()"></div></div></div>
+        <div class="scr" data-s="cam"><div class="cam"><div class="camtop"><span class="svic" data-ic="back"></span> Scan<span class="gal svic" data-ic="picture" onclick="startScan()"></span></div><div class="vf"><span class="svic" data-ic="receipt"></span></div><div class="shutter" onclick="startScan()"></div></div></div>
 
         <div class="scr" data-s="flow" id="flow"></div>
 
         <!-- receipt viewer (France) -->
         <div class="rcptv" id="rcpt" onclick="closeRcpt(event)"><div class="rcptc" onclick="event.stopPropagation()">
-          <div class="rcptcap">Scanned receipt — tap outside to close</div><button class="x" onclick="closeRcpt()">✕</button>
+          <div class="rcptcap">Scanned receipt — tap outside to close</div><button class="x" onclick="closeRcpt()"><span class="svic" data-ic="close"></span></button>
           <div class="rv">HÔTEL DU LOUVRE</div><div class="radr">Rue de Rivoli · Paris · 12 Jun 2026</div>
           <div class="rln"><span>Chambre / room night</span><span>€220.00</span></div>
           <div class="rln"><span>Dîner / dinner</span><span>€68.00</span></div>
@@ -255,8 +260,8 @@
 
         <!-- manual add-item sheet -->
         <div class="asheet" id="asheet" onclick="closeAdd(event)"><div class="asc" onclick="event.stopPropagation()">
-          <div class="tsh"></div><h3>Add expense (manual)</h3>
-          <div class="afield"><label>Type</label><select id="ai_type"></select></div>
+          <div class="tsh"></div><h3>Add expense</h3>
+          <div class="afield"><label>Type</label><select id="ai_type" onchange="onTypeChange()"></select></div>
           <div class="arow2">
             <div class="afield"><label>Date</label><input type="date" id="ai_date" value="2026-06-12" max="2026-07-24"></div>
             <div class="afield"><label>Currency</label><select id="ai_cur"><option value="GBP">£ GBP</option><option value="EUR">€ EUR</option><option value="INR">₹ INR</option></select></div>
@@ -264,14 +269,38 @@
           <div class="afield"><label>Amount (in selected currency)</label><input type="number" id="ai_amt" placeholder="0.00" inputmode="decimal"></div>
           <div class="afield"><label>Destination</label><input type="text" id="ai_dest" placeholder="e.g. Paris"></div>
           <div class="afield"><label>Reason</label><input type="text" id="ai_reason" placeholder="e.g. Client meeting"></div>
+          <div class="afield"><label>Receipt <span class="reqmark" id="ai_req"></span></label>
+            <button type="button" class="uploadbtn" id="ai_upbtn" onclick="document.getElementById('ai_file').click()"><span class="svic" data-ic="attach"></span> <span id="ai_uptxt">Upload receipt</span></button>
+            <input type="file" id="ai_file" accept="image/*" style="display:none" onchange="onAddFile(this)">
+            <div class="fname" id="ai_fname"><span class="svic" data-ic="accept"></span> <span id="ai_fnametxt"></span></div>
+          </div>
+          <div class="aerr" id="ai_err"><span class="svic" data-ic="alert"></span> <span id="ai_errtxt"></span></div>
           <button class="aadd" onclick="addItem()">Add to claim</button>
           <button class="acancel" onclick="closeAdd()">Cancel</button>
         </div></div>
 
+        <!-- manual mileage sheet -->
+        <div class="asheet" id="msheet" onclick="closeMile(event)"><div class="asc" onclick="event.stopPropagation()">
+          <div class="tsh"></div><h3>Add mileage</h3>
+          <div class="arow2">
+            <div class="afield"><label>Trip Date</label><input type="date" id="mi_date" value="2026-06-12" max="2026-07-24"></div>
+            <div class="afield"><label>Engine Type</label><select id="mi_eng"><option>Petrol</option><option>Diesel</option><option>Electric</option><option>Hybrid</option></select></div>
+          </div>
+          <div class="afield"><label>Destination</label><input type="text" id="mi_dest" placeholder="e.g. Client site, Reading"></div>
+          <div class="afield"><label>Reason</label><input type="text" id="mi_reason" placeholder="e.g. Client visit"></div>
+          <div class="arow2">
+            <div class="afield"><label>Miles</label><input type="number" id="mi_miles" placeholder="0" inputmode="decimal"></div>
+            <div class="afield"><label>Rate per mile (£)</label><input type="number" id="mi_rate" value="0.45" step="0.01" inputmode="decimal"></div>
+          </div>
+          <div class="aerr" id="mi_err"><span class="svic" data-ic="alert"></span> <span id="mi_errtxt"></span></div>
+          <button class="aadd" onclick="addMileage()">Add to claim</button>
+          <button class="acancel" onclick="closeMile()">Cancel</button>
+        </div></div>
+
         <!-- save result panel -->
         <div class="savepanel" id="savepanel"><div class="spc">
-          <div class="okc">✓</div><h3>Draft saved</h3><p>Open it on desktop to submit — or keep going here.</p>
-          <button class="b1" onclick="newClaimFromPanel()">＋ Start a new claim</button>
+          <div class="okc"><span class="svic" data-ic="accept"></span></div><h3>Draft saved</h3><p>Open it on desktop to submit — or keep going here.</p>
+          <button class="b1" onclick="newClaimFromPanel()"><span class="svic" data-ic="add"></span> Start a new claim</button>
           <button class="b2" onclick="closeSP()">Back to home</button>
         </div></div>
 
@@ -282,18 +311,65 @@
 
 <script>
   var HOME='£';
+
+  /* ---- SAP-Fiori-style line icon set (monochrome, self-contained) ---- */
+  var ICON={
+    back:'<path d="M15 5l-7 7 7 7"/>',
+    add:'<path d="M12 5v14M5 12h14"/>',
+    close:'<path d="M6 6l12 12M18 6L6 18"/>',
+    chev:'<path d="M6 9l6 6 6-6"/>',
+    camera:'<path d="M4 9a2 2 0 0 1 2-2h1.4l1.3-2h6.6L17 7h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3"/>',
+    picture:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17l5-5 3.5 3.5L16 12l4 4"/>',
+    save:'<path d="M5 6a1 1 0 0 1 1-1h10l3 3v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 5v5h7V5"/><path d="M8 20v-6h8v6"/>',
+    calendar:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/>',
+    attach:'<path d="M17 8.5l-6.6 6.6a2.5 2.5 0 0 1-3.5-3.5l7.3-7.3a4 4 0 0 1 5.6 5.6l-7.4 7.4"/>',
+    alert:'<path d="M12 4.5l8.5 15H3.5z"/><path d="M12 10v4.4"/><circle cx="12" cy="17.2" r=".7" fill="currentColor" stroke="none"/>',
+    accept:'<path d="M5 12.5l4.5 4.5L19 6.5"/>',
+    world:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.6 2.4 2.6 14.6 0 17"/><path d="M12 3.5c-2.6 2.4-2.6 14.6 0 17"/>',
+    sync:'<path d="M4 9h13l-3-3"/><path d="M20 15H7l3 3"/>',
+    desktop:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/>',
+    phone:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M10.5 18h3"/>',
+    /* expense-type glyphs */
+    bed:'<path d="M3 7v11M3 13h18M21 18v-4a2 2 0 0 0-2-2h-7v3"/><circle cx="6.5" cy="10" r="1.5" fill="currentColor" stroke="none"/>',
+    food:'<path d="M6 3v8M8 3v8M7 11v10M7 3v8"/><path d="M16 3c-1.3 0-2.2 2-2.2 4.5S14.7 12 16 12v9"/>',
+    train:'<rect x="6" y="4" width="12" height="11" rx="2.5"/><path d="M6 11h12"/><circle cx="9.5" cy="13" r=".9" fill="currentColor" stroke="none"/><circle cx="14.5" cy="13" r=".9" fill="currentColor" stroke="none"/><path d="M8 15l-2 5M16 15l2 5"/>',
+    car:'<path d="M5 17v-4l1.8-4.2A2 2 0 0 1 8.6 7.5h6.8a2 2 0 0 1 1.8 1.3L19 13v4"/><path d="M4 13h16"/><path d="M5.5 17v2M18.5 17v2"/><circle cx="8" cy="16.4" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16.4" r="1.3" fill="currentColor" stroke="none"/>',
+    road:'<path d="M7 20L9.4 4M17 20L14.6 4"/><path d="M12 6v2.4M12 11v2.4M12 16v2.4"/>',
+    parking:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9.5 16.5V8h3.2a2.4 2.4 0 0 1 0 4.8H9.5"/>',
+    plane:'<path d="M10.5 3.6a1.5 1.5 0 0 1 3 0V9l7 4v2l-7-2v3.6l2 1.5V20l-3.5-1L9 20v-1.9l2-1.5V13l-7 2v-2l7-4z" fill="currentColor" stroke="none"/>',
+    phone2:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M10.5 18h3"/>',
+    doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 12h5M9.5 15.5h5"/>',
+    receipt:'<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4z"/><path d="M9 8h6M9 11.5h6"/>'
+  };
+  function rawsvg(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICON[n]||ICON.doc)+'</svg>';}
+  function svg(n,extra){return '<span class="svic'+(extra?' '+extra:'')+'">'+rawsvg(n)+'</span>';}
+
   // Scanned demo bill: UK employee, France (EUR). gross/net/vat in £ (converted); orig in €.
   var ORIG=[
-    {ic:'🏨',type:'Hotel Accommodation',dest:'Paris',reason:'Hotel — room night',orig:'220.00',curSym:'€',rate:'0.859',gross:'188.98',net:'188.98',vat:'0.00',date:'12 Jun 2026'},
-    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Dinner',orig:'68.00',curSym:'€',rate:'0.859',gross:'58.41',net:'58.41',vat:'0.00',date:'12 Jun 2026'},
-    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Breakfast',orig:'24.00',curSym:'€',rate:'0.859',gross:'20.62',net:'20.62',vat:'0.00',date:'13 Jun 2026'},
-    {ic:'🚕',type:'Taxi / Cab',dest:'Paris',reason:'Airport taxi',orig:'35.00',curSym:'€',rate:'0.859',gross:'30.07',net:'30.07',vat:'0.00',date:'12 Jun 2026'},
-    {ic:'🅿️',type:'',resolved:'Parking',detected:'Voiturier / valet',suggest:['Parking','Taxi / Cab','Other Business Expense'],dest:'Paris',reason:'Valet parking',orig:'18.00',curSym:'€',rate:'0.859',gross:'15.46',net:'15.46',vat:'0.00',date:'12 Jun 2026'}
+    {ic:'bed',type:'Hotel Accommodation',dest:'Paris',reason:'Hotel — room night',orig:'220.00',curSym:'€',rate:'0.859',gross:'188.98',net:'188.98',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'food',type:'Meals & Subsistence',dest:'Paris',reason:'Dinner',orig:'68.00',curSym:'€',rate:'0.859',gross:'58.41',net:'58.41',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'food',type:'Meals & Subsistence',dest:'Paris',reason:'Breakfast',orig:'24.00',curSym:'€',rate:'0.859',gross:'20.62',net:'20.62',vat:'0.00',date:'13 Jun 2026'},
+    {ic:'car',type:'Taxi / Cab',dest:'Paris',reason:'Airport taxi',orig:'35.00',curSym:'€',rate:'0.859',gross:'30.07',net:'30.07',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'parking',type:'',resolved:'Parking',detected:'Voiturier / valet',suggest:['Parking','Taxi / Cab','Other Business Expense'],dest:'Paris',reason:'Valet parking',orig:'18.00',curSym:'€',rate:'0.859',gross:'15.46',net:'15.46',vat:'0.00',date:'12 Jun 2026'}
   ];
   function clone(a){return JSON.parse(JSON.stringify(a));}
-  var MULTI=clone(ORIG);
-  var TYPES=[{code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},{code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},{code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},{code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},{code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}];
-  function iconFor(d){for(var i=0;i<TYPES.length;i++){if(TYPES[i].d===d)return TYPES[i].ic;}return '📄';}
+  var MULTI=clone(ORIG), MILE=[];
+  // config table mirror (EXP-EXPENSE_TYPES.csv): code, description, icon key, requiresReceipt
+  var TYPES=[
+    {code:'HOTEL',d:'Hotel Accommodation',k:'bed',req:true},
+    {code:'FOOD',d:'Meals & Subsistence',k:'food',req:true},
+    {code:'TRAIN',d:'Train / Rail Tickets',k:'train',req:true},
+    {code:'TAXI',d:'Taxi / Cab',k:'car',req:true},
+    {code:'TOLLS',d:'Road Tolls',k:'road',req:false},
+    {code:'PARKING',d:'Parking',k:'parking',req:true},
+    {code:'FLIGHT',d:'Flight / Air Travel',k:'plane',req:true},
+    {code:'CAR_HIRE',d:'Car Hire',k:'car',req:true},
+    {code:'PHONE',d:'Phone / Mobile Data',k:'phone2',req:false},
+    {code:'OTHER',d:'Other Business Expense',k:'doc',req:true}
+  ];
+  function typeOf(d){for(var i=0;i<TYPES.length;i++){if(TYPES[i].d===d)return TYPES[i];}return null;}
+  function iconFor(d){var t=typeOf(d);return t?t.k:'doc';}
+  function reqReceipt(d){var t=typeOf(d);return t?t.req:false;}
   function num(s){return parseFloat(String(s).replace(/,/g,''));}
   function money(c,n){return c+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function sum(l,f){return l.reduce(function(a,it){return a+num(it[f]);},0);}
@@ -301,12 +377,12 @@
 
   function itemRows(it,i){
     var foreign=!!it.orig, typeRow, notes='';
-    if(it.type){ typeRow=kv('Type',it.type+(it.picked?' <span class="pickedok">✓</span>':'')); }
+    if(it.type){ typeRow=kv('Type',it.type+(it.picked?' <span class="pickedok">'+svg('accept')+'</span>':'')); }
     else{
-      typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">⚠ Not matched</span></span></div>'+
+      typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">'+svg('alert')+' Not matched</span></span></div>'+
         '<div class="pickbox"><div class="ph">Couldn’t match “'+it.detected+'” to a configured type — pick one:</div>'+
         '<div class="chips">'+it.suggest.map(function(s){return '<button class="chip" onclick="pick('+i+',\''+s+'\')">'+s+'</button>';}).join('')+
-        '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div><div class="picknote">Detected words kept in Notes.</div></div>';
+        '<button class="chip more" onclick="openTypeSheet('+i+')">'+svg('add')+' More</button></div><div class="picknote">Detected words kept in Notes.</div></div>';
       notes+=kv('Notes','“'+it.detected+'” (from receipt)');
     }
     var amt;
@@ -321,29 +397,37 @@
         '<div class="kv"><span class="k">Gross</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
         kv('Net','£'+it.net)+kv('Tax','£'+it.vat);
     }
-    var attach = it.manual ? kv('Attachment','<span style="color:var(--mut)">None (manual)</span>')
-      : '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
+    var showR=(!it.manual)||it.hasReceipt;
+    var attach = showR
+      ? '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">'+svg('attach')+' receipt.jpg ›</span></span></div>'
+      : kv('Attachment','<span style="color:var(--mut)">None</span>');
     return kv('Date',it.date||'12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+amt+notes+attach;
   }
   function headerRows(){return kv('Country','United Kingdom')+
-    '<div class="kv"><span class="k">Claim Period</span><span class="v"><span class="datefield"><span id="dpv">12 Jun 2026</span> 📅<input type="date" value="2026-06-12" max="2026-07-24" onchange="setDate(this)"></span></span></div>'+
+    '<div class="kv"><span class="k">Claim Period</span><span class="v"><span class="datefield"><span id="dpv">12 Jun 2026</span> '+svg('calendar')+'<input type="date" value="2026-06-12" max="2026-07-24" onchange="setDate(this)"></span></span></div>'+
     kv('Employee','Sabarinathan Chandrasekar')+kv('Employee Number','100128')+kv('Site Currency','GBP (£)');}
   function fmtDate(iso){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var p=iso.split('-');return parseInt(p[2],10)+' '+m[parseInt(p[1],10)-1]+' '+p[0];}
   function setDate(el){document.getElementById('dpv').textContent=fmtDate(el.value);}
 
   function draftHTML(){
     var list=MULTI,N=list.length,needs=list.filter(function(x){return !x.type;}).length;
-    var acc=list.map(function(it,i){var orig=it.orig?'<div class="o">'+it.curSym+it.orig+'</div>':'';return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div>'+orig+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+    var mAmt=sum(MILE,'amount');
+    var netT=sum(list,'net')+mAmt, taxT=sum(list,'vat'), grossT=sum(list,'gross')+mAmt;
+    var acc=list.map(function(it,i){var orig=it.orig?'<div class="o">'+it.curSym+it.orig+'</div>':'';return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+svg(it.ic)+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div>'+orig+'</span><span class="cv">'+svg('chev')+'</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+    var mrows = MILE.length
+      ? MILE.map(function(m){return '<div class="milerow"><span class="mk">'+m.reason+' · '+m.miles+' mi @ £'+m.rate+'</span><span class="mv">£'+m.amount+'</span></div>';}).join('')
+      : '<div style="font-size:11.5px;color:var(--mut)">No mileage yet — use the add button to enter a trip.</div>';
     return '<div class="body np">'+
-      '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
-      '<div class="htot"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,60 C60,30 120,90 320,55"/><path d="M-10,80 C60,50 120,110 320,75"/></svg><div class="tc"><div class="l">Net</div><div class="n">'+money(HOME,sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+money(HOME,sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+money(HOME,sum(list,"gross"))+'</div></div></div>'+
-      '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
+      '<div class="mback"><span class="b" onclick="go(\'home\')">'+svg('back')+'</span><span class="ttl">New Claim</span></div>'+
+      '<div class="htot"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,60 C60,30 120,90 320,55"/><path d="M-10,80 C60,50 120,110 320,75"/></svg><div class="tc"><div class="l">Net</div><div class="n">'+money(HOME,netT)+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+money(HOME,taxT)+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+money(HOME,grossT)+'</div></div></div>'+
+      '<div class="mcard"><div class="mch"><span class="ic">'+svg('receipt')+'</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
       '<div class="isum"><span>Expense Items ('+N+')</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
       (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+
-      (N===0?'<div class="emptyhint">No items yet — add one manually below, or scan a receipt.</div>':'')+acc+
-      '<button class="addbtn" onclick="openAdd()">＋ Add expense (manual)</button>'+
-      '<div class="isum" style="margin-top:14px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div style="font-size:11.5px;color:var(--mut)">No mileage — add on desktop.</div></div>'+
-      '<button class="savebtn" onclick="save()">💾 Save Draft</button>'+
+      (N===0?'<div class="emptyhint">No items yet — add one below, or scan a receipt.</div>':'')+acc+
+      '<button class="addbtn" onclick="openAdd()">'+svg('add')+' Add expense</button>'+
+      '<div class="isum" style="margin-top:14px">Mileage Claims</div>'+
+      '<div class="mcard"><div class="mch"><span class="ic">'+svg('car')+'</span><span class="ti">Mileage</span><span class="ct">'+MILE.length+'</span><button class="iconbtn" onclick="openMile()" title="Add mileage" aria-label="Add mileage">'+svg('add')+'</button></div>'+mrows+'</div>'+
+      '<button class="savebtn" onclick="save()">'+svg('save')+' Save Draft</button>'+
       '<div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>'+
       '</div>';
   }
@@ -355,45 +439,66 @@
 
   function go(scr){document.querySelectorAll('#M .scr').forEach(function(s){s.classList.toggle('on',s.getAttribute('data-s')===scr);});}
   function startScan(fromCam){if(fromCam){go('cam');return;}
-    MULTI=clone(ORIG);
-    document.getElementById('flow').innerHTML='<div class="reading"><div class="rc">🧾</div><div style="font-weight:800;font-size:15px">Reading your receipt…</div><div style="font-size:11.5px;color:var(--soft)">5 items · detecting currency &amp; converting</div><div class="rprog"><i></i></div></div>';
+    MULTI=clone(ORIG);MILE=[];
+    document.getElementById('flow').innerHTML='<div class="reading"><div class="rc">'+svg('receipt')+'</div><div style="font-weight:800;font-size:15px">Reading your receipt…</div><div style="font-size:11.5px;color:var(--soft)">5 items · detecting currency &amp; converting</div><div class="rprog"><i></i></div></div>';
     go('flow');setTimeout(function(){var f=document.querySelector('#M [data-s=flow]');if(f&&f.classList.contains('on'))inject();},1700);}
 
   function openRcpt(){document.getElementById('rcpt').classList.add('on');}
   function closeRcpt(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('rcpt').classList.remove('on');}
 
   var _pickIdx=-1;
-  function renderTS(q){q=(q||'').toLowerCase();var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;}).map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+t.ic+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+'</div></span><span class="go">＋</span></div>';}).join('');document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';}
+  function renderTS(q){q=(q||'').toLowerCase();var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;}).map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+svg(t.k)+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+(t.req?' · receipt required':'')+'</div></span><span class="go">'+svg('add')+'</span></div>';}).join('');document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';}
   function openTypeSheet(i){_pickIdx=i;document.getElementById('tsearch').value='';renderTS('');document.getElementById('tsheet').classList.add('on');}
   function filterTS(q){renderTS(q);}function chooseType(d){if(_pickIdx>=0)pick(_pickIdx,d);closeTS();}
   function closeTS(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('tsheet').classList.remove('on');}
 
-  // manual add-item
-  function openAdd(){document.getElementById('ai_amt').value='';document.getElementById('ai_dest').value='';document.getElementById('ai_reason').value='';document.getElementById('asheet').classList.add('on');}
+  // ---- manual add-item (with receipt-required validation from config) ----
+  var _addReceipt=false;
+  function onTypeChange(){var d=document.getElementById('ai_type').value;document.getElementById('ai_req').textContent=reqReceipt(d)?'(required for this type)':'';document.getElementById('ai_err').classList.remove('on');}
+  function onAddFile(inp){_addReceipt=!!(inp.files&&inp.files.length);var nm=_addReceipt?inp.files[0].name:'';document.getElementById('ai_fnametxt').textContent=nm;document.getElementById('ai_fname').classList.toggle('on',_addReceipt);document.getElementById('ai_upbtn').classList.toggle('ok',_addReceipt);document.getElementById('ai_uptxt').textContent=_addReceipt?'Replace receipt':'Upload receipt';if(_addReceipt)document.getElementById('ai_err').classList.remove('on');}
+  function openAdd(){document.getElementById('ai_amt').value='';document.getElementById('ai_dest').value='';document.getElementById('ai_reason').value='';document.getElementById('ai_file').value='';_addReceipt=false;document.getElementById('ai_fname').classList.remove('on');document.getElementById('ai_upbtn').classList.remove('ok');document.getElementById('ai_uptxt').textContent='Upload receipt';document.getElementById('ai_err').classList.remove('on');onTypeChange();document.getElementById('asheet').classList.add('on');}
   function closeAdd(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('asheet').classList.remove('on');}
+  function showErr(id,txt){document.getElementById(id+'txt').textContent=txt;document.getElementById(id).classList.add('on');}
   function addItem(){
     var t=document.getElementById('ai_type').value;
     var d=document.getElementById('ai_date').value||'2026-06-12';
     var cur=document.getElementById('ai_cur').value;
     var amt=parseFloat(document.getElementById('ai_amt').value||'0');
-    if(!amt||amt<=0){alert('Enter an amount');return;}
-    var item={ic:iconFor(t),type:t,dest:document.getElementById('ai_dest').value||'—',reason:document.getElementById('ai_reason').value||'—',date:fmtDate(d),manual:true};
+    if(!amt||amt<=0){showErr('ai_err','Enter an amount greater than 0.');return;}
+    if(reqReceipt(t)&&!_addReceipt){showErr('ai_err','“'+t+'” requires a receipt. Please upload one to continue.');return;}
+    var item={ic:iconFor(t),type:t,dest:document.getElementById('ai_dest').value||'—',reason:document.getElementById('ai_reason').value||'—',date:fmtDate(d),manual:true,hasReceipt:_addReceipt};
     if(cur==='GBP'){var net=Math.round((amt/1.2)*100)/100;item.gross=amt.toFixed(2);item.net=net.toFixed(2);item.vat=(amt-net).toFixed(2);item.taxType='VAT Standard (20%)';}
     else{var rate=cur==='EUR'?0.859:0.0095;var g=Math.round(amt*rate*100)/100;item.gross=g.toFixed(2);item.net=g.toFixed(2);item.vat='0.00';item.orig=amt.toFixed(2);item.curSym=cur==='EUR'?'€':'₹';item.rate=String(rate);}
     MULTI.push(item);closeAdd();inject();var idx=MULTI.length-1;var e=document.getElementById('ac'+idx);if(e)e.classList.add('open');
   }
 
-  // new claim / save panel
-  function newClaim(){MULTI=[];inject();}
+  // ---- manual mileage ----
+  function openMile(){document.getElementById('mi_dest').value='';document.getElementById('mi_reason').value='';document.getElementById('mi_miles').value='';document.getElementById('mi_rate').value='0.45';document.getElementById('mi_err').classList.remove('on');document.getElementById('msheet').classList.add('on');}
+  function closeMile(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('msheet').classList.remove('on');}
+  function addMileage(){
+    var miles=parseFloat(document.getElementById('mi_miles').value||'0');
+    var rate=parseFloat(document.getElementById('mi_rate').value||'0');
+    if(!miles||miles<=0){showErr('mi_err','Enter the miles travelled.');return;}
+    if(!rate||rate<=0){showErr('mi_err','Enter a rate per mile.');return;}
+    MILE.push({date:fmtDate(document.getElementById('mi_date').value||'2026-06-12'),dest:document.getElementById('mi_dest').value||'—',reason:document.getElementById('mi_reason').value||'Mileage',engine:document.getElementById('mi_eng').value,miles:miles,rate:rate.toFixed(2),amount:(miles*rate).toFixed(2)});
+    closeMile();inject();
+  }
+
+  // new claim (used by save panel) / save panel
+  function newClaim(){MULTI=[];MILE=[];inject();}
   function newClaimFromPanel(){closeSP();newClaim();}
   function closeSP(){document.getElementById('savepanel').classList.remove('on');go('home');}
 
   // desktop rows (Currency column)
-  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td class="curcell">EUR ▾</td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td>📎 receipt.jpg</td></tr>';}).join('');
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td><span class="dcur">EUR '+svg('chev')+'</span></td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td><span class="datt">'+svg('attach')+' receipt.jpg</span></td></tr>';}).join('');
   function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
 
-  // populate manual type dropdown
-  document.getElementById('ai_type').innerHTML=TYPES.map(function(t){return '<option value="'+t.d+'">'+t.ic+'  '+t.d+'</option>';}).join('');
+  // populate manual type dropdown (no emoji — text list, config-driven)
+  document.getElementById('ai_type').innerHTML=TYPES.map(function(t){return '<option value="'+t.d+'">'+t.d+(t.req?' — receipt required':'')+'</option>';}).join('');
+
+  // fill all static SVG icon hosts
+  document.querySelectorAll('.svic[data-ic]').forEach(function(el){el.innerHTML=rawsvg(el.getAttribute('data-ic'));});
+  onTypeChange();
 </script>
 </body>
 </html>
