@@ -148,6 +148,27 @@
   .dlg .btns{display:flex;gap:10px;margin-top:16px}.dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}.dlg .c{background:#eef1f6;border:0;color:var(--soft)}.dlg .k{background:var(--brand);border:0;color:#fff}
   .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--brand-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
   .disc{text-align:center;font-size:11px;color:var(--mut);margin-top:8px}
+  /* manual add / new claim / save panel */
+  .newclaimbtn{width:100%;margin-top:12px;background:#fff;border:1.5px solid var(--line);color:var(--brand-ink);font:inherit;font-weight:800;font-size:13px;padding:12px;border-radius:14px;cursor:pointer;box-shadow:var(--shsm)}
+  .addbtn{width:100%;margin:2px 0;background:var(--lav);border:1.5px dashed var(--brand);color:var(--brand-ink);font:inherit;font-weight:800;font-size:13px;padding:12px;border-radius:14px;cursor:pointer}
+  .emptyhint{text-align:center;color:var(--mut);font-size:12px;margin:6px 0 8px}
+  .asheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:56}.asheet.on{display:flex}
+  .asc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 16px 18px;max-height:90%;overflow:auto;animation:up .28s ease}
+  .asc .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}
+  .asc h3{font-size:14px;font-weight:800;text-align:center;margin-bottom:12px}
+  .afield{margin-bottom:10px}.afield label{font-size:10.5px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px}
+  .afield input,.afield select{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;font-size:13px;outline:none;background:#fff;color:var(--ink)}
+  .afield input:focus,.afield select:focus{border-color:var(--brand)}
+  .arow2{display:flex;gap:10px}.arow2 .afield{flex:1}
+  .aadd{width:100%;border:0;border-radius:14px;padding:14px;font:inherit;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-top:4px}
+  .acancel{width:100%;border:0;background:none;color:var(--soft);font:inherit;font-weight:700;padding:11px;cursor:pointer}
+  .savepanel{position:absolute;inset:0;background:rgba(17,26,46,.55);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.savepanel.on{display:flex}
+  .spc{background:#fff;border-radius:18px;padding:22px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  .spc .okc{width:56px;height:56px;border-radius:50%;background:#e7f7ee;color:var(--green);display:grid;place-items:center;font-size:26px;margin:0 auto 12px}
+  .spc h3{font-size:16px;margin-bottom:4px}.spc p{font-size:12.5px;color:var(--soft);margin-bottom:16px}
+  .spc .b1{width:100%;border:0;border-radius:13px;padding:13px;font:inherit;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-bottom:9px}
+  .spc .b2{width:100%;border:1.5px solid var(--line);border-radius:13px;padding:12px;font:inherit;font-weight:700;font-size:13px;color:var(--soft);background:#fff;cursor:pointer}
+  .curcell{color:var(--brand-ink);font-weight:700}
 </style>
 </head>
 <body>
@@ -177,8 +198,8 @@
             <div class="dfield"><div class="k">Employee Number</div><div class="v">100128</div></div>
             <div class="dfield"><div class="k">Payroll Area</div><div class="v">UK01</div></div>
           </div>
-          <div class="sect">Expense Items (5) — original currency EUR</div>
-          <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Original</th><th style="text-align:right">Gross (£)</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead><tbody id="deskItems"></tbody></table></div>
+          <div class="sect">Expense Items (5) — Currency selectable per item (manual entry)</div>
+          <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Currency</th><th>Tax Type</th><th style="text-align:right">Original</th><th style="text-align:right">Gross (£)</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead><tbody id="deskItems"></tbody></table></div>
           <div class="totbar"><span class="lab">Net</span><b>£313.54</b><span class="lab">Tax</span><b>£0.00</b><span class="lab">Total</span><b>£313.54</b></div>
           <div class="dact"><button class="btn sec">Edit</button><button class="btn sec">Save Draft</button><button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button></div>
         </div>
@@ -199,6 +220,7 @@
             <div class="top"><div><div class="sub">Welcome back,</div><div class="h2">Your Expenses</div></div><span class="avatar">SC</span></div>
             <div class="hero"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>
               <div class="hi">Reimbursed this month</div><div class="big">£2,180</div><div class="meta"><span><b>4</b> claims</span><span><b>1</b> draft pending</span></div></div>
+            <button class="newclaimbtn" onclick="newClaim()">＋ New claim (manual — no scan)</button>
             <div class="seclbl">Recent <span class="more">See all</span></div>
             <div class="rec"><span class="ic">🧾</span><span><div class="t">UKEXP08</div><div class="s">Dec 2025 · UK</div></span><span class="r"><div class="a">£180</div><span class="stat ap">Approved</span></span></div>
             <div class="rec"><span class="ic">✈️</span><span><div class="t">UKEXP05</div><div class="s">Nov 2025 · UK</div></span><span class="r"><div class="a">£640</div><span class="stat ap">Approved</span></span></div>
@@ -231,28 +253,54 @@
           <input class="tsearch" id="tsearch" placeholder="Search types…" oninput="filterTS(this.value)"><div class="tslist" id="tslist"></div>
         </div></div>
 
+        <!-- manual add-item sheet -->
+        <div class="asheet" id="asheet" onclick="closeAdd(event)"><div class="asc" onclick="event.stopPropagation()">
+          <div class="tsh"></div><h3>Add expense (manual)</h3>
+          <div class="afield"><label>Type</label><select id="ai_type"></select></div>
+          <div class="arow2">
+            <div class="afield"><label>Date</label><input type="date" id="ai_date" value="2026-06-12" max="2026-07-24"></div>
+            <div class="afield"><label>Currency</label><select id="ai_cur"><option value="GBP">£ GBP</option><option value="EUR">€ EUR</option><option value="INR">₹ INR</option></select></div>
+          </div>
+          <div class="afield"><label>Amount (in selected currency)</label><input type="number" id="ai_amt" placeholder="0.00" inputmode="decimal"></div>
+          <div class="afield"><label>Destination</label><input type="text" id="ai_dest" placeholder="e.g. Paris"></div>
+          <div class="afield"><label>Reason</label><input type="text" id="ai_reason" placeholder="e.g. Client meeting"></div>
+          <button class="aadd" onclick="addItem()">Add to claim</button>
+          <button class="acancel" onclick="closeAdd()">Cancel</button>
+        </div></div>
+
+        <!-- save result panel -->
+        <div class="savepanel" id="savepanel"><div class="spc">
+          <div class="okc">✓</div><h3>Draft saved</h3><p>Open it on desktop to submit — or keep going here.</p>
+          <button class="b1" onclick="newClaimFromPanel()">＋ Start a new claim</button>
+          <button class="b2" onclick="closeSP()">Back to home</button>
+        </div></div>
+
       </div></div></div>
       <div class="frozen">€ shown + editable £ conversion · Tax £0 (foreign) · TVA optional → Notes.</div>
     </div>
   </div>
 
 <script>
-  var HOME='£', FGN='€';
-  // UK employee, France hotel bill. gross/net/vat already in £ (converted); orig in €.
-  var MULTI=[
-    {ic:'🏨',type:'Hotel Accommodation',dest:'Paris',reason:'Hotel — room night',orig:'220.00',rate:'0.859',gross:'188.98',net:'188.98',vat:'0.00',frnote:'TVA 10% = €20.00'},
-    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Dinner',orig:'68.00',rate:'0.859',gross:'58.41',net:'58.41',vat:'0.00',frnote:'TVA 10% = €6.18'},
-    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Breakfast',orig:'24.00',rate:'0.859',gross:'20.62',net:'20.62',vat:'0.00',frnote:'TVA 10% = €2.18'},
-    {ic:'🚕',type:'Taxi / Cab',dest:'Paris',reason:'Airport taxi',orig:'35.00',rate:'0.859',gross:'30.07',net:'30.07',vat:'0.00',frnote:'TVA 10% = €3.18'},
-    {ic:'🅿️',type:'',resolved:'Parking',detected:'Voiturier / valet',suggest:['Parking','Taxi / Cab','Other Business Expense'],dest:'Paris',reason:'Valet parking',orig:'18.00',rate:'0.859',gross:'15.46',net:'15.46',vat:'0.00',frnote:'TVA 20% = €3.00'}
+  var HOME='£';
+  // Scanned demo bill: UK employee, France (EUR). gross/net/vat in £ (converted); orig in €.
+  var ORIG=[
+    {ic:'🏨',type:'Hotel Accommodation',dest:'Paris',reason:'Hotel — room night',orig:'220.00',curSym:'€',rate:'0.859',gross:'188.98',net:'188.98',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Dinner',orig:'68.00',curSym:'€',rate:'0.859',gross:'58.41',net:'58.41',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Breakfast',orig:'24.00',curSym:'€',rate:'0.859',gross:'20.62',net:'20.62',vat:'0.00',date:'13 Jun 2026'},
+    {ic:'🚕',type:'Taxi / Cab',dest:'Paris',reason:'Airport taxi',orig:'35.00',curSym:'€',rate:'0.859',gross:'30.07',net:'30.07',vat:'0.00',date:'12 Jun 2026'},
+    {ic:'🅿️',type:'',resolved:'Parking',detected:'Voiturier / valet',suggest:['Parking','Taxi / Cab','Other Business Expense'],dest:'Paris',reason:'Valet parking',orig:'18.00',curSym:'€',rate:'0.859',gross:'15.46',net:'15.46',vat:'0.00',date:'12 Jun 2026'}
   ];
+  function clone(a){return JSON.parse(JSON.stringify(a));}
+  var MULTI=clone(ORIG);
+  var TYPES=[{code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},{code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},{code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},{code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},{code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}];
+  function iconFor(d){for(var i=0;i<TYPES.length;i++){if(TYPES[i].d===d)return TYPES[i].ic;}return '📄';}
   function num(s){return parseFloat(String(s).replace(/,/g,''));}
   function money(c,n){return c+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function sum(l,f){return l.reduce(function(a,it){return a+num(it[f]);},0);}
   function kv(k,v){return '<div class="kv"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
 
   function itemRows(it,i){
-    var typeRow, notes='';
+    var foreign=!!it.orig, typeRow, notes='';
     if(it.type){ typeRow=kv('Type',it.type+(it.picked?' <span class="pickedok">✓</span>':'')); }
     else{
       typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">⚠ Not matched</span></span></div>'+
@@ -261,13 +309,21 @@
         '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div><div class="picknote">Detected words kept in Notes.</div></div>';
       notes+=kv('Notes','“'+it.detected+'” (from receipt)');
     }
-    return kv('Date','12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+
-      kv('Tax Type','No VAT (foreign)')+
-      kv('Original (receipt)','€'+it.orig)+
-      '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
-      '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">€'+it.orig+' @ '+it.rate+' · editable</span></div>'+
-      kv('Net','£'+it.net)+kv('Tax','£0.00')+notes+
-      '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
+    var amt;
+    if(foreign){
+      amt=kv('Tax Type','No VAT (foreign)')+
+        kv('Original (receipt)',it.curSym+it.orig)+
+        '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
+        '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">'+it.curSym+it.orig+' @ '+it.rate+' · editable</span></div>'+
+        kv('Net','£'+it.net)+kv('Tax','£0.00');
+    }else{
+      amt=kv('Tax Type',it.taxType||'VAT Standard (20%)')+
+        '<div class="kv"><span class="k">Gross</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
+        kv('Net','£'+it.net)+kv('Tax','£'+it.vat);
+    }
+    var attach = it.manual ? kv('Attachment','<span style="color:var(--mut)">None (manual)</span>')
+      : '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
+    return kv('Date',it.date||'12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+amt+notes+attach;
   }
   function headerRows(){return kv('Country','United Kingdom')+
     '<div class="kv"><span class="k">Claim Period</span><span class="v"><span class="datefield"><span id="dpv">12 Jun 2026</span> 📅<input type="date" value="2026-06-12" max="2026-07-24" onchange="setDate(this)"></span></span></div>'+
@@ -277,42 +333,67 @@
 
   function draftHTML(){
     var list=MULTI,N=list.length,needs=list.filter(function(x){return !x.type;}).length;
-    var acc=list.map(function(it,i){return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div><div class="o">€'+it.orig+'</div></span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+    var acc=list.map(function(it,i){var orig=it.orig?'<div class="o">'+it.curSym+it.orig+'</div>':'';return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div>'+orig+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
       '<div class="htot"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,60 C60,30 120,90 320,55"/><path d="M-10,80 C60,50 120,110 320,75"/></svg><div class="tc"><div class="l">Net</div><div class="n">'+money(HOME,sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+money(HOME,sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+money(HOME,sum(list,"gross"))+'</div></div></div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
-      '<div class="isum"><span>Expense Items ('+N+') — one bill</span><span class="ea" id="ea" onclick="tall()">Expand all</span></div>'+
-      (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+acc+
-      '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div style="font-size:11.5px;color:var(--mut)">No mileage — add on desktop.</div></div>'+
+      '<div class="isum"><span>Expense Items ('+N+')</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
+      (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+
+      (N===0?'<div class="emptyhint">No items yet — add one manually below, or scan a receipt.</div>':'')+acc+
+      '<button class="addbtn" onclick="openAdd()">＋ Add expense (manual)</button>'+
+      '<div class="isum" style="margin-top:14px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div style="font-size:11.5px;color:var(--mut)">No mileage — add on desktop.</div></div>'+
       '<button class="savebtn" onclick="save()">💾 Save Draft</button>'+
       '<div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>'+
-      '</div><div class="toast" id="ts">✓ Draft saved — open on desktop to submit</div>';
+      '</div>';
   }
   function inject(){document.getElementById('flow').innerHTML=draftHTML();go('flow');}
   function tacc(i){document.getElementById('ac'+i).classList.toggle('open');}
   function pick(i,c){MULTI[i].type=c;MULTI[i].picked=true;inject();var e=document.getElementById('ac'+i);if(e)e.classList.add('open');}
-  function applyFR(i){MULTI[i].frApplied=!MULTI[i].frApplied;inject();var e=document.getElementById('ac'+i);if(e)e.classList.add('open');}
   var _all=false;function tall(){_all=!_all;MULTI.forEach(function(_,i){var e=document.getElementById('ac'+i);if(e)e.classList.toggle('open',_all);});var b=document.getElementById('ea');if(b)b.textContent=_all?'Collapse all':'Expand all';}
-  function save(){document.getElementById('ts').classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
+  function save(){document.getElementById('savepanel').classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
 
   function go(scr){document.querySelectorAll('#M .scr').forEach(function(s){s.classList.toggle('on',s.getAttribute('data-s')===scr);});}
   function startScan(fromCam){if(fromCam){go('cam');return;}
+    MULTI=clone(ORIG);
     document.getElementById('flow').innerHTML='<div class="reading"><div class="rc">🧾</div><div style="font-weight:800;font-size:15px">Reading your receipt…</div><div style="font-size:11.5px;color:var(--soft)">5 items · detecting currency &amp; converting</div><div class="rprog"><i></i></div></div>';
     go('flow');setTimeout(function(){var f=document.querySelector('#M [data-s=flow]');if(f&&f.classList.contains('on'))inject();},1700);}
 
   function openRcpt(){document.getElementById('rcpt').classList.add('on');}
   function closeRcpt(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('rcpt').classList.remove('on');}
 
-  var TYPES=[{code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},{code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},{code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},{code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},{code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}];
   var _pickIdx=-1;
   function renderTS(q){q=(q||'').toLowerCase();var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;}).map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+t.ic+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+'</div></span><span class="go">＋</span></div>';}).join('');document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';}
   function openTypeSheet(i){_pickIdx=i;document.getElementById('tsearch').value='';renderTS('');document.getElementById('tsheet').classList.add('on');}
   function filterTS(q){renderTS(q);}function chooseType(d){if(_pickIdx>=0)pick(_pickIdx,d);closeTS();}
   function closeTS(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('tsheet').classList.remove('on');}
 
-  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>12 Jun 2026</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td>📎 receipt.jpg</td></tr>';}).join('');
+  // manual add-item
+  function openAdd(){document.getElementById('ai_amt').value='';document.getElementById('ai_dest').value='';document.getElementById('ai_reason').value='';document.getElementById('asheet').classList.add('on');}
+  function closeAdd(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('asheet').classList.remove('on');}
+  function addItem(){
+    var t=document.getElementById('ai_type').value;
+    var d=document.getElementById('ai_date').value||'2026-06-12';
+    var cur=document.getElementById('ai_cur').value;
+    var amt=parseFloat(document.getElementById('ai_amt').value||'0');
+    if(!amt||amt<=0){alert('Enter an amount');return;}
+    var item={ic:iconFor(t),type:t,dest:document.getElementById('ai_dest').value||'—',reason:document.getElementById('ai_reason').value||'—',date:fmtDate(d),manual:true};
+    if(cur==='GBP'){var net=Math.round((amt/1.2)*100)/100;item.gross=amt.toFixed(2);item.net=net.toFixed(2);item.vat=(amt-net).toFixed(2);item.taxType='VAT Standard (20%)';}
+    else{var rate=cur==='EUR'?0.859:0.0095;var g=Math.round(amt*rate*100)/100;item.gross=g.toFixed(2);item.net=g.toFixed(2);item.vat='0.00';item.orig=amt.toFixed(2);item.curSym=cur==='EUR'?'€':'₹';item.rate=String(rate);}
+    MULTI.push(item);closeAdd();inject();var idx=MULTI.length-1;var e=document.getElementById('ac'+idx);if(e)e.classList.add('open');
+  }
+
+  // new claim / save panel
+  function newClaim(){MULTI=[];inject();}
+  function newClaimFromPanel(){closeSP();newClaim();}
+  function closeSP(){document.getElementById('savepanel').classList.remove('on');go('home');}
+
+  // desktop rows (Currency column)
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td class="curcell">EUR ▾</td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td>📎 receipt.jpg</td></tr>';}).join('');
   function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
+
+  // populate manual type dropdown
+  document.getElementById('ai_type').innerHTML=TYPES.map(function(t){return '<option value="'+t.d+'">'+t.ic+'  '+t.d+'</option>';}).join('');
 </script>
 </body>
 </html>
