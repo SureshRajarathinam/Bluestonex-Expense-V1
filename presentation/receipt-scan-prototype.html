@@ -108,6 +108,15 @@
   .pv{display:block;font-size:8.5px;font-weight:800;margin-top:1px}
   .pv.scan{color:var(--brand)}.pv.calc{color:var(--green)}.pv.auto{color:var(--mut)}.pv.dir{color:var(--violet)}
   .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px}
+  .warnpill{font-size:10px;font-weight:800;color:var(--amber);background:#fbf3e2;padding:2px 8px;border-radius:99px}
+  .pickbox{background:#fdf6ea;border:1px dashed #e7c98f;border-radius:12px;padding:10px;margin:7px 0 3px}
+  .pickbox .ph{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:8px;line-height:1.35}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}
+  .chip.more{border-color:var(--line);color:var(--soft)}
+  .picknote{font-size:10px;color:var(--mut);margin-top:8px}
+  .needline{font-size:10.5px;color:var(--amber);font-weight:700;margin:-4px 2px 9px}
+  .pickedok{font-size:10px;color:var(--green);font-weight:800}
   .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:12px;box-shadow:var(--shblue)}
   .htot .tc{text-align:center;flex:1;position:relative}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase}
   .htot .tc .n{font-size:14px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}.htot .tc.big .n{font-size:16px}
@@ -240,7 +249,7 @@
     {ic:'🍽️',type:'Meals', date:'15 Jan 2026',dest:'Bengaluru',reason:'Dinner',           gross:'1,180.00',net:'1,000.00',vat:'180.00'},
     {ic:'🍽️',type:'Meals', date:'16 Jan 2026',dest:'Bengaluru',reason:'Breakfast',        gross:'590.00',  net:'500.00',  vat:'90.00'},
     {ic:'🧺',type:'Other', date:'16 Jan 2026',dest:'Bengaluru',reason:'Laundry',          gross:'295.00',  net:'250.00',  vat:'45.00'},
-    {ic:'🅿️',type:'Travel',date:'15 Jan 2026',dest:'Bengaluru',reason:'Parking',          gross:'885.00',  net:'750.00',  vat:'135.00'}
+    {ic:'🅿️',type:'',resolved:'Travel',detected:'Valet parking',suggest:['Travel','Taxi / Cab','Other'],date:'15 Jan 2026',dest:'Bengaluru',reason:'Valet parking',gross:'885.00',net:'750.00',vat:'135.00'}
   ];
   var SINGLE=[{ic:'🚕',type:'Taxi / Cab',date:'16 Jan 2026',dest:'Bengaluru',reason:'Client visit',gross:'10,010.00',net:'8,483.05',vat:'1,526.95'}];
   var WAVE='<svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>';
@@ -249,19 +258,34 @@
   function inr(n){return CUR+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function sum(l,f){return l.reduce(function(a,it){return a+num(it[f]);},0);}
   function kv(k,v,p,m){return '<div class="kv"><span class="k">'+k+'</span><span class="v'+(m?' mono':'')+'">'+v+(p?'<span class="pv '+({SCANNED:'scan',CALCULATED:'calc',AUTO:'auto',DIRECTORY:'dir'}[p])+'">'+p+'</span>':'')+'</span></div>';}
-  function itemRows(it){return kv('Date',it.date,'SCANNED')+kv('Type',it.type,'SCANNED')+kv('Destination',it.dest,'SCANNED')+kv('Reason',it.reason,'SCANNED')+kv('Tax Type',TAX,'AUTO')+kv('Gross',CUR+it.gross,'SCANNED',1)+kv('Net',CUR+it.net,'CALCULATED',1)+kv('Tax',CUR+it.vat,'CALCULATED',1)+'<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att">📎 receipt.jpg</span></span></div>';}
+  function itemRows(it,i){
+    var typeRow, notesRow='';
+    if(it.type){
+      typeRow=kv('Type',it.type+(it.picked?' ':''),it.picked?null:'SCANNED')+(it.picked?'<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v"><span class="pickedok">✓ you picked this</span></span></div>':'');
+    }else{
+      typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">⚠ Not matched</span></span></div>'+
+        '<div class="pickbox"><div class="ph">Couldn’t match “'+it.detected+'” to a configured type — pick one:</div>'+
+        '<div class="chips">'+it.suggest.map(function(s){return '<button class="chip" onclick="pick('+i+',\''+s+'\')">'+s+'</button>';}).join('')+
+        '<button class="chip more" onclick="alert(\'(Prototype) full expense-type list opens here\')">More…</button></div>'+
+        '<div class="picknote">Detected words are kept in Notes so nothing is lost.</div></div>';
+      notesRow=kv('Notes','“'+it.detected+'” (from receipt)','SCANNED');
+    }
+    return kv('Date',it.date,'SCANNED')+typeRow+kv('Destination',it.dest,'SCANNED')+kv('Reason',it.reason,'SCANNED')+kv('Tax Type',TAX,'AUTO')+kv('Gross',CUR+it.gross,'SCANNED',1)+kv('Net',CUR+it.net,'CALCULATED',1)+kv('Tax',CUR+it.vat,'CALCULATED',1)+notesRow+'<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att">📎 receipt.jpg</span></span></div>';
+  }
   function headerRows(){return kv('Country','India','SCANNED')+kv('Claim Period','Jan 2026','SCANNED')+kv('Employee','Suresh Rajarathinam','DIRECTORY')+kv('Employee Number','100234','DIRECTORY')+kv('Site Currency','INR (₹)','AUTO');}
 
   var _mode='multi', _all=false;
   function draftHTML(md){
     var list=md==='single'?SINGLE:MULTI,N=list.length;
-    var acc=list.map(function(it,i){return '<div class="acc'+(i===0?' open':'')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div><div class="s2">Item '+(i+1)+' of '+N+' · '+it.type+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it)+'</div></div>';}).join('');
+    var needs=list.filter(function(x){return !x.type;}).length;
+    var acc=list.map(function(it,i){var tl=it.type?('Item '+(i+1)+' of '+N+' · '+it.type):('Item '+(i+1)+' of '+N+' · <span style="color:var(--amber);font-weight:800">⚠ needs a type</span>');return '<div class="acc'+(i===0||!it.type?' open':'')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div><div class="s2">'+tl+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
       '<div class="fban">⚠ Scanned draft — double-check the amount &amp; date before saving.</div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
       '<div class="htot">'+WAVE+'<div class="tc"><div class="l">Net</div><div class="n">'+inr(sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+inr(sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+inr(sum(list,"gross"))+'</div></div></div>'+
-      '<div class="isum"><span>Expense Items ('+N+')'+(N>1?' — one bill':'')+'</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+acc+
+      '<div class="isum"><span>Expense Items ('+N+')'+(N>1?' — one bill':'')+'</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
+      (needs?'<div class="needline">⚠ '+needs+' item needs a type — tap it and pick from the suggestions.</div>':'')+acc+
       '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div class="emptym">No mileage — add on desktop.</div></div>'+
       '<button class="savebtn" onclick="save()">💾 Save Draft</button>'+
       '<div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>'+
@@ -270,6 +294,7 @@
   }
   function inject(md){_mode=md;_all=false;document.getElementById('flow').innerHTML=draftHTML(md);go('flow');}
   function tacc(i){document.getElementById('ac'+i).classList.toggle('open');}
+  function pick(i,choice){ var list=_mode==='single'?SINGLE:MULTI; list[i].type=choice; list[i].picked=true; inject(_mode); var e=document.getElementById('ac'+i); if(e)e.classList.add('open'); }
   function tall(){_all=!_all;(_mode==='single'?SINGLE:MULTI).forEach(function(_,i){var e=document.getElementById('ac'+i);if(e)e.classList.toggle('open',_all);});var b=document.getElementById('ea');if(b)b.textContent=_all?'Collapse all':'Expand all';}
   function save(){document.getElementById('ts').classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
 
@@ -282,7 +307,7 @@
     setTimeout(function(){var f=document.querySelector('#M [data-s=flow]');if(f&&f.classList.contains('on'))inject(md);},1600);
   }
 
-  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+it.type+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>'+TAX+'</td><td class="num">'+CUR+it.gross+'</td><td class="num">'+CUR+it.net+'</td><td class="num">'+CUR+it.vat+'</td><td>📎 receipt.jpg</td></tr>';}).join('');
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved||'—')+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>'+TAX+'</td><td class="num">'+CUR+it.gross+'</td><td class="num">'+CUR+it.net+'</td><td class="num">'+CUR+it.vat+'</td><td>📎 receipt.jpg</td></tr>';}).join('');
   function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
 </script>
 </body>
