@@ -75,7 +75,9 @@
   .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef0f6}.kv:last-child{border-bottom:0}
   .kv .k{font-size:11px;color:var(--soft);font-weight:600;flex-shrink:0}.kv .v{font-size:12.5px;font-weight:700;text-align:right}.kv .v.mono{font-variant-numeric:tabular-nums}
   .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px;cursor:pointer}
-  .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:6px;box-shadow:var(--shblue)}
+  .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:12px;box-shadow:var(--shblue)}
+  .datefield{position:relative;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand);border-radius:8px;padding:4px 10px;color:var(--brand-ink);font-weight:700;font-size:12px;cursor:pointer}
+  .datefield input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
   .htot .tc{text-align:center;flex:1;position:relative;padding:0 6px;min-width:0}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
   .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}.htot .tc.big .n{font-size:14.5px}
   .htot .dv{width:1px;background:rgba(255,255,255,.28);margin:3px 0;flex-shrink:0}
@@ -259,20 +261,19 @@
         '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div><div class="picknote">Detected words kept in Notes.</div></div>';
       notes+=kv('Notes','“'+it.detected+'” (from receipt)');
     }
-    if(it.frApplied) notes+='<div class="frnote">France tax recorded: <b>'+it.frnote+'</b> · info only, not reclaimed <span class="undo" onclick="applyFR('+i+')">remove</span></div>';
-    var frCtl = it.frApplied ? '' : '<div class="frlink" onclick="applyFR('+i+')">＋ Record France tax (TVA) — optional, for records</div>';
-    return '<div class="fbadge">🌍 Foreign · France (EUR) — converted to £</div>'+
-      kv('Date','12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+
+    return kv('Date','12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+
       kv('Tax Type','No VAT (foreign)')+
       kv('Original (receipt)','€'+it.orig)+
       '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
       '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">€'+it.orig+' @ '+it.rate+' · editable</span></div>'+
-      kv('Net','£'+it.net)+kv('Tax','£0.00')+notes+frCtl+
+      kv('Net','£'+it.net)+kv('Tax','£0.00')+notes+
       '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
   }
   function headerRows(){return kv('Country','United Kingdom')+
-    '<div class="kv"><span class="k">Claim Period</span><span class="v"><input class="dinp" type="date" value="2026-06-12" max="2026-07-24"></span></div>'+
+    '<div class="kv"><span class="k">Claim Period</span><span class="v"><span class="datefield"><span id="dpv">12 Jun 2026</span> 📅<input type="date" value="2026-06-12" max="2026-07-24" onchange="setDate(this)"></span></span></div>'+
     kv('Employee','Sabarinathan Chandrasekar')+kv('Employee Number','100128')+kv('Site Currency','GBP (£)');}
+  function fmtDate(iso){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var p=iso.split('-');return parseInt(p[2],10)+' '+m[parseInt(p[1],10)-1]+' '+p[0];}
+  function setDate(el){document.getElementById('dpv').textContent=fmtDate(el.value);}
 
   function draftHTML(){
     var list=MULTI,N=list.length,needs=list.filter(function(x){return !x.type;}).length;
@@ -280,7 +281,6 @@
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
       '<div class="htot"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,60 C60,30 120,90 320,55"/><path d="M-10,80 C60,50 120,110 320,75"/></svg><div class="tc"><div class="l">Net</div><div class="n">'+money(HOME,sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+money(HOME,sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+money(HOME,sum(list,"gross"))+'</div></div></div>'+
-      '<div class="fxnote">🌍 France receipt → converted to <b>£</b> (editable). Foreign VAT isn’t reclaimable, so <b>Tax = £0</b>; you’re reimbursed the full £ gross.</div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
       '<div class="isum"><span>Expense Items ('+N+') — one bill</span><span class="ea" id="ea" onclick="tall()">Expand all</span></div>'+
       (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+acc+
