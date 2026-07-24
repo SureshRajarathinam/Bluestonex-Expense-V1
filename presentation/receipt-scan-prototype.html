@@ -3,16 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Receipt Scan — FAB Radial (blue)</title>
+<title>Receipt Scan — Foreign Currency (UK → France)</title>
 <style>
   :root{
     --ink:#17171c; --card:#ffffff; --bg:#e9ebf1; --lav:#e9ecfb; --line:#ececf2; --mut:#9a9aa8; --soft:#6c6c78;
-    /* BluestoneX blue (desktop app) */
     --brand:#0070f2; --brand-ink:#0057c2; --brand-deep:#00347a; --g1:#0f6fe6; --g2:#3d8bff;
-    --green:#12a150; --amber:#c77700; --violet:#6d5ef0;
+    --green:#12a150; --amber:#c77700; --violet:#6d5ef0; --red:#e5352b;
     --font:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
-    --sh:0 10px 26px rgba(30,40,80,.10); --shsm:0 4px 12px rgba(30,40,80,.08);
-    --shblue:0 14px 30px rgba(0,90,220,.42);
+    --sh:0 10px 26px rgba(30,40,80,.10); --shsm:0 4px 12px rgba(30,40,80,.08); --shblue:0 14px 30px rgba(0,90,220,.42);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:26px 16px 60px}
@@ -32,7 +30,6 @@
   .role.emp{background:var(--lav);color:var(--brand-ink)}.role.desk{background:#eef1f6;color:var(--soft)}
   .frozen{font-size:10.5px;color:var(--mut);text-align:center;margin-top:6px}
 
-  /* connector */
   .connector{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--brand-ink);min-width:56px}
   .connector .arrow{font-size:28px}.connector .lbl{font-size:11px;font-weight:800;text-align:center;line-height:1.35;color:var(--soft)}
   .connector .lbl b{color:var(--brand-ink)}
@@ -43,157 +40,110 @@
   .sw{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;background:var(--bg)}
   .scr{position:absolute;inset:0;display:none;flex-direction:column}.scr.on{display:flex;animation:fade .22s ease}
   @keyframes fade{from{opacity:.5}to{opacity:1}}
-  .body{flex:1;overflow:auto;padding:44px 15px 92px}
-  .body.np{padding-bottom:20px}
-  .wave{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
-  .wave path{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.2}
+  .body{flex:1;overflow:auto;padding:44px 15px 92px}.body.np{padding-bottom:20px}
+  .wave{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}.wave path{fill:none;stroke:rgba(255,255,255,.18);stroke-width:1.2}
 
-  .top{display:flex;align-items:flex-start}
-  .top .sub{font-size:12px;color:var(--soft);font-weight:600}
-  .top .h2{font-size:23px;font-weight:800;letter-spacing:-.02em}
+  .top{display:flex;align-items:flex-start}.top .sub{font-size:12px;color:var(--soft);font-weight:600}.top .h2{font-size:23px;font-weight:800;letter-spacing:-.02em}
   .avatar{margin-left:auto;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#9db4ff,var(--g2));border:2px solid #fff;box-shadow:var(--shsm);display:grid;place-items:center;font-size:12px;font-weight:800;color:#12275c}
-
   .hero{position:relative;border-radius:22px;padding:18px;color:#fff;overflow:hidden;margin-top:14px;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:var(--shblue)}
-  .hero .hi{font-size:12px;opacity:.92;position:relative}
-  .hero .big{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:3px;position:relative}
+  .hero .hi{font-size:12px;opacity:.92;position:relative}.hero .big{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:3px;position:relative}
   .hero .meta{font-size:11.5px;opacity:.94;margin-top:7px;position:relative;display:flex;gap:14px}.hero .meta b{font-weight:800}
-
-  .seclbl{display:flex;align-items:center;font-size:12px;font-weight:800;margin:18px 2px 10px}
-  .seclbl .more{margin-left:auto;color:var(--mut);font-size:11px;font-weight:700}
+  .seclbl{display:flex;align-items:center;font-size:12px;font-weight:800;margin:18px 2px 10px}.seclbl .more{margin-left:auto;color:var(--mut);font-size:11px;font-weight:700}
   .rec{background:#fff;border-radius:18px;padding:12px 13px;margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:var(--shsm)}
   .rec .ic{width:40px;height:40px;border-radius:13px;background:var(--lav);display:grid;place-items:center;font-size:18px;flex-shrink:0}
-  .rec .t{font-size:13.5px;font-weight:800}.rec .s{font-size:11px;color:var(--mut)}
-  .rec .r{margin-left:auto;text-align:right}.rec .r .a{font-size:13.5px;font-weight:800}
-  .stat{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:99px;margin-top:2px;display:inline-block}
-  .stat.ap{background:#e7f7ee;color:var(--green)}.stat.dr{background:#eef1f6;color:var(--soft)}
+  .rec .t{font-size:13.5px;font-weight:800}.rec .s{font-size:11px;color:var(--mut)}.rec .r{margin-left:auto;text-align:right}.rec .r .a{font-size:13.5px;font-weight:800}
+  .stat{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:99px;margin-top:2px;display:inline-block}.stat.ap{background:#e7f7ee;color:var(--green)}
 
-  /* bottom bar: ONLY the FAB (nav icons removed) */
   .dock{position:absolute;left:0;right:0;bottom:0;height:74px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-top:1px solid var(--line);z-index:20}
   .dock .homeline{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);width:120px;height:4px;border-radius:99px;background:#c9cdda}
-  .cfab{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;border:4px solid var(--bg);cursor:pointer;
-    background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:27px;box-shadow:var(--shblue);z-index:22;transition:transform .15s}
+  .cfab{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;border:4px solid var(--bg);cursor:pointer;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:27px;box-shadow:var(--shblue);z-index:22;transition:transform .15s}
   .cfab:active{transform:translateX(-50%) scale(.92)}
-  .radial{position:absolute;left:50%;bottom:46px;transform:translateX(-50%);z-index:23;display:none}
-  .radial.on{display:block}
-  .rbtn{position:absolute;width:50px;height:50px;border-radius:50%;border:0;cursor:pointer;background:#fff;color:var(--brand-ink);font-size:21px;box-shadow:var(--sh);display:grid;place-items:center;animation:fan .25s ease}
-  @keyframes fan{from{opacity:0;transform:translateY(22px) scale(.6)}to{opacity:1}}
-  .rbtn.l{left:-92px;bottom:38px}.rbtn.r{left:42px;bottom:38px}
-  .rbtn.center{left:-25px;bottom:44px}
-  .rbtn .lbl{position:absolute;top:54px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;color:var(--ink);white-space:nowrap}
 
-  /* camera + reading */
   .cam{flex:1;background:#0b0b0f;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative}
-  .camtop{position:absolute;top:0;left:0;right:0;padding:16px;font-size:13px;font-weight:700;display:flex;align-items:center}
-  .camtop .gal{margin-left:auto;font-size:18px;cursor:pointer;opacity:.85}
+  .camtop{position:absolute;top:0;left:0;right:0;padding:16px;font-size:13px;font-weight:700;display:flex;align-items:center}.camtop .gal{margin-left:auto;font-size:18px;cursor:pointer;opacity:.85}
   .vf{width:196px;height:256px;border:2px dashed rgba(120,160,255,.6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:68px;background:#141824}
   .shutter{width:62px;height:62px;border-radius:50%;background:#fff;border:5px solid var(--g2);margin-top:22px;cursor:pointer}
   .reading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
   .rc{width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-size:42px;color:#fff;box-shadow:var(--shblue);animation:bob 1.4s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(3deg)}}
-  .rprog{width:160px;height:6px;border-radius:99px;background:#d3ddf3;overflow:hidden}
-  .rprog i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--g1),var(--g2));border-radius:99px;animation:load 1.5s ease-in-out infinite}
+  .rprog{width:160px;height:6px;border-radius:99px;background:#d3ddf3;overflow:hidden}.rprog i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--g1),var(--g2));border-radius:99px;animation:load 1.5s ease-in-out infinite}
   @keyframes load{0%{margin-left:-45%}100%{margin-left:105%}}
 
-  /* draft */
-  .mback{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-  .mback .b{font-size:19px;cursor:pointer;color:var(--brand-ink)}.mback .ttl{font-size:17px;font-weight:800}
-  .fban{background:#fbf3e2;color:var(--amber);font-size:11px;font-weight:700;padding:9px 11px;border-radius:13px;margin-bottom:12px;display:flex;gap:7px;line-height:1.3}
+  .mback{display:flex;align-items:center;gap:10px;margin-bottom:12px}.mback .b{font-size:19px;cursor:pointer;color:var(--brand-ink)}.mback .ttl{font-size:17px;font-weight:800}
   .mcard{background:#fff;border-radius:18px;padding:13px;margin-bottom:11px;box-shadow:var(--shsm)}
-  .mch{display:flex;align-items:center;gap:9px;margin-bottom:6px}
-  .mch .ic{width:32px;height:32px;border-radius:11px;background:var(--lav);display:grid;place-items:center;font-size:15px}
-  .mch .ti{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
-  .mch .ct{margin-left:auto;font-size:10px;font-weight:800;color:var(--mut)}
+  .mch{display:flex;align-items:center;gap:9px;margin-bottom:6px}.mch .ic{width:32px;height:32px;border-radius:11px;background:var(--lav);display:grid;place-items:center;font-size:15px}.mch .ti{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.mch .ct{margin-left:auto;font-size:10px;font-weight:800;color:var(--mut)}
   .kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef0f6}.kv:last-child{border-bottom:0}
   .kv .k{font-size:11px;color:var(--soft);font-weight:600;flex-shrink:0}.kv .v{font-size:12.5px;font-weight:700;text-align:right}.kv .v.mono{font-variant-numeric:tabular-nums}
-  .pv{display:block;font-size:8.5px;font-weight:800;margin-top:1px}
-  .pv.scan{color:var(--brand)}.pv.calc{color:var(--green)}.pv.auto{color:var(--mut)}.pv.dir{color:var(--violet)}
-  .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px}
-  .warnpill{font-size:10px;font-weight:800;color:#e5352b;background:#fdeceb;padding:2px 8px;border-radius:99px}
-  .pickbox{background:#fdf6ea;border:1px dashed #e7c98f;border-radius:12px;padding:10px;margin:7px 0 3px}
-  .pickbox .ph{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:8px;line-height:1.35}
-  .chips{display:flex;gap:7px;flex-wrap:wrap}
-  .chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}
-  .chip.more{border-color:var(--line);color:var(--soft)}
-  .picknote{font-size:10px;color:var(--mut);margin-top:8px}
-  .needline{font-size:10.5px;color:#e5352b;font-weight:700;margin:-4px 2px 9px;display:flex;align-items:center}
-  .reddot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e5352b;margin-right:7px;box-shadow:0 0 0 3px rgba(229,53,43,.15)}
-  .needdot{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#e5352b;color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;font-style:normal}
-  .acc.need .ach{background:#fff5f4}
-  .pickedok{font-size:10px;color:var(--green);font-weight:800}
-  .att{cursor:pointer}
-  /* type picker sheet */
-  .tsheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:55}
-  .tsheet.on{display:flex}
-  .tsc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 14px 18px;max-height:82%;display:flex;flex-direction:column;animation:up .28s ease}
-  .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}
-  .tst{font-size:14px;font-weight:800;text-align:center;margin-bottom:3px}
-  .tstsub{font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px}
-  .tsearch{border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:13px;margin-bottom:10px;outline:none}
-  .tsearch:focus{border-color:var(--brand)}
-  .tslist{overflow:auto}
-  .trow{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;cursor:pointer;border:1px solid transparent;transition:background .12s}
-  .trow:active,.trow:hover{background:var(--lav)}
-  .trow .tic{width:40px;height:40px;border-radius:12px;background:var(--lav);display:grid;place-items:center;font-size:19px;flex-shrink:0}
-  .trow .tnm{font-size:13.5px;font-weight:700}.trow .tcode{font-size:10px;color:var(--mut);margin-top:1px;letter-spacing:.03em}
-  .trow .go{margin-left:auto;color:var(--brand);font-weight:800;font-size:18px}
-  .dinp{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
-  /* receipt viewer */
-  .rcptv{position:absolute;inset:0;background:rgba(17,26,46,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
-  .rcptv.on{display:flex}
-  .rcptc{background:#fffdf7;width:100%;max-height:84%;overflow:auto;border-radius:14px;padding:16px 18px;box-shadow:0 20px 50px rgba(0,0,0,.4);color:#3a3327;font-family:"SF Mono",ui-monospace,Consolas,monospace;position:relative}
-  .rcptc .x{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:#efe7d9;border:0;font-size:15px;cursor:pointer;color:#3a3327}
-  .rcptc .rv{text-align:center;font-weight:800;font-size:14px;letter-spacing:.03em}
-  .rcptc .radr{text-align:center;font-size:10px;color:#a9997c;margin-bottom:10px}
-  .rcptc .rln{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px dotted #e3d9c3}
-  .rcptc .rtot{display:flex;justify-content:space-between;font-weight:800;font-size:13px;border-top:1.5px dashed #d8cdb6;margin-top:8px;padding-top:8px}
-  .rcptc .rfoot{text-align:center;font-size:10px;color:#a9997c;margin-top:12px}
-  .rcptcap{position:absolute;top:-26px;left:0;right:0;text-align:center;color:#fff;font-family:var(--font);font-size:11px;font-weight:700;opacity:.9}
-  .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:12px;box-shadow:var(--shblue)}
+  .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px;cursor:pointer}
+  .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:6px;box-shadow:var(--shblue)}
   .htot .tc{text-align:center;flex:1;position:relative;padding:0 6px;min-width:0}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
   .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}.htot .tc.big .n{font-size:14.5px}
   .htot .dv{width:1px;background:rgba(255,255,255,.28);margin:3px 0;flex-shrink:0}
-  .isum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--soft);margin:2px 2px 9px}
-  .isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
+  .fxnote{font-size:10.5px;color:var(--soft);text-align:center;margin:0 2px 12px;line-height:1.4}
+  .fxnote b{color:var(--brand-ink)}
+  .isum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--soft);margin:2px 2px 9px}.isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
   .acc{background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shsm);overflow:hidden}
   .ach{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer}
   .ach .n{position:relative;width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
   .ach .ic2{font-size:16px}.ach .lead{min-width:0}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ach .s2{font-size:10px;color:var(--mut)}.ach .amt{margin-left:auto;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
-  .ach .cv{color:var(--mut);font-size:11px;transition:transform .2s}.acc.open .ach .cv{transform:rotate(180deg)}
+  .ach .amt{margin-left:auto;text-align:right}.ach .amt .g{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}.ach .amt .o{font-size:9.5px;color:var(--mut);font-weight:700}
+  .ach .cv{color:var(--mut);font-size:11px;transition:transform .2s;margin-left:8px}.acc.open .ach .cv{transform:rotate(180deg)}
   .ab{display:none;padding:0 11px 11px;border-top:1px solid #f2f3f8}.acc.open .ab{display:block}
-  .emptym{font-size:11.5px;color:var(--mut);padding:3px 0}
-  .savebtn{width:100%;border:0;border-radius:15px;padding:15px;font:inherit;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;box-shadow:var(--shblue);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:transform .12s}
-  .savebtn:active{transform:scale(.97)}
+  .fbadge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:var(--brand-ink);background:var(--lav);padding:4px 9px;border-radius:99px;margin:9px 0 4px}
+  .conv{width:104px;text-align:right;font:inherit;font-size:12.5px;font-weight:800;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
+  .rate{font-size:10px;color:var(--mut);font-weight:600}
+  .frlink{font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;margin-top:8px;display:inline-block}
+  .frnote{font-size:11px;color:var(--soft);background:#f5f7fd;border:1px dashed #cdd8f0;border-radius:9px;padding:7px 9px;margin-top:8px}
+  .frnote b{color:var(--ink)}.frnote .undo{color:var(--brand);font-weight:700;cursor:pointer;margin-left:6px}
+  .needdot{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;font-style:normal}
+  .acc.need .ach{background:#fff5f4}
+  .needline{font-size:10.5px;color:var(--red);font-weight:700;margin:-2px 2px 9px;display:flex;align-items:center}
+  .reddot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--red);margin-right:7px;box-shadow:0 0 0 3px rgba(229,53,43,.15)}
+  .warnpill{font-size:10px;font-weight:800;color:var(--red);background:#fdeceb;padding:2px 8px;border-radius:99px}
+  .pickbox{background:#fdf6ea;border:1px dashed #e7c98f;border-radius:12px;padding:10px;margin:7px 0 3px}.pickbox .ph{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:8px;line-height:1.35}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}.chip.more{border-color:var(--line);color:var(--soft)}
+  .picknote{font-size:10px;color:var(--mut);margin-top:8px}
+  .pickedok{font-size:10px;color:var(--green);font-weight:800}
+  .dinp{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
+  .savebtn{width:100%;border:0;border-radius:15px;padding:15px;font:inherit;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;box-shadow:var(--shblue);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;transition:transform .12s}.savebtn:active{transform:scale(.97)}
   .noap{font-size:10px;color:var(--mut);text-align:center;margin-top:8px;line-height:1.3}.noap b{color:var(--amber)}
-  .slink{text-align:center;margin-top:8px}.slink span{font-size:11px;color:var(--brand);font-weight:700;cursor:pointer;text-decoration:underline}
   .toast{position:absolute;left:12px;right:12px;bottom:14px;background:var(--brand-deep);color:#fff;border-radius:13px;padding:12px 14px;font-size:12px;display:none;align-items:center;gap:8px;z-index:35}.toast.on{display:flex}
+  /* receipt viewer */
+  .rcptv{position:absolute;inset:0;background:rgba(17,26,46,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.rcptv.on{display:flex}
+  .rcptc{background:#fffdf7;width:100%;max-height:84%;overflow:auto;border-radius:14px;padding:16px 18px;box-shadow:0 20px 50px rgba(0,0,0,.4);color:#3a3327;font-family:"SF Mono",ui-monospace,Consolas,monospace;position:relative}
+  .rcptc .x{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:#efe7d9;border:0;font-size:15px;cursor:pointer;color:#3a3327}
+  .rcptc .rv{text-align:center;font-weight:800;font-size:14px}.rcptc .radr{text-align:center;font-size:10px;color:#a9997c;margin-bottom:10px}
+  .rcptc .rln{display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px dotted #e3d9c3}
+  .rcptc .rtot{display:flex;justify-content:space-between;font-weight:800;font-size:13px;border-top:1.5px dashed #d8cdb6;margin-top:8px;padding-top:8px}.rcptc .rfoot{text-align:center;font-size:10px;color:#a9997c;margin-top:12px}
+  .rcptcap{position:absolute;top:-26px;left:0;right:0;text-align:center;color:#fff;font-family:var(--font);font-size:11px;font-weight:700;opacity:.9}
+  /* type picker */
+  .tsheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:55}.tsheet.on{display:flex}
+  .tsc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 14px 18px;max-height:82%;display:flex;flex-direction:column;animation:up .28s ease}
+  @keyframes up{from{transform:translateY(24px)}to{transform:translateY(0)}}
+  .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}.tst{font-size:14px;font-weight:800;text-align:center;margin-bottom:3px}.tstsub{font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px}
+  .tsearch{border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:13px;margin-bottom:10px;outline:none}.tsearch:focus{border-color:var(--brand)}
+  .tslist{overflow:auto}.trow{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;cursor:pointer;transition:background .12s}.trow:active,.trow:hover{background:var(--lav)}
+  .trow .tic{width:40px;height:40px;border-radius:12px;background:var(--lav);display:grid;place-items:center;font-size:19px;flex-shrink:0}.trow .tnm{font-size:13.5px;font-weight:700}.trow .tcode{font-size:10px;color:var(--mut);margin-top:1px}.trow .go{margin-left:auto;color:var(--brand);font-weight:800;font-size:18px}
 
-  /* desktop anchor */
+  /* desktop */
   .desktop{background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(16,30,50,.2);overflow:hidden;border:1px solid #cfd8e3;position:relative}
   .winbar{background:#eef2f7;border-bottom:1px solid var(--line);padding:9px 12px;display:flex;align-items:center;gap:7px}
   .dotr{width:11px;height:11px;border-radius:50%}.dotr.r{background:#ff5f57}.dotr.y{background:#febc2e}.dotr.g{background:#28c840}
   .url{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:7px;font-size:11px;color:var(--mut);padding:4px 12px}
-  .dpad{padding:18px 20px;background:#f4f7fb}
-  .pgtitle{font-size:16px;font-weight:800}.pgsub{font-size:12px;color:var(--soft);margin:2px 0 12px}
+  .dpad{padding:18px 20px;background:#f4f7fb}.pgtitle{font-size:16px;font-weight:800}.pgsub{font-size:12px;color:var(--soft);margin:2px 0 12px}
   .attn{background:#e7f7ee;color:var(--green);font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;display:inline-flex;gap:7px;margin-bottom:12px}
-  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:6px}
-  .dfield{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
-  .dfield .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}.dfield .v{font-size:13px;font-weight:600;margin-top:2px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:6px}.dfield{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 11px}.dfield .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:700}.dfield .v{font-size:13px;font-weight:600;margin-top:2px}
   .sect{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);font-weight:800;margin:14px 0 7px}
   .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
-  table.items{width:100%;border-collapse:collapse;background:#fff;min-width:640px}
+  table.items{width:100%;border-collapse:collapse;background:#fff;min-width:680px}
   table.items th{font-size:10px;text-transform:uppercase;color:var(--mut);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:700;white-space:nowrap}
-  table.items td{padding:8px 10px;border-bottom:1px solid #f0f4f9;font-size:12px;white-space:nowrap}
-  table.items td.num{text-align:right;font-variant-numeric:tabular-nums}table.items tr:last-child td{border-bottom:0}
+  table.items td{padding:8px 10px;border-bottom:1px solid #f0f4f9;font-size:12px;white-space:nowrap}table.items td.num{text-align:right;font-variant-numeric:tabular-nums}table.items tr:last-child td{border-bottom:0}
   .totbar{display:flex;justify-content:flex-end;gap:20px;padding:11px 2px;font-size:13px}.totbar .lab{color:var(--soft)}
   .dact{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-  .btn{border:0;border-radius:9px;padding:10px 18px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
-  .btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--brand-ink)}.btn.pri{background:var(--brand);color:#fff}
+  .btn{border:0;border-radius:9px;padding:10px 18px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--brand-ink)}.btn.pri{background:var(--brand);color:#fff}
   .ovl{position:absolute;inset:0;background:rgba(11,18,32,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:10}.ovl.on{display:flex}
-  .dlg{background:#fff;border-radius:14px;padding:20px;width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
-  .dlg h3{font-size:15px;margin-bottom:8px}.dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}.dlg .who{font-weight:800;color:var(--brand-ink)}
-  .dlg .btns{display:flex;gap:10px;margin-top:16px}.dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}
-  .dlg .c{background:#eef1f6;border:0;color:var(--soft)}.dlg .k{background:var(--brand);border:0;color:#fff}
+  .dlg{background:#fff;border-radius:14px;padding:20px;width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}.dlg h3{font-size:15px;margin-bottom:8px}.dlg p{font-size:13px;color:var(--soft);margin-bottom:5px}.dlg .who{font-weight:800;color:var(--brand-ink)}
+  .dlg .btns{display:flex;gap:10px;margin-top:16px}.dlg button{flex:1;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}.dlg .c{background:#eef1f6;border:0;color:var(--soft)}.dlg .k{background:var(--brand);border:0;color:#fff}
   .restart{display:block;margin:18px auto 0;background:none;border:0;color:var(--brand-ink);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:underline}
   .disc{text-align:center;font-size:11px;color:var(--mut);margin-top:8px}
 </style>
@@ -201,196 +151,168 @@
 <body>
 
   <div class="head">
-    <h1>📷 Receipt Scan — FAB radial <span style="color:var(--mut);font-weight:700">(BluestoneX blue)</span></h1>
-    <p>Chosen concept, adjusted: the bottom bar now holds <b>only the +</b> (nav icons removed), and the accent is the
-       <b>desktop app's blue</b>. Tap + → it fans into Scan / New. Every desktop field carried 1:1 · N items → N cards · Save-Draft-only.</p>
-    <div class="badges"><span class="badge">🔵 <b>Brand blue</b></span><span class="badge">➕ <b>+ only</b> dock</span><span class="badge">📱 Scan &amp; Draft · 🖥️ Submit</span></div>
+    <h1>📷 Receipt Scan — Foreign Currency <span style="color:var(--mut);font-weight:700">(UK employee · France €)</span></h1>
+    <p>A UK employee scans a France hotel bill. It stays a <b>UK / GBP</b> claim: each € item is <b>auto-converted to £ (editable)</b>,
+       foreign VAT isn't reclaimed so <b>Tax = £0</b>, and France TVA can optionally be recorded to Notes.</p>
+    <div class="badges"><span class="badge">🌍 <b>€ → £</b> auto, editable</span><span class="badge">🧾 Tax £0 (foreign)</span><span class="badge">📝 TVA → Notes (optional)</span></div>
   </div>
 
   <div class="stage">
 
-    <!-- ===== DESKTOP ANCHOR ===== -->
+    <!-- DESKTOP ANCHOR -->
     <div class="panel">
       <div class="cap"><span class="ico">🖥️</span><span class="t">Desktop ("Fiori")</span><span class="role desk">review &amp; submit</span></div>
       <div class="desktop">
-        <div class="winbar"><span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span><span class="url">bsx-tdd…/site/MyBSX › My Expenses › INEXP13</span></div>
+        <div class="winbar"><span class="dotr r"></span><span class="dotr y"></span><span class="dotr g"></span><span class="url">bsx-tdd…/site/MyBSX › My Expenses › UKEXP19</span></div>
         <div class="dpad">
-          <div class="pgtitle">Expense Claim — INEXP13</div><div class="pgsub">One 5-line bill scanned on mobile · loaded as 5 rows.</div>
-          <div class="attn">✓ Every field arrived pre-filled from the mobile draft.</div>
+          <div class="pgtitle">Expense Claim — UKEXP19</div><div class="pgsub">France trip · € receipt scanned on mobile · converted to £.</div>
+          <div class="attn">✓ Converted amounts + original € arrived from the mobile draft.</div>
           <div class="grid3">
-            <div class="dfield"><div class="k">Country</div><div class="v">India</div></div>
-            <div class="dfield"><div class="k">Claim Period</div><div class="v">Jan 2026</div></div>
-            <div class="dfield"><div class="k">Site Currency</div><div class="v">INR (₹)</div></div>
-            <div class="dfield"><div class="k">Employee</div><div class="v">Suresh Rajarathinam</div></div>
-            <div class="dfield"><div class="k">Employee Number</div><div class="v">100234</div></div>
-            <div class="dfield"><div class="k">Payroll Area</div><div class="v">IN01</div></div>
+            <div class="dfield"><div class="k">Country</div><div class="v">United Kingdom</div></div>
+            <div class="dfield"><div class="k">Claim Period</div><div class="v">12 Jun 2026</div></div>
+            <div class="dfield"><div class="k">Site Currency</div><div class="v">GBP (£)</div></div>
+            <div class="dfield"><div class="k">Employee</div><div class="v">Sabarinathan Chandrasekar</div></div>
+            <div class="dfield"><div class="k">Employee Number</div><div class="v">100128</div></div>
+            <div class="dfield"><div class="k">Payroll Area</div><div class="v">UK01</div></div>
           </div>
-          <div class="sect">Expense Items (5)</div>
-          <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Gross</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead><tbody id="deskItems"></tbody></table></div>
-          <div class="totbar"><span class="lab">Net</span><b>₹4,000.00</b><span class="lab">Tax</span><b>₹720.00</b><span class="lab">Total</span><b>₹4,720.00</b></div>
+          <div class="sect">Expense Items (5) — original currency EUR</div>
+          <div class="tscroll"><table class="items"><thead><tr><th>Date</th><th>Type</th><th>Destination</th><th>Reason</th><th>Tax Type</th><th style="text-align:right">Original</th><th style="text-align:right">Gross (£)</th><th style="text-align:right">Net</th><th style="text-align:right">Tax</th><th>Attachment</th></tr></thead><tbody id="deskItems"></tbody></table></div>
+          <div class="totbar"><span class="lab">Net</span><b>£313.54</b><span class="lab">Tax</span><b>£0.00</b><span class="lab">Total</span><b>£313.54</b></div>
           <div class="dact"><button class="btn sec">Edit</button><button class="btn sec">Save Draft</button><button class="btn pri" onclick="dovl(true)">Apply for Approval ▶</button></div>
         </div>
-        <div class="ovl" id="dovl"><div class="dlg"><h3>Send for approval?</h3><p>This claim will be routed to</p><p class="who">Suresh R. — India · Level 1</p><div class="btns"><button class="c" onclick="dovl(false)">Cancel</button><button class="k" onclick="dovl(false)">Confirm</button></div></div></div>
+        <div class="ovl" id="dovl"><div class="dlg"><h3>Send for approval?</h3><p>This claim will be routed to</p><p class="who">Manager — UK · Level 1</p><div class="btns"><button class="c" onclick="dovl(false)">Cancel</button><button class="k" onclick="dovl(false)">Confirm</button></div></div></div>
       </div>
-      <div class="frozen">Design frozen — shared review &amp; submit surface.</div>
+      <div class="frozen">Same claim, £ values + original € — routed to UK approvers.</div>
     </div>
 
     <div class="connector"><div class="arrow">⇆</div><div class="lbl">SAME<br><b>Draft</b><br>phone → desktop</div></div>
 
-    <!-- ===== MOBILE (Concept 2, blue) ===== -->
+    <!-- PREMIUM MOBILE -->
     <div class="panel">
-      <div class="cap"><span class="ico">📱</span><span class="t">Mobile — FAB radial</span><span class="role emp">scan &amp; draft</span></div>
+      <div class="cap"><span class="ico">📱</span><span class="t">Mobile</span><span class="role emp">scan &amp; draft</span></div>
       <div style="display:flex;justify-content:center"><div class="phone"><div class="notch"></div><div class="sw" id="M">
 
-        <!-- home -->
         <div class="scr on" data-s="home">
           <div class="body">
-            <div class="top"><div><div class="sub">Welcome back,</div><div class="h2">Your Expenses</div></div><span class="avatar">SR</span></div>
-            <div class="hero">
-              <svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>
-              <div class="hi">Reimbursed this month</div><div class="big">₹14,730</div>
-              <div class="meta"><span><b>3</b> claims</span><span><b>1</b> draft pending</span></div>
-            </div>
+            <div class="top"><div><div class="sub">Welcome back,</div><div class="h2">Your Expenses</div></div><span class="avatar">SC</span></div>
+            <div class="hero"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>
+              <div class="hi">Reimbursed this month</div><div class="big">£2,180</div><div class="meta"><span><b>4</b> claims</span><span><b>1</b> draft pending</span></div></div>
             <div class="seclbl">Recent <span class="more">See all</span></div>
             <div class="rec"><span class="ic">🧾</span><span><div class="t">UKEXP08</div><div class="s">Dec 2025 · UK</div></span><span class="r"><div class="a">£180</div><span class="stat ap">Approved</span></span></div>
-            <div class="rec"><span class="ic">🍽️</span><span><div class="t">INEXP11</div><div class="s">Dec 2025 · India</div></span><span class="r"><div class="a">₹9,540</div><span class="stat ap">Approved</span></span></div>
+            <div class="rec"><span class="ic">✈️</span><span><div class="t">UKEXP05</div><div class="s">Nov 2025 · UK</div></span><span class="r"><div class="a">£640</div><span class="stat ap">Approved</span></span></div>
           </div>
-          <!-- FAB only: one tap opens the camera -->
           <div class="dock"><div class="homeline"></div></div>
-          <button class="cfab" id="fab" onclick="startScan('multi',true)">＋</button>
+          <button class="cfab" onclick="startScan(true)">＋</button>
         </div>
 
-        <!-- camera -->
-        <div class="scr" data-s="cam">
-          <div class="cam"><div class="camtop">← Scan<span class="gal" onclick="startScan(_mode||'multi')">🖼️</span></div><div class="vf">🧾</div><div class="shutter" onclick="startScan(_mode||'multi')"></div></div>
-        </div>
+        <div class="scr" data-s="cam"><div class="cam"><div class="camtop">← Scan<span class="gal" onclick="startScan()">🖼️</span></div><div class="vf">🧾</div><div class="shutter" onclick="startScan()"></div></div></div>
 
-        <!-- flow (reading → draft injected) -->
         <div class="scr" data-s="flow" id="flow"></div>
 
-        <!-- receipt viewer -->
-        <div class="rcptv" id="rcpt" onclick="closeRcpt(event)">
-          <div class="rcptc" onclick="event.stopPropagation()">
-            <div class="rcptcap">Scanned receipt — tap outside to close</div>
-            <button class="x" onclick="closeRcpt()">✕</button>
-            <div class="rv">TAJ RESIDENCY</div>
-            <div class="radr">MG Road · Bengaluru · 15 Jan 2026</div>
-            <div class="rln"><span>Hotel — room night</span><span>₹1,770.00</span></div>
-            <div class="rln"><span>Dinner</span><span>₹1,180.00</span></div>
-            <div class="rln"><span>Breakfast</span><span>₹590.00</span></div>
-            <div class="rln"><span>Laundry</span><span>₹295.00</span></div>
-            <div class="rln"><span>Valet parking</span><span>₹885.00</span></div>
-            <div class="rln"><span>Subtotal (net)</span><span>₹4,000.00</span></div>
-            <div class="rln"><span>GST 18%</span><span>₹720.00</span></div>
-            <div class="rtot"><span>TOTAL</span><span>₹4,720.00</span></div>
-            <div class="rfoot">*** Thank you for your stay ***</div>
-          </div>
-        </div>
+        <!-- receipt viewer (France) -->
+        <div class="rcptv" id="rcpt" onclick="closeRcpt(event)"><div class="rcptc" onclick="event.stopPropagation()">
+          <div class="rcptcap">Scanned receipt — tap outside to close</div><button class="x" onclick="closeRcpt()">✕</button>
+          <div class="rv">HÔTEL DU LOUVRE</div><div class="radr">Rue de Rivoli · Paris · 12 Jun 2026</div>
+          <div class="rln"><span>Chambre / room night</span><span>€220.00</span></div>
+          <div class="rln"><span>Dîner / dinner</span><span>€68.00</span></div>
+          <div class="rln"><span>Petit-déjeuner</span><span>€24.00</span></div>
+          <div class="rln"><span>Taxi</span><span>€35.00</span></div>
+          <div class="rln"><span>Voiturier / valet</span><span>€18.00</span></div>
+          <div class="rln"><span>dont TVA</span><span>€35.09</span></div>
+          <div class="rtot"><span>TOTAL TTC</span><span>€365.00</span></div>
+          <div class="rfoot">*** Merci de votre visite ***</div>
+        </div></div>
 
-        <!-- expense-type picker -->
-        <div class="tsheet" id="tsheet" onclick="closeTS(event)">
-          <div class="tsc" onclick="event.stopPropagation()">
-            <div class="tsh"></div>
-            <div class="tst">Choose expense type</div>
-            <div class="tstsub">Pick the type that fits this item</div>
-            <input class="tsearch" id="tsearch" placeholder="Search types…" oninput="filterTS(this.value)">
-            <div class="tslist" id="tslist"></div>
-          </div>
-        </div>
+        <!-- type picker -->
+        <div class="tsheet" id="tsheet" onclick="closeTS(event)"><div class="tsc" onclick="event.stopPropagation()">
+          <div class="tsh"></div><div class="tst">Choose expense type</div><div class="tstsub">Pick the type that fits this item</div>
+          <input class="tsearch" id="tsearch" placeholder="Search types…" oninput="filterTS(this.value)"><div class="tslist" id="tslist"></div>
+        </div></div>
 
       </div></div></div>
-      <div class="frozen">Bottom bar = just the +. Blue accent throughout, like the desktop app.</div>
+      <div class="frozen">€ shown + editable £ conversion · Tax £0 (foreign) · TVA optional → Notes.</div>
     </div>
   </div>
 
 <script>
-  var CUR='₹', TAX='GST Standard';
+  var HOME='£', FGN='€';
+  // UK employee, France hotel bill. gross/net/vat already in £ (converted); orig in €.
   var MULTI=[
-    {ic:'🏨',type:'Hotel Accommodation', date:'15 Jan 2026',dest:'Bengaluru',reason:'Hotel — room night',gross:'1,770.00',net:'1,500.00',vat:'270.00'},
-    {ic:'🍽️',type:'Meals & Subsistence', date:'15 Jan 2026',dest:'Bengaluru',reason:'Dinner',           gross:'1,180.00',net:'1,000.00',vat:'180.00'},
-    {ic:'🍽️',type:'Meals & Subsistence', date:'16 Jan 2026',dest:'Bengaluru',reason:'Breakfast',        gross:'590.00',  net:'500.00',  vat:'90.00'},
-    {ic:'🧺',type:'Other Business Expense', date:'16 Jan 2026',dest:'Bengaluru',reason:'Laundry',        gross:'295.00',  net:'250.00',  vat:'45.00'},
-    {ic:'🅿️',type:'',resolved:'Parking',detected:'Valet parking',suggest:['Parking','Taxi / Cab','Other Business Expense'],date:'15 Jan 2026',dest:'Bengaluru',reason:'Valet parking',gross:'885.00',net:'750.00',vat:'135.00'}
+    {ic:'🏨',type:'Hotel Accommodation',dest:'Paris',reason:'Hotel — room night',orig:'220.00',rate:'0.859',gross:'188.98',net:'188.98',vat:'0.00',frnote:'TVA 10% = €20.00'},
+    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Dinner',orig:'68.00',rate:'0.859',gross:'58.41',net:'58.41',vat:'0.00',frnote:'TVA 10% = €6.18'},
+    {ic:'🍽️',type:'Meals & Subsistence',dest:'Paris',reason:'Breakfast',orig:'24.00',rate:'0.859',gross:'20.62',net:'20.62',vat:'0.00',frnote:'TVA 10% = €2.18'},
+    {ic:'🚕',type:'Taxi / Cab',dest:'Paris',reason:'Airport taxi',orig:'35.00',rate:'0.859',gross:'30.07',net:'30.07',vat:'0.00',frnote:'TVA 10% = €3.18'},
+    {ic:'🅿️',type:'',resolved:'Parking',detected:'Voiturier / valet',suggest:['Parking','Taxi / Cab','Other Business Expense'],dest:'Paris',reason:'Valet parking',orig:'18.00',rate:'0.859',gross:'15.46',net:'15.46',vat:'0.00',frnote:'TVA 20% = €3.00'}
   ];
-  var SINGLE=[{ic:'🚕',type:'Taxi / Cab',date:'16 Jan 2026',dest:'Bengaluru',reason:'Client visit',gross:'10,010.00',net:'8,483.05',vat:'1,526.95'}];
-  var WAVE='<svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>';
-
   function num(s){return parseFloat(String(s).replace(/,/g,''));}
-  function inr(n){return CUR+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function money(c,n){return c+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function sum(l,f){return l.reduce(function(a,it){return a+num(it[f]);},0);}
-  function kv(k,v,p,m){return '<div class="kv"><span class="k">'+k+'</span><span class="v'+(m?' mono':'')+'">'+v+'</span></div>';}
+  function kv(k,v){return '<div class="kv"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
+
   function itemRows(it,i){
-    var typeRow, notesRow='';
-    if(it.type){
-      typeRow=kv('Type',it.type+(it.picked?' ':''),it.picked?null:'SCANNED')+(it.picked?'<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v"><span class="pickedok">✓ you picked this</span></span></div>':'');
-    }else{
+    var typeRow, notes='';
+    if(it.type){ typeRow=kv('Type',it.type+(it.picked?' <span class="pickedok">✓</span>':'')); }
+    else{
       typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">⚠ Not matched</span></span></div>'+
         '<div class="pickbox"><div class="ph">Couldn’t match “'+it.detected+'” to a configured type — pick one:</div>'+
         '<div class="chips">'+it.suggest.map(function(s){return '<button class="chip" onclick="pick('+i+',\''+s+'\')">'+s+'</button>';}).join('')+
-        '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div>'+
-        '<div class="picknote">Detected words are kept in Notes so nothing is lost.</div></div>';
-      notesRow=kv('Notes','“'+it.detected+'” (from receipt)','SCANNED');
+        '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div><div class="picknote">Detected words kept in Notes.</div></div>';
+      notes+=kv('Notes','“'+it.detected+'” (from receipt)');
     }
-    return kv('Date',it.date)+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+kv('Tax Type',TAX)+kv('Gross',CUR+it.gross,null,1)+kv('Net',CUR+it.net,null,1)+kv('Tax',CUR+it.vat,null,1)+notesRow+'<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
+    if(it.frApplied) notes+='<div class="frnote">France tax recorded: <b>'+it.frnote+'</b> · info only, not reclaimed <span class="undo" onclick="applyFR('+i+')">remove</span></div>';
+    var frCtl = it.frApplied ? '' : '<div class="frlink" onclick="applyFR('+i+')">＋ Record France tax (TVA) — optional, for records</div>';
+    return '<div class="fbadge">🌍 Foreign · France (EUR) — converted to £</div>'+
+      kv('Date','12 Jun 2026')+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+
+      kv('Tax Type','No VAT (foreign)')+
+      kv('Original (receipt)','€'+it.orig)+
+      '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
+      '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">€'+it.orig+' @ '+it.rate+' · editable</span></div>'+
+      kv('Net','£'+it.net)+kv('Tax','£0.00')+notes+frCtl+
+      '<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
   }
-  function headerRows(){return kv('Country','India')+
-    '<div class="kv"><span class="k">Claim Period</span><span class="v"><input class="dinp" type="date" value="2026-01-16" max="2026-07-24"></span></div>'+
-    kv('Employee','Suresh Rajarathinam')+kv('Employee Number','100234')+kv('Site Currency','INR (₹)');}
+  function headerRows(){return kv('Country','United Kingdom')+
+    '<div class="kv"><span class="k">Claim Period</span><span class="v"><input class="dinp" type="date" value="2026-06-12" max="2026-07-24"></span></div>'+
+    kv('Employee','Sabarinathan Chandrasekar')+kv('Employee Number','100128')+kv('Site Currency','GBP (£)');}
 
-  var _mode='multi', _all=false;
-  function draftHTML(md){
-    var list=md==='single'?SINGLE:MULTI,N=list.length;
-    var needs=list.filter(function(x){return !x.type;}).length;
-    var acc=list.map(function(it,i){return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+  function draftHTML(){
+    var list=MULTI,N=list.length,needs=list.filter(function(x){return !x.type;}).length;
+    var acc=list.map(function(it,i){return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div><div class="o">€'+it.orig+'</div></span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
-      '<div class="htot">'+WAVE+'<div class="tc"><div class="l">Net</div><div class="n">'+inr(sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+inr(sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+inr(sum(list,"gross"))+'</div></div></div>'+
+      '<div class="htot"><svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,60 C60,30 120,90 320,55"/><path d="M-10,80 C60,50 120,110 320,75"/></svg><div class="tc"><div class="l">Net</div><div class="n">'+money(HOME,sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+money(HOME,sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+money(HOME,sum(list,"gross"))+'</div></div></div>'+
+      '<div class="fxnote">🌍 France receipt → converted to <b>£</b> (editable). Foreign VAT isn’t reclaimable, so <b>Tax = £0</b>; you’re reimbursed the full £ gross.</div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
-      '<div class="isum"><span>Expense Items ('+N+')'+(N>1?' — one bill':'')+'</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
+      '<div class="isum"><span>Expense Items ('+N+') — one bill</span><span class="ea" id="ea" onclick="tall()">Expand all</span></div>'+
       (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+acc+
-      '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div class="emptym">No mileage — add on desktop.</div></div>'+
+      '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div style="font-size:11.5px;color:var(--mut)">No mileage — add on desktop.</div></div>'+
       '<button class="savebtn" onclick="save()">💾 Save Draft</button>'+
       '<div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>'+
       '</div><div class="toast" id="ts">✓ Draft saved — open on desktop to submit</div>';
   }
-  function inject(md){_mode=md;_all=false;document.getElementById('flow').innerHTML=draftHTML(md);go('flow');}
+  function inject(){document.getElementById('flow').innerHTML=draftHTML();go('flow');}
   function tacc(i){document.getElementById('ac'+i).classList.toggle('open');}
-  function pick(i,choice){ var list=_mode==='single'?SINGLE:MULTI; list[i].type=choice; list[i].picked=true; inject(_mode); var e=document.getElementById('ac'+i); if(e)e.classList.add('open'); }
-  function tall(){_all=!_all;(_mode==='single'?SINGLE:MULTI).forEach(function(_,i){var e=document.getElementById('ac'+i);if(e)e.classList.toggle('open',_all);});var b=document.getElementById('ea');if(b)b.textContent=_all?'Collapse all':'Expand all';}
+  function pick(i,c){MULTI[i].type=c;MULTI[i].picked=true;inject();var e=document.getElementById('ac'+i);if(e)e.classList.add('open');}
+  function applyFR(i){MULTI[i].frApplied=!MULTI[i].frApplied;inject();var e=document.getElementById('ac'+i);if(e)e.classList.add('open');}
+  var _all=false;function tall(){_all=!_all;MULTI.forEach(function(_,i){var e=document.getElementById('ac'+i);if(e)e.classList.toggle('open',_all);});var b=document.getElementById('ea');if(b)b.textContent=_all?'Collapse all':'Expand all';}
   function save(){document.getElementById('ts').classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
 
   function go(scr){document.querySelectorAll('#M .scr').forEach(function(s){s.classList.toggle('on',s.getAttribute('data-s')===scr);});}
-  function radTog(){var r=document.getElementById('rad');r.classList.toggle('on');document.getElementById('fab').textContent=r.classList.contains('on')?'×':'＋';}
-  function radClose(){document.getElementById('rad').classList.remove('on');document.getElementById('fab').textContent='＋';}
-  function startScan(md,fromCam){md=md||'multi';_mode=md;if(fromCam){go('cam');return;}
-    document.getElementById('flow').innerHTML='<div class="reading"><div class="rc">🧾</div><div style="font-weight:800;font-size:15px">Reading your receipt…</div><div style="font-size:11.5px;color:var(--soft)">'+(md==='single'?'1 item':'5 items')+' · amount &amp; tax</div><div class="rprog"><i></i></div></div>';
-    go('flow');
-    setTimeout(function(){var f=document.querySelector('#M [data-s=flow]');if(f&&f.classList.contains('on'))inject(md);},1600);
-  }
+  function startScan(fromCam){if(fromCam){go('cam');return;}
+    document.getElementById('flow').innerHTML='<div class="reading"><div class="rc">🧾</div><div style="font-weight:800;font-size:15px">Reading your receipt…</div><div style="font-size:11.5px;color:var(--soft)">5 items · detecting currency &amp; converting</div><div class="rprog"><i></i></div></div>';
+    go('flow');setTimeout(function(){var f=document.querySelector('#M [data-s=flow]');if(f&&f.classList.contains('on'))inject();},1700);}
 
-  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved||'—')+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>'+TAX+'</td><td class="num">'+CUR+it.gross+'</td><td class="num">'+CUR+it.net+'</td><td class="num">'+CUR+it.vat+'</td><td>📎 receipt.jpg</td></tr>';}).join('');
-  function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
   function openRcpt(){document.getElementById('rcpt').classList.add('on');}
   function closeRcpt(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('rcpt').classList.remove('on');}
 
-  // full expense-type picker
-  var TYPES=[
-    {code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},
-    {code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},
-    {code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},
-    {code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},
-    {code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}
-  ];
+  var TYPES=[{code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},{code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},{code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},{code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},{code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}];
   var _pickIdx=-1;
-  function renderTS(q){q=(q||'').toLowerCase();
-    var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;})
-      .map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+t.ic+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+'</div></span><span class="go">＋</span></div>';}).join('');
-    document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';
-  }
+  function renderTS(q){q=(q||'').toLowerCase();var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;}).map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+t.ic+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+'</div></span><span class="go">＋</span></div>';}).join('');document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';}
   function openTypeSheet(i){_pickIdx=i;document.getElementById('tsearch').value='';renderTS('');document.getElementById('tsheet').classList.add('on');}
-  function filterTS(q){renderTS(q);}
-  function chooseType(desc){if(_pickIdx>=0)pick(_pickIdx,desc);closeTS();}
+  function filterTS(q){renderTS(q);}function chooseType(d){if(_pickIdx>=0)pick(_pickIdx,d);closeTS();}
   function closeTS(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('tsheet').classList.remove('on');}
+
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>12 Jun 2026</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td>📎 receipt.jpg</td></tr>';}).join('');
+  function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
 </script>
 </body>
 </html>
