@@ -118,9 +118,9 @@
   .needline{font-size:10.5px;color:var(--amber);font-weight:700;margin:-4px 2px 9px}
   .pickedok{font-size:10px;color:var(--green);font-weight:800}
   .htot{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-radius:18px;padding:14px;display:flex;justify-content:space-between;margin-bottom:12px;box-shadow:var(--shblue)}
-  .htot .tc{text-align:center;flex:1;position:relative}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase}
-  .htot .tc .n{font-size:14px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}.htot .tc.big .n{font-size:16px}
-  .htot .dv{width:1px;background:rgba(255,255,255,.28)}
+  .htot .tc{text-align:center;flex:1;position:relative;padding:0 6px;min-width:0}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
+  .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}.htot .tc.big .n{font-size:14.5px}
+  .htot .dv{width:1px;background:rgba(255,255,255,.28);margin:3px 0;flex-shrink:0}
   .isum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--soft);margin:2px 2px 9px}
   .isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
   .acc{background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shsm);overflow:hidden}
@@ -281,9 +281,9 @@
     var acc=list.map(function(it,i){var tl=it.type?('Item '+(i+1)+' of '+N+' · '+it.type):('Item '+(i+1)+' of '+N+' · <span style="color:var(--amber);font-weight:800">⚠ needs a type</span>');return '<div class="acc'+(i===0||!it.type?' open':'')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div><div class="s2">'+tl+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
+      '<div class="htot">'+WAVE+'<div class="tc"><div class="l">Net</div><div class="n">'+inr(sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+inr(sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+inr(sum(list,"gross"))+'</div></div></div>'+
       '<div class="fban">⚠ Scanned draft — double-check the amount &amp; date before saving.</div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
-      '<div class="htot">'+WAVE+'<div class="tc"><div class="l">Net</div><div class="n">'+inr(sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+inr(sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+inr(sum(list,"gross"))+'</div></div></div>'+
       '<div class="isum"><span>Expense Items ('+N+')'+(N>1?' — one bill':'')+'</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
       (needs?'<div class="needline">⚠ '+needs+' item needs a type — tap it and pick from the suggestions.</div>':'')+acc+
       '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div class="emptym">No mileage — add on desktop.</div></div>'+
