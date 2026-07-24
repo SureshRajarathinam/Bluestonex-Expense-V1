@@ -108,16 +108,34 @@
   .pv{display:block;font-size:8.5px;font-weight:800;margin-top:1px}
   .pv.scan{color:var(--brand)}.pv.calc{color:var(--green)}.pv.auto{color:var(--mut)}.pv.dir{color:var(--violet)}
   .att{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);font-weight:700;background:#e7f7ee;padding:4px 8px;border-radius:8px}
-  .warnpill{font-size:10px;font-weight:800;color:var(--amber);background:#fbf3e2;padding:2px 8px;border-radius:99px}
+  .warnpill{font-size:10px;font-weight:800;color:#e5352b;background:#fdeceb;padding:2px 8px;border-radius:99px}
   .pickbox{background:#fdf6ea;border:1px dashed #e7c98f;border-radius:12px;padding:10px;margin:7px 0 3px}
   .pickbox .ph{font-size:11px;color:var(--amber);font-weight:700;margin-bottom:8px;line-height:1.35}
   .chips{display:flex;gap:7px;flex-wrap:wrap}
   .chip{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:11.5px;padding:7px 12px;border-radius:99px;cursor:pointer}
   .chip.more{border-color:var(--line);color:var(--soft)}
   .picknote{font-size:10px;color:var(--mut);margin-top:8px}
-  .needline{font-size:10.5px;color:var(--amber);font-weight:700;margin:-4px 2px 9px}
+  .needline{font-size:10.5px;color:#e5352b;font-weight:700;margin:-4px 2px 9px;display:flex;align-items:center}
+  .reddot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e5352b;margin-right:7px;box-shadow:0 0 0 3px rgba(229,53,43,.15)}
+  .needdot{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#e5352b;color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;font-style:normal}
+  .acc.need .ach{background:#fff5f4}
   .pickedok{font-size:10px;color:var(--green);font-weight:800}
   .att{cursor:pointer}
+  /* type picker sheet */
+  .tsheet{position:absolute;inset:0;background:rgba(17,26,46,.5);display:none;align-items:flex-end;z-index:55}
+  .tsheet.on{display:flex}
+  .tsc{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:12px 14px 18px;max-height:82%;display:flex;flex-direction:column;animation:up .28s ease}
+  .tsh{width:40px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 10px}
+  .tst{font-size:14px;font-weight:800;text-align:center;margin-bottom:3px}
+  .tstsub{font-size:11px;color:var(--mut);text-align:center;margin-bottom:10px}
+  .tsearch{border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;font:inherit;font-size:13px;margin-bottom:10px;outline:none}
+  .tsearch:focus{border-color:var(--brand)}
+  .tslist{overflow:auto}
+  .trow{display:flex;align-items:center;gap:12px;padding:11px;border-radius:14px;cursor:pointer;border:1px solid transparent;transition:background .12s}
+  .trow:active,.trow:hover{background:var(--lav)}
+  .trow .tic{width:40px;height:40px;border-radius:12px;background:var(--lav);display:grid;place-items:center;font-size:19px;flex-shrink:0}
+  .trow .tnm{font-size:13.5px;font-weight:700}.trow .tcode{font-size:10px;color:var(--mut);margin-top:1px;letter-spacing:.03em}
+  .trow .go{margin-left:auto;color:var(--brand);font-weight:800;font-size:18px}
   .dinp{font:inherit;font-size:12px;font-weight:700;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
   /* receipt viewer */
   .rcptv{position:absolute;inset:0;background:rgba(17,26,46,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
@@ -138,7 +156,7 @@
   .isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
   .acc{background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shsm);overflow:hidden}
   .ach{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer}
-  .ach .n{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+  .ach .n{position:relative;width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
   .ach .ic2{font-size:16px}.ach .lead{min-width:0}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ach .s2{font-size:10px;color:var(--mut)}.ach .amt{margin-left:auto;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
   .ach .cv{color:var(--mut);font-size:11px;transition:transform .2s}.acc.open .ach .cv{transform:rotate(180deg)}
@@ -269,6 +287,17 @@
           </div>
         </div>
 
+        <!-- expense-type picker -->
+        <div class="tsheet" id="tsheet" onclick="closeTS(event)">
+          <div class="tsc" onclick="event.stopPropagation()">
+            <div class="tsh"></div>
+            <div class="tst">Choose expense type</div>
+            <div class="tstsub">Pick the type that fits this item</div>
+            <input class="tsearch" id="tsearch" placeholder="Search types…" oninput="filterTS(this.value)">
+            <div class="tslist" id="tslist"></div>
+          </div>
+        </div>
+
       </div></div></div>
       <div class="frozen">Bottom bar = just the +. Blue accent throughout, like the desktop app.</div>
     </div>
@@ -277,11 +306,11 @@
 <script>
   var CUR='₹', TAX='GST Standard';
   var MULTI=[
-    {ic:'🏨',type:'Hotel', date:'15 Jan 2026',dest:'Bengaluru',reason:'Hotel — room night',gross:'1,770.00',net:'1,500.00',vat:'270.00'},
-    {ic:'🍽️',type:'Meals', date:'15 Jan 2026',dest:'Bengaluru',reason:'Dinner',           gross:'1,180.00',net:'1,000.00',vat:'180.00'},
-    {ic:'🍽️',type:'Meals', date:'16 Jan 2026',dest:'Bengaluru',reason:'Breakfast',        gross:'590.00',  net:'500.00',  vat:'90.00'},
-    {ic:'🧺',type:'Other', date:'16 Jan 2026',dest:'Bengaluru',reason:'Laundry',          gross:'295.00',  net:'250.00',  vat:'45.00'},
-    {ic:'🅿️',type:'',resolved:'Travel',detected:'Valet parking',suggest:['Travel','Taxi / Cab','Other'],date:'15 Jan 2026',dest:'Bengaluru',reason:'Valet parking',gross:'885.00',net:'750.00',vat:'135.00'}
+    {ic:'🏨',type:'Hotel Accommodation', date:'15 Jan 2026',dest:'Bengaluru',reason:'Hotel — room night',gross:'1,770.00',net:'1,500.00',vat:'270.00'},
+    {ic:'🍽️',type:'Meals & Subsistence', date:'15 Jan 2026',dest:'Bengaluru',reason:'Dinner',           gross:'1,180.00',net:'1,000.00',vat:'180.00'},
+    {ic:'🍽️',type:'Meals & Subsistence', date:'16 Jan 2026',dest:'Bengaluru',reason:'Breakfast',        gross:'590.00',  net:'500.00',  vat:'90.00'},
+    {ic:'🧺',type:'Other Business Expense', date:'16 Jan 2026',dest:'Bengaluru',reason:'Laundry',        gross:'295.00',  net:'250.00',  vat:'45.00'},
+    {ic:'🅿️',type:'',resolved:'Parking',detected:'Valet parking',suggest:['Parking','Taxi / Cab','Other Business Expense'],date:'15 Jan 2026',dest:'Bengaluru',reason:'Valet parking',gross:'885.00',net:'750.00',vat:'135.00'}
   ];
   var SINGLE=[{ic:'🚕',type:'Taxi / Cab',date:'16 Jan 2026',dest:'Bengaluru',reason:'Client visit',gross:'10,010.00',net:'8,483.05',vat:'1,526.95'}];
   var WAVE='<svg class="wave" viewBox="0 0 300 130" preserveAspectRatio="none"><path d="M-10,55 C50,20 100,80 160,50 S260,25 320,55"/><path d="M-10,72 C55,40 105,95 165,66 S265,42 320,72"/><path d="M-10,90 C60,60 110,110 170,82 S270,60 320,90"/></svg>';
@@ -298,27 +327,27 @@
       typeRow='<div class="kv"><span class="k">Type</span><span class="v"><span class="warnpill">⚠ Not matched</span></span></div>'+
         '<div class="pickbox"><div class="ph">Couldn’t match “'+it.detected+'” to a configured type — pick one:</div>'+
         '<div class="chips">'+it.suggest.map(function(s){return '<button class="chip" onclick="pick('+i+',\''+s+'\')">'+s+'</button>';}).join('')+
-        '<button class="chip more" onclick="alert(\'(Prototype) full expense-type list opens here\')">More…</button></div>'+
+        '<button class="chip more" onclick="openTypeSheet('+i+')">⋯ More</button></div>'+
         '<div class="picknote">Detected words are kept in Notes so nothing is lost.</div></div>';
       notesRow=kv('Notes','“'+it.detected+'” (from receipt)','SCANNED');
     }
     return kv('Date',it.date)+typeRow+kv('Destination',it.dest)+kv('Reason',it.reason)+kv('Tax Type',TAX)+kv('Gross',CUR+it.gross,null,1)+kv('Net',CUR+it.net,null,1)+kv('Tax',CUR+it.vat,null,1)+notesRow+'<div class="kv"><span class="k">Attachment</span><span class="v"><span class="att" onclick="openRcpt()">📎 receipt.jpg ›</span></span></div>';
   }
   function headerRows(){return kv('Country','India')+
-    '<div class="kv"><span class="k">Claim Period</span><span class="v"><input class="dinp" type="month" value="2026-01"></span></div>'+
+    '<div class="kv"><span class="k">Claim Period</span><span class="v"><input class="dinp" type="date" value="2026-01-16" max="2026-07-24"></span></div>'+
     kv('Employee','Suresh Rajarathinam')+kv('Employee Number','100234')+kv('Site Currency','INR (₹)');}
 
   var _mode='multi', _all=false;
   function draftHTML(md){
     var list=md==='single'?SINGLE:MULTI,N=list.length;
     var needs=list.filter(function(x){return !x.type;}).length;
-    var acc=list.map(function(it,i){var tl=it.type?it.type:'<span style="color:var(--amber);font-weight:800">⚠ needs a type</span>';return '<div class="acc'+(i===0||!it.type?' open':'')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div><div class="s2">'+tl+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+    var acc=list.map(function(it,i){return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+it.ic+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt">'+CUR+it.gross+'</span><span class="cv">▾</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">←</span><span class="ttl">New Claim</span></div>'+
       '<div class="htot">'+WAVE+'<div class="tc"><div class="l">Net</div><div class="n">'+inr(sum(list,"net"))+'</div></div><div class="dv"></div><div class="tc"><div class="l">Tax</div><div class="n">'+inr(sum(list,"vat"))+'</div></div><div class="dv"></div><div class="tc big"><div class="l">Total</div><div class="n">'+inr(sum(list,"gross"))+'</div></div></div>'+
       '<div class="mcard"><div class="mch"><span class="ic">🧾</span><span class="ti">Claim</span></div>'+headerRows()+'</div>'+
       '<div class="isum"><span>Expense Items ('+N+')'+(N>1?' — one bill':'')+'</span>'+(N>1?'<span class="ea" id="ea" onclick="tall()">Expand all</span>':'')+'</div>'+
-      (needs?'<div class="needline">⚠ '+needs+' item needs a type — tap it and pick from the suggestions.</div>':'')+acc+
+      (needs?'<div class="needline"><span class="reddot"></span>'+needs+' item needs a type — tap the marked item to fix.</div>':'')+acc+
       '<div class="isum" style="margin-top:12px">Mileage Claims</div><div class="mcard"><div class="mch"><span class="ic">🚗</span><span class="ti">Mileage</span><span class="ct">0</span></div><div class="emptym">No mileage — add on desktop.</div></div>'+
       '<button class="savebtn" onclick="save()">💾 Save Draft</button>'+
       '<div class="noap"><b>No Apply for Approval on mobile.</b> Submit on desktop.</div>'+
@@ -343,6 +372,25 @@
   function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
   function openRcpt(){document.getElementById('rcpt').classList.add('on');}
   function closeRcpt(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('rcpt').classList.remove('on');}
+
+  // full expense-type picker
+  var TYPES=[
+    {code:'HOTEL',d:'Hotel Accommodation',ic:'🏨'},{code:'FOOD',d:'Meals & Subsistence',ic:'🍽️'},
+    {code:'TRAIN',d:'Train / Rail Tickets',ic:'🚆'},{code:'TAXI',d:'Taxi / Cab',ic:'🚕'},
+    {code:'TOLLS',d:'Road Tolls',ic:'🛣️'},{code:'PARKING',d:'Parking',ic:'🅿️'},
+    {code:'FLIGHT',d:'Flight / Air Travel',ic:'✈️'},{code:'CAR_HIRE',d:'Car Hire',ic:'🚗'},
+    {code:'PHONE',d:'Phone / Mobile Data',ic:'📱'},{code:'OTHER',d:'Other Business Expense',ic:'📄'}
+  ];
+  var _pickIdx=-1;
+  function renderTS(q){q=(q||'').toLowerCase();
+    var rows=TYPES.filter(function(t){return t.d.toLowerCase().indexOf(q)>=0||t.code.toLowerCase().indexOf(q)>=0;})
+      .map(function(t){return '<div class="trow" onclick="chooseType(\''+t.d.replace(/'/g,"\\'")+'\')"><span class="tic">'+t.ic+'</span><span><div class="tnm">'+t.d+'</div><div class="tcode">'+t.code+'</div></span><span class="go">＋</span></div>';}).join('');
+    document.getElementById('tslist').innerHTML=rows||'<div style="padding:16px;color:var(--mut);font-size:12px;text-align:center">No matching type</div>';
+  }
+  function openTypeSheet(i){_pickIdx=i;document.getElementById('tsearch').value='';renderTS('');document.getElementById('tsheet').classList.add('on');}
+  function filterTS(q){renderTS(q);}
+  function chooseType(desc){if(_pickIdx>=0)pick(_pickIdx,desc);closeTS();}
+  function closeTS(e){if(e&&e.type==='click'&&e.target!==e.currentTarget)return;document.getElementById('tsheet').classList.remove('on');}
 </script>
 </body>
 </html>
