@@ -86,17 +86,17 @@
   .datefield{position:relative;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--brand);border-radius:8px;padding:4px 10px;color:var(--brand-ink);font-weight:700;font-size:12px;cursor:pointer}.datefield .svic{font-size:14px}
   .datefield input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
   .htot .tc{text-align:center;flex:1;position:relative;padding:0 6px;min-width:0}.htot .tc .l{font-size:9.5px;opacity:.85;text-transform:uppercase;letter-spacing:.04em}
-  .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}.htot .tc.big .n{font-size:14.5px}
+  .htot .tc .n{font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;line-height:1.15;overflow-wrap:anywhere;word-break:break-word}.htot .tc.big .n{font-size:14.5px}
   .htot .dv{width:1px;background:rgba(255,255,255,.28);margin:3px 0;flex-shrink:0}
   .isum{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:800;color:var(--soft);margin:2px 2px 9px}.isum .ea{color:var(--brand);cursor:pointer;font-size:11px}
   .acc{background:#fff;border-radius:16px;margin-bottom:8px;box-shadow:var(--shsm);overflow:hidden}
   .ach{display:flex;align-items:center;gap:10px;padding:11px;cursor:pointer}
   .ach .n{position:relative;width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
-  .ach .ic2{font-size:18px;color:var(--brand);display:inline-flex}.ach .lead{min-width:0}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ach .amt{margin-left:auto;text-align:right}.ach .amt .g{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}.ach .amt .o{font-size:9.5px;color:var(--mut);font-weight:700}
+  .ach .ic2{font-size:18px;color:var(--brand);display:inline-flex;flex-shrink:0}.ach .lead{min-width:0;flex:1 1 auto}.ach .ty{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ach .amt{margin-left:auto;text-align:right;min-width:0;max-width:56%;flex-shrink:0}.ach .amt .g{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;word-break:break-word}.ach .amt .o{font-size:9.5px;color:var(--mut);font-weight:700}
   .ach .cv{color:var(--mut);font-size:14px;transition:transform .2s;margin-left:8px;display:inline-flex}.acc.open .ach .cv{transform:rotate(180deg)}
   .ab{display:none;padding:0 11px 11px;border-top:1px solid #f2f3f8}.acc.open .ab{display:block}
-  .conv{width:104px;text-align:right;font:inherit;font-size:12.5px;font-weight:800;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
+  .conv{width:128px;max-width:60%;text-align:right;font:inherit;font-size:12.5px;font-weight:800;border:1.5px solid var(--brand);border-radius:8px;padding:4px 8px;color:var(--brand-ink);background:#fff}
   .rate{font-size:10px;color:var(--mut);font-weight:600}
   .needdot{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid #fff;font-style:normal}
   .acc.need .ach{background:#fff5f4}
@@ -167,7 +167,8 @@
   .savepanel{position:absolute;inset:0;background:rgba(17,26,46,.55);display:none;align-items:center;justify-content:center;padding:24px;z-index:60}.savepanel.on{display:flex}
   .spc{background:#fff;border-radius:18px;padding:22px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35)}
   .spc .okc{width:56px;height:56px;border-radius:50%;background:#e7f7ee;color:var(--green);display:grid;place-items:center;margin:0 auto 12px}.spc .okc .svic{font-size:26px}
-  .spc h3{font-size:16px;margin-bottom:4px}.spc p{font-size:12.5px;color:var(--soft);margin-bottom:16px}
+  .spc h3{font-size:16px;margin-bottom:4px}.spc p{font-size:12.5px;color:var(--soft);margin-bottom:14px;line-height:1.45}.spc p b{color:var(--brand-ink)}
+  .sphome{font-size:11px;color:var(--mut);font-weight:700}
   .spc .b1{width:100%;border:0;border-radius:13px;padding:13px;font:inherit;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:7px}.spc .b1 .svic{font-size:15px}
   .spc .b2{width:100%;border:1.5px solid var(--line);border-radius:13px;padding:12px;font:inherit;font-weight:700;font-size:13px;color:var(--soft);background:#fff;cursor:pointer}
   .milerow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px dashed #eef0f6;font-size:11.5px}.milerow:last-child{border-bottom:0}.milerow .mk{color:var(--soft);font-weight:600}.milerow .mv{font-weight:800;font-variant-numeric:tabular-nums}
@@ -297,11 +298,11 @@
           <button class="acancel" onclick="closeMile()">Cancel</button>
         </div></div>
 
-        <!-- save result panel -->
+        <!-- save result popup -->
         <div class="savepanel" id="savepanel"><div class="spc">
-          <div class="okc"><span class="svic" data-ic="accept"></span></div><h3>Draft saved</h3><p>Open it on desktop to submit — or keep going here.</p>
-          <button class="b1" onclick="newClaimFromPanel()"><span class="svic" data-ic="add"></span> Start a new claim</button>
-          <button class="b2" onclick="closeSP()">Back to home</button>
+          <div class="okc"><span class="svic" data-ic="accept"></span></div><h3>Draft saved</h3>
+          <p>Open the <b>desktop app</b> to review and <b>Apply for Approval</b>.</p>
+          <div class="sphome">Returning to home…</div>
         </div></div>
 
       </div></div></div>
@@ -372,6 +373,8 @@
   function reqReceipt(d){var t=typeOf(d);return t?t.req:false;}
   function num(s){return parseFloat(String(s).replace(/,/g,''));}
   function money(c,n){return c+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  // format a stored amount string with thousands separators (mirrors desktop tabular amounts)
+  function fmtN(v){var n=num(v);if(isNaN(n))n=0;return n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
   function sum(l,f){return l.reduce(function(a,it){return a+num(it[f]);},0);}
   function kv(k,v){return '<div class="kv"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';}
 
@@ -388,14 +391,14 @@
     var amt;
     if(foreign){
       amt=kv('Tax Type','No VAT (foreign)')+
-        kv('Original (receipt)',it.curSym+it.orig)+
-        '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
-        '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">'+it.curSym+it.orig+' @ '+it.rate+' · editable</span></div>'+
-        kv('Net','£'+it.net)+kv('Tax','£0.00');
+        kv('Original (receipt)',it.curSym+fmtN(it.orig))+
+        '<div class="kv"><span class="k">Gross (converted)</span><span class="v"><input class="conv" value="£'+fmtN(it.gross)+'"></span></div>'+
+        '<div class="kv" style="border:0;padding-top:0"><span class="k"></span><span class="v rate">'+it.curSym+fmtN(it.orig)+' @ '+it.rate+' · editable</span></div>'+
+        kv('Net','£'+fmtN(it.net))+kv('Tax','£0.00');
     }else{
       amt=kv('Tax Type',it.taxType||'VAT Standard (20%)')+
-        '<div class="kv"><span class="k">Gross</span><span class="v"><input class="conv" value="£'+it.gross+'"></span></div>'+
-        kv('Net','£'+it.net)+kv('Tax','£'+it.vat);
+        '<div class="kv"><span class="k">Gross</span><span class="v"><input class="conv" value="£'+fmtN(it.gross)+'"></span></div>'+
+        kv('Net','£'+fmtN(it.net))+kv('Tax','£'+fmtN(it.vat));
     }
     var showR=(!it.manual)||it.hasReceipt;
     var attach = showR
@@ -413,9 +416,9 @@
     var list=MULTI,N=list.length,needs=list.filter(function(x){return !x.type;}).length;
     var mAmt=sum(MILE,'amount');
     var netT=sum(list,'net')+mAmt, taxT=sum(list,'vat'), grossT=sum(list,'gross')+mAmt;
-    var acc=list.map(function(it,i){var orig=it.orig?'<div class="o">'+it.curSym+it.orig+'</div>':'';return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+svg(it.ic)+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+it.gross+'</div>'+orig+'</span><span class="cv">'+svg('chev')+'</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
+    var acc=list.map(function(it,i){var orig=it.orig?'<div class="o">'+it.curSym+fmtN(it.orig)+'</div>':'';return '<div class="acc'+(it.type?'':' need')+'" id="ac'+i+'"><div class="ach" onclick="tacc('+i+')"><span class="n">'+(i+1)+(it.type?'':'<i class="needdot">!</i>')+'</span><span class="ic2">'+svg(it.ic)+'</span><span class="lead"><div class="ty">'+it.reason+'</div></span><span class="amt"><div class="g">£'+fmtN(it.gross)+'</div>'+orig+'</span><span class="cv">'+svg('chev')+'</span></div><div class="ab">'+itemRows(it,i)+'</div></div>';}).join('');
     var mrows = MILE.length
-      ? MILE.map(function(m){return '<div class="milerow"><span class="mk">'+m.reason+' · '+m.miles+' mi @ £'+m.rate+'</span><span class="mv">£'+m.amount+'</span></div>';}).join('')
+      ? MILE.map(function(m){return '<div class="milerow"><span class="mk">'+m.reason+' · '+m.miles+' mi @ £'+m.rate+'</span><span class="mv">£'+fmtN(m.amount)+'</span></div>';}).join('')
       : '<div style="font-size:11.5px;color:var(--mut)">No mileage yet — use the add button to enter a trip.</div>';
     return '<div class="body np">'+
       '<div class="mback"><span class="b" onclick="go(\'home\')">'+svg('back')+'</span><span class="ttl">New Claim</span></div>'+
@@ -435,7 +438,7 @@
   function tacc(i){document.getElementById('ac'+i).classList.toggle('open');}
   function pick(i,c){MULTI[i].type=c;MULTI[i].picked=true;inject();var e=document.getElementById('ac'+i);if(e)e.classList.add('open');}
   var _all=false;function tall(){_all=!_all;MULTI.forEach(function(_,i){var e=document.getElementById('ac'+i);if(e)e.classList.toggle('open',_all);});var b=document.getElementById('ea');if(b)b.textContent=_all?'Collapse all':'Expand all';}
-  function save(){document.getElementById('savepanel').classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});}
+  function save(){var sp=document.getElementById('savepanel');sp.classList.add('on');var a=document.querySelector('.connector .arrow');if(a)a.animate([{opacity:.3},{opacity:1}],{duration:600,iterations:3});setTimeout(function(){sp.classList.remove('on');go('home');},1800);}
 
   function go(scr){document.querySelectorAll('#M .scr').forEach(function(s){s.classList.toggle('on',s.getAttribute('data-s')===scr);});}
   function startScan(fromCam){if(fromCam){go('cam');return;}
@@ -464,7 +467,9 @@
     var d=document.getElementById('ai_date').value||'2026-06-12';
     var cur=document.getElementById('ai_cur').value;
     var amt=parseFloat(document.getElementById('ai_amt').value||'0');
-    if(!amt||amt<=0){showErr('ai_err','Enter an amount greater than 0.');return;}
+    if(isNaN(amt)||amt<=0){showErr('ai_err','Enter a gross amount greater than 0.');return;}
+    if(amt>=1e13){showErr('ai_err','Amount is too large — max 13 digits before the decimal.');return;}
+    amt=Math.round(amt*100)/100;  // 2 decimals, like Decimal(15,2)
     if(reqReceipt(t)&&!_addReceipt){showErr('ai_err','“'+t+'” requires a receipt. Please upload one to continue.');return;}
     var item={ic:iconFor(t),type:t,dest:document.getElementById('ai_dest').value||'—',reason:document.getElementById('ai_reason').value||'—',date:fmtDate(d),manual:true,hasReceipt:_addReceipt};
     if(cur==='GBP'){var net=Math.round((amt/1.2)*100)/100;item.gross=amt.toFixed(2);item.net=net.toFixed(2);item.vat=(amt-net).toFixed(2);item.taxType='VAT Standard (20%)';}
@@ -478,19 +483,16 @@
   function addMileage(){
     var miles=parseFloat(document.getElementById('mi_miles').value||'0');
     var rate=parseFloat(document.getElementById('mi_rate').value||'0');
-    if(!miles||miles<=0){showErr('mi_err','Enter the miles travelled.');return;}
-    if(!rate||rate<=0){showErr('mi_err','Enter a rate per mile.');return;}
+    if(isNaN(miles)||miles<=0){showErr('mi_err','Enter the miles travelled.');return;}
+    if(miles>=1e8){showErr('mi_err','Miles value is too large.');return;}
+    if(isNaN(rate)||rate<=0){showErr('mi_err','Enter a rate per mile.');return;}
     MILE.push({date:fmtDate(document.getElementById('mi_date').value||'2026-06-12'),dest:document.getElementById('mi_dest').value||'—',reason:document.getElementById('mi_reason').value||'Mileage',engine:document.getElementById('mi_eng').value,miles:miles,rate:rate.toFixed(2),amount:(miles*rate).toFixed(2)});
     closeMile();inject();
   }
 
-  // new claim (used by save panel) / save panel
-  function newClaim(){MULTI=[];MILE=[];inject();}
-  function newClaimFromPanel(){closeSP();newClaim();}
-  function closeSP(){document.getElementById('savepanel').classList.remove('on');go('home');}
 
   // desktop rows (Currency column)
-  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td><span class="dcur">EUR '+svg('chev')+'</span></td><td>No VAT (foreign)</td><td class="num">€'+it.orig+'</td><td class="num">£'+it.gross+'</td><td class="num">£'+it.net+'</td><td class="num">£0.00</td><td><span class="datt">'+svg('attach')+' receipt.jpg</span></td></tr>';}).join('');
+  document.getElementById('deskItems').innerHTML=MULTI.map(function(it){return '<tr><td>'+it.date+'</td><td>'+(it.type||it.resolved)+'</td><td>'+it.dest+'</td><td>'+it.reason+'</td><td><span class="dcur">EUR '+svg('chev')+'</span></td><td>No VAT (foreign)</td><td class="num">€'+fmtN(it.orig)+'</td><td class="num">£'+fmtN(it.gross)+'</td><td class="num">£'+fmtN(it.net)+'</td><td class="num">£0.00</td><td><span class="datt">'+svg('attach')+' receipt.jpg</span></td></tr>';}).join('');
   function dovl(on){document.getElementById('dovl').classList.toggle('on',on);}
 
   // populate manual type dropdown (no emoji — text list, config-driven)

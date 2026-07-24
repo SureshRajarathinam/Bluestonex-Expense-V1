@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Expense — 5 Entry Concepts</title>
+<style>
+  :root{
+    --ink:#17171c; --bg:#e9ebf1; --lav:#e9ecfb; --line:#ececf2; --mut:#9a9aa8; --soft:#6c6c78;
+    --brand:#0070f2; --brand-ink:#0057c2; --brand-deep:#00347a; --g1:#0f6fe6; --g2:#3d8bff;
+    --green:#12a150; --amber:#c77700; --red:#e5352b;
+    --font:"72","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --shsm:0 4px 12px rgba(30,40,80,.08); --shblue:0 12px 26px rgba(0,90,220,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;padding:26px 16px 60px}
+  .svic{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:middle}.svic svg{width:1em;height:1em;display:block}
+  .head{max-width:1180px;margin:0 auto 22px;text-align:center}
+  .head h1{font-size:21px;font-weight:800;color:var(--brand-ink);display:flex;gap:9px;justify-content:center;align-items:center}.head h1 .svic{font-size:22px;color:var(--brand)}
+  .head p{font-size:13px;color:var(--soft);margin-top:6px;max-width:760px;margin-inline:auto;line-height:1.5}
+  .grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:26px;justify-items:center}
+  .concept{width:290px}
+  .clabel{text-align:center;margin-bottom:10px}
+  .clabel .tag{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));padding:3px 10px;border-radius:99px;margin-bottom:6px}
+  .clabel .nm{font-size:15px;font-weight:800}.clabel .ds{font-size:11.5px;color:var(--soft);margin-top:3px;line-height:1.4;min-height:32px}
+
+  .phone{width:290px;height:600px;background:#0e0e12;border-radius:40px;padding:9px;box-shadow:0 18px 44px rgba(20,30,70,.3);position:relative;margin:0 auto}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:96px;height:20px;background:#0e0e12;border-radius:0 0 14px 14px;z-index:40}
+  .sw{width:100%;height:100%;border-radius:31px;overflow:hidden;position:relative;background:#fff;display:flex;flex-direction:column}
+  .shh{padding:34px 16px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .shh .b{font-size:18px;color:var(--brand-ink);display:inline-flex;cursor:pointer}.shh .ttl{font-size:16px;font-weight:800}.shh .step{margin-left:auto;font-size:11px;color:var(--mut);font-weight:700}
+  .cbody{flex:1;overflow:auto;padding:4px 16px 14px}
+  .foot{flex-shrink:0;padding:10px 16px 16px;border-top:1px solid var(--line);display:flex;gap:9px}
+  .foot button{flex:1;border:0;border-radius:12px;padding:12px;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+  .foot .sec{background:#fff;border:1.5px solid var(--line);color:var(--soft)}
+  .foot .pri{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;box-shadow:var(--shblue)}
+  label.fl{font-size:10.5px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;display:block;margin:12px 0 5px}
+  input.fi,select.fi{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;font-size:13px;outline:none;background:#fff;color:var(--ink)}
+  input.fi:focus,select.fi:focus{border-color:var(--brand)}
+  .req{color:var(--red);font-weight:800}
+
+  /* progress dots */
+  .dots{display:flex;gap:6px;justify-content:center;margin:2px 0 8px}
+  .dots i{width:7px;height:7px;border-radius:99px;background:#d5dce8;transition:.2s}.dots i.on{background:var(--brand);width:20px}
+  .qbig{font-size:19px;font-weight:800;letter-spacing:-.01em;margin:14px 2px 4px;line-height:1.25}
+  .qsub{font-size:12px;color:var(--soft);margin-bottom:10px}
+  .chip{border:1.5px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:700;font-size:12.5px;padding:9px 12px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;width:100%;margin-bottom:8px;text-align:left}
+  .chip .svic{font-size:17px;color:var(--brand)}.chip.sel{border-color:var(--brand);background:var(--lav);color:var(--brand-ink)}.chip .go{margin-left:auto;color:var(--mut)}
+  .seg{display:flex;background:#eef1f7;border-radius:12px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:none;font:inherit;font-weight:800;font-size:12.5px;padding:8px;border-radius:9px;cursor:pointer;color:var(--soft)}
+  .seg button.on{background:#fff;color:var(--brand-ink);box-shadow:var(--shsm)}
+
+  /* B chat */
+  .chat{display:flex;flex-direction:column;gap:9px;padding-top:8px}
+  .bub{max-width:82%;padding:10px 12px;border-radius:16px;font-size:12.5px;line-height:1.4}
+  .bub.a{align-self:flex-start;background:#eef1f7;border-bottom-left-radius:5px;color:var(--ink)}
+  .bub.u{align-self:flex-end;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;border-bottom-right-radius:5px;font-weight:700}
+  .qr{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+  .qr button{border:1.5px solid var(--brand);background:#fff;color:var(--brand-ink);font:inherit;font-weight:800;font-size:12px;padding:7px 11px;border-radius:99px;cursor:pointer}
+  .cinput{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:8px}
+  .cinput input{flex:1;border:1.5px solid var(--line);border-radius:99px;padding:10px 14px;font:inherit;font-size:13px;outline:none}
+  .cinput button{width:40px;height:40px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0}.cinput button .svic{font-size:17px}
+
+  /* C keypad */
+  .amtwrap{text-align:center;padding:16px 0 6px}
+  .amtwrap .cl{font-size:11px;color:var(--soft);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+  .amtwrap .amt{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums;word-break:break-all;line-height:1.1}
+  .amtwrap .cur{font-size:18px;color:var(--mut);font-weight:800}
+  .tchips{display:flex;gap:7px;overflow-x:auto;padding:8px 0 10px}
+  .tchips button{flex:0 0 auto;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 11px;font:inherit;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--soft)}
+  .tchips button .svic{font-size:15px;color:var(--brand)}.tchips button.on{border-color:var(--brand);background:var(--lav);color:var(--brand-ink)}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+  .pad button{border:0;background:#f2f4f9;border-radius:12px;padding:13px;font:inherit;font-size:18px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .pad button:active{background:var(--lav)}.pad button.act{color:var(--brand-ink)}
+
+  /* D grid tiles */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:10px 0}
+  .tile{border:1.5px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+  .tile .svic{font-size:22px;color:var(--brand)}.tile .tn{font-size:10px;font-weight:700;margin-top:6px;color:var(--soft);line-height:1.2}
+  .tile.sel{border-color:var(--brand);background:var(--lav)}.tile.sel .tn{color:var(--brand-ink)}
+  .rcpttile{border:1.5px dashed var(--brand);background:var(--lav);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;color:var(--brand-ink);font-weight:800;font-size:12.5px;cursor:pointer;margin-top:8px}
+  .rcpttile .svic{font-size:20px}.rcpttile.ok{border-style:solid;border-color:var(--green);background:#e7f7ee;color:var(--green)}
+
+  /* E fiori compact */
+  .fiForm{margin-top:6px}
+  .fiRow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .fiRow .fk{width:88px;flex-shrink:0;font-size:11.5px;color:var(--soft);font-weight:700}
+  .fiRow .fv{flex:1}.fiRow .fv input,.fiRow .fv select{width:100%;border:0;border-bottom:1.5px solid transparent;font:inherit;font-size:13px;padding:4px 0;outline:none;background:none}
+  .fiRow .fv input:focus,.fiRow .fv select:focus{border-bottom-color:var(--brand)}
+  .fiHint{font-size:10.5px;color:var(--amber);font-weight:700;margin-top:8px;display:flex;align-items:center;gap:6px}.fiHint .svic{font-size:13px}
+
+  .done{position:absolute;inset:0;background:rgba(255,255,255,.96);display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;z-index:30}.done.on{display:flex}
+  .done .okc{width:56px;height:56px;border-radius:50%;background:#e7f7ee;color:var(--green);display:grid;place-items:center}.done .okc .svic{font-size:26px}
+  .done h3{font-size:16px}.done p{font-size:12px;color:var(--soft)}.done button{margin-top:8px;border:0;background:var(--brand);color:#fff;font:inherit;font-weight:800;padding:9px 18px;border-radius:10px;cursor:pointer}
+  .foot .miniprev{position:static}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1><span class="svic" data-ic="add"></span> Add Expense — 5 entry concepts</h1>
+    <p>Five creative ways to enter a manual expense on mobile. Each keeps the same fields (type, date, currency, amount, destination, reason, receipt) and the same SAP-Fiori icon language — only the <b>flow and feel</b> differ. Try each, then tell me which to build.</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+<script>
+  var ICON={
+    back:'<path d="M15 5l-7 7 7 7"/>',add:'<path d="M12 5v14M5 12h14"/>',close:'<path d="M6 6l12 12M18 6L6 18"/>',
+    chev:'<path d="M6 9l6 6 6-6"/>',send:'<path d="M4 12l16-8-6 16-3-6z" fill="currentColor" stroke="none"/>',
+    calendar:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/>',
+    attach:'<path d="M17 8.5l-6.6 6.6a2.5 2.5 0 0 1-3.5-3.5l7.3-7.3a4 4 0 0 1 5.6 5.6l-7.4 7.4"/>',
+    accept:'<path d="M5 12.5l4.5 4.5L19 6.5"/>',alert:'<path d="M12 4.5l8.5 15H3.5z"/><path d="M12 10v4.4"/><circle cx="12" cy="17.2" r=".7" fill="currentColor" stroke="none"/>',
+    back2:'<path d="M9 6l-3 3 3 3"/>',bksp:'<path d="M8 6h12v12H8l-5-6z"/><path d="M12 9l4 4M16 9l-4 4"/>',
+    bed:'<path d="M3 7v11M3 13h18M21 18v-4a2 2 0 0 0-2-2h-7v3"/><circle cx="6.5" cy="10" r="1.5" fill="currentColor" stroke="none"/>',
+    food:'<path d="M6 3v8M8 3v8M7 11v10M7 3v8"/><path d="M16 3c-1.3 0-2.2 2-2.2 4.5S14.7 12 16 12v9"/>',
+    train:'<rect x="6" y="4" width="12" height="11" rx="2.5"/><path d="M6 11h12"/><circle cx="9.5" cy="13" r=".9" fill="currentColor" stroke="none"/><circle cx="14.5" cy="13" r=".9" fill="currentColor" stroke="none"/><path d="M8 15l-2 5M16 15l2 5"/>',
+    car:'<path d="M5 17v-4l1.8-4.2A2 2 0 0 1 8.6 7.5h6.8a2 2 0 0 1 1.8 1.3L19 13v4"/><path d="M4 13h16"/><path d="M5.5 17v2M18.5 17v2"/><circle cx="8" cy="16.4" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16.4" r="1.3" fill="currentColor" stroke="none"/>',
+    road:'<path d="M7 20L9.4 4M17 20L14.6 4"/><path d="M12 6v2.4M12 11v2.4M12 16v2.4"/>',
+    parking:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9.5 16.5V8h3.2a2.4 2.4 0 0 1 0 4.8H9.5"/>',
+    plane:'<path d="M10.5 3.6a1.5 1.5 0 0 1 3 0V9l7 4v2l-7-2v3.6l2 1.5V20l-3.5-1L9 20v-1.9l2-1.5V13l-7 2v-2l7-4z" fill="currentColor" stroke="none"/>',
+    phone2:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M10.5 18h3"/>',
+    doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 12h5M9.5 15.5h5"/>',
+    bot:'<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 4v3M9 12v1.5M15 12v1.5"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/>'
+  };
+  function rawsvg(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICON[n]||ICON.doc)+'</svg>';}
+  function svg(n){return '<span class="svic">'+rawsvg(n)+'</span>';}
+  var TYPES=[{c:'HOTEL',d:'Hotel Accommodation',k:'bed',req:true},{c:'FOOD',d:'Meals & Subsistence',k:'food',req:true},{c:'TRAIN',d:'Train / Rail',k:'train',req:true},{c:'TAXI',d:'Taxi / Cab',k:'car',req:true},{c:'TOLLS',d:'Road Tolls',k:'road',req:false},{c:'PARKING',d:'Parking',k:'parking',req:true},{c:'FLIGHT',d:'Flight',k:'plane',req:true},{c:'CAR_HIRE',d:'Car Hire',k:'car',req:true},{c:'PHONE',d:'Phone / Data',k:'phone2',req:false},{c:'OTHER',d:'Other',k:'doc',req:true}];
+  function money(cents){return (cents/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+  var CONCEPTS=[
+    {tag:'A',nm:'Guided Wizard',ds:'One question per step with progress. Calm, hard to get wrong — great for occasional users.'},
+    {tag:'B',nm:'Conversational',ds:'An assistant chats you through it with quick-reply chips. Friendly and modern.'},
+    {tag:'C',nm:'Amount-first Keypad',ds:'Banking-app feel: big amount + numeric pad first, then type. Fastest for “just log it”.'},
+    {tag:'D',nm:'Visual Tile Picker',ds:'Tap a big type tile, then a short compact form + receipt tile. Tactile and quick.'},
+    {tag:'E',nm:'Fiori Compact Form',ds:'Standard SAP compact SimpleForm with a footer bar. The safe, native-looking option.'}
+  ];
+
+  function phoneShell(id,inner){return '<div class="phone"><div class="notch"></div><div class="sw" id="'+id+'">'+inner+
+    '<div class="done" id="'+id+'_done"><div class="okc">'+svg('accept')+'</div><h3>Added to claim</h3><p>Item added. This is a design preview.</p><button onclick="reset_'+id+'()">Try again</button></div>'+
+    '</div></div>';}
+
+  var g=document.getElementById('grid');
+  g.innerHTML=CONCEPTS.map(function(c){var id='C'+c.tag;return '<div class="concept"><div class="clabel"><span class="tag">Concept '+c.tag+'</span><div class="nm">'+c.nm+'</div><div class="ds">'+c.ds+'</div></div>'+phoneShell(id,'<div id="'+id+'_in"></div>')+'</div>';}).join('');
+
+  /* ================= Concept A — Guided Wizard ================= */
+  var A={step:0,type:null,cur:'GBP',amt:'',dest:'',reason:'',date:'2026-06-12',rcpt:false};
+  var A_STEPS=['type','amount','details','receipt','review'];
+  function A_render(){
+    var s=A_STEPS[A.step],body='';
+    var dots='<div class="dots">'+A_STEPS.map(function(_,i){return '<i class="'+(i<=A.step?'on':'')+'"></i>';}).join('')+'</div>';
+    if(s==='type'){body='<div class="qbig">What did you spend on?</div><div class="qsub">Pick the expense type</div>'+
+      TYPES.map(function(t){return '<button class="chip '+(A.type===t.d?'sel':'')+'" onclick="A.type=\''+t.d+'\';A_render()">'+svg(t.k)+t.d+(t.req?'<span class="go" style="font-size:10px;color:var(--amber)">receipt</span>':'')+'</button>';}).join('');}
+    else if(s==='amount'){body='<div class="qbig">How much was it?</div><div class="qsub">Enter the gross amount</div>'+
+      '<div class="seg">'+['GBP £','EUR €','INR ₹'].map(function(x){var cd=x.split(' ')[0];return '<button class="'+(A.cur===cd?'on':'')+'" onclick="A.cur=\''+cd+'\';A_render()">'+x+'</button>';}).join('')+'</div>'+
+      '<label class="fl" style="margin-top:14px">Amount</label><input class="fi" type="number" inputmode="decimal" placeholder="0.00" value="'+A.amt+'" oninput="A.amt=this.value">';}
+    else if(s==='details'){body='<div class="qbig">A few details</div>'+
+      '<label class="fl">Date</label><input class="fi" type="date" value="'+A.date+'" max="2026-07-24" oninput="A.date=this.value">'+
+      '<label class="fl">Destination</label><input class="fi" placeholder="e.g. Paris" value="'+A.dest+'" oninput="A.dest=this.value">'+
+      '<label class="fl">Reason</label><input class="fi" placeholder="e.g. Client meeting" value="'+A.reason+'" oninput="A.reason=this.value">';}
+    else if(s==='receipt'){var need=A_needR();body='<div class="qbig">Attach a receipt</div><div class="qsub">'+(need?'<span class="req">Required for this expense type.</span>':'Optional for this type.')+'</div>'+
+      '<div class="rcpttile '+(A.rcpt?'ok':'')+'" onclick="A.rcpt=true;A_render()">'+svg(A.rcpt?'accept':'attach')+(A.rcpt?'receipt.jpg attached':'Upload / photograph receipt')+'</div>';}
+    else if(s==='review'){body='<div class="qbig">Review</div>'+
+      A_kv('Type',A.type||'—')+A_kv('Amount',(A.cur==='GBP'?'£':A.cur==='EUR'?'€':'₹')+(A.amt||'0'))+A_kv('Date',A.date)+A_kv('Destination',A.dest||'—')+A_kv('Reason',A.reason||'—')+A_kv('Receipt',A.rcpt?'Attached':(A_needR()?'⚠ Missing':'None'));}
+    document.getElementById('CA_in').innerHTML=
+      '<div class="shh">'+(A.step>0?'<span class="b" onclick="A.step--;A_render()">'+rawsvg('back')+'</span>':'')+'<span class="ttl">Add expense</span><span class="step">'+(A.step+1)+' / '+A_STEPS.length+'</span></div>'+
+      '<div class="cbody">'+dots+body+'</div>'+
+      '<div class="foot">'+(A.step<A_STEPS.length-1?'<button class="pri" onclick="A_next()">Continue</button>':'<button class="pri" onclick="A_add()">Add to claim</button>')+'</div>';
+  }
+  function A_kv(k,v){return '<div class="fiRow"><div class="fk">'+k+'</div><div class="fv" style="font-weight:700">'+v+'</div></div>';}
+  function A_needR(){var t=TYPES.filter(function(x){return x.d===A.type;})[0];return t?t.req:false;}
+  function A_next(){var s=A_STEPS[A.step];if(s==='type'&&!A.type){alert('Pick a type');return;}if(s==='amount'&&(!A.amt||parseFloat(A.amt)<=0)){alert('Enter an amount');return;}A.step++;A_render();}
+  function A_add(){if(A_needR()&&!A.rcpt){alert('Receipt required for '+A.type);A.step=3;A_render();return;}document.getElementById('CA_done').classList.add('on');}
+  function reset_CA(){A={step:0,type:null,cur:'GBP',amt:'',dest:'',reason:'',date:'2026-06-12',rcpt:false};document.getElementById('CA_done').classList.remove('on');A_render();}
+
+  /* ================= Concept B — Conversational ================= */
+  var B={msgs:[],stage:0,type:null,cur:'GBP',amt:'',rcpt:false};
+  var B_FLOW=[
+    {ask:'Hi! What did you spend on?',qr:function(){return TYPES.slice(0,6).map(function(t){return {t:t.d,fn:'B_type(\''+t.d+'\')'};});}},
+    {ask:'Great. How much? (type the amount)',input:true,fn:'B_amount'},
+    {ask:'Which currency?',qr:function(){return [{t:'£ GBP',fn:'B_cur(\'GBP\')'},{t:'€ EUR',fn:'B_cur(\'EUR\')'},{t:'₹ INR',fn:'B_cur(\'INR\')'}];}},
+    {ask:function(){return B_needR()?'This type needs a receipt — attach one?':'Add a receipt? (optional)';},qr:function(){return [{t:'📎 Attach',fn:'B_rcpt(true)'},{t:B_needR()?'Skip (needs it!)':'Skip',fn:'B_rcpt(false)'}];}}
+  ];
+  function B_needR(){var t=TYPES.filter(function(x){return x.d===B.type;})[0];return t?t.req:false;}
+  function B_render(){
+    var flow=B_FLOW[B.stage];
+    var chat=B.msgs.map(function(m){return '<div class="bub '+m.r+'">'+m.t+'</div>';}).join('');
+    var ask=flow?(typeof flow.ask==='function'?flow.ask():flow.ask):'All set!';
+    var controls='';
+    if(flow){
+      chat+='<div class="bub a">'+ask+'</div>';
+      if(flow.qr){controls='<div class="qr">'+flow.qr().map(function(q){return '<button onclick="'+q.fn+'">'+q.t+'</button>';}).join('')+'</div>';}
+      if(flow.input){controls='<div class="cinput"><input id="B_field" placeholder="e.g. 120.00" inputmode="decimal"><button onclick="'+flow.fn+'()">'+rawsvg('send')+'</button></div>';}
+    }
+    document.getElementById('CB_in').innerHTML=
+      '<div class="shh"><span class="b">'+rawsvg('bot')+'</span><span class="ttl">Expense assistant</span></div>'+
+      '<div class="cbody" style="display:flex;flex-direction:column"><div class="chat">'+chat+controls+'</div></div>';
+    var cb=document.querySelector('#CB_in .cbody');if(cb)cb.scrollTop=cb.scrollHeight;
+  }
+  function B_say(r,t){B.msgs.push({r:r,t:t});}
+  function B_type(d){B.type=d;B_say('u',d);B.stage=1;B_render();}
+  function B_amount(){var v=document.getElementById('B_field').value;if(!v||parseFloat(v)<=0){alert('Enter an amount');return;}B.amt=v;B_say('u',v);B.stage=2;B_render();}
+  function B_cur(c){B.cur=c;B_say('u',{GBP:'£ GBP',EUR:'€ EUR',INR:'₹ INR'}[c]);B.stage=3;B_render();}
+  function B_rcpt(v){if(B_needR()&&!v){B_say('u','Skip');B_say('a','This type needs a receipt to submit — attaching one anyway is recommended.');B.rcpt=false;}else{B.rcpt=v;B_say('u',v?'Attached receipt.jpg':'Skip');}var sym={GBP:'£',EUR:'€',INR:'₹'}[B.cur];B_say('a','Done! Added '+B.type+' — '+sym+B.amt+'. ✔');B.stage=4;B_render();setTimeout(function(){document.getElementById('CB_done').classList.add('on');},600);}
+  function reset_CB(){B={msgs:[],stage:0,type:null,cur:'GBP',amt:'',rcpt:false};document.getElementById('CB_done').classList.remove('on');B_render();}
+
+  /* ================= Concept C — Amount-first Keypad ================= */
+  var C={cents:0,type:null,cur:'GBP'};
+  function C_render(){
+    var sym={GBP:'£',EUR:'€',INR:'₹'}[C.cur];
+    var keys=['1','2','3','4','5','6','7','8','9','.','0','⌫'];
+    document.getElementById('CC_in').innerHTML=
+      '<div class="shh"><span class="ttl">Add expense</span><span class="step">amount first</span></div>'+
+      '<div class="cbody" style="display:flex;flex-direction:column">'+
+        '<div class="amtwrap"><div class="cl">Amount</div><div class="amt"><span class="cur">'+sym+'</span> '+money(C.cents)+'</div></div>'+
+        '<div class="seg" style="margin-bottom:2px">'+['GBP £','EUR €','INR ₹'].map(function(x){var cd=x.split(' ')[0];return '<button class="'+(C.cur===cd?'on':'')+'" onclick="C.cur=\''+cd+'\';C_render()">'+x+'</button>';}).join('')+'</div>'+
+        '<div class="tchips">'+TYPES.map(function(t){return '<button class="'+(C.type===t.d?'on':'')+'" onclick="C.type=\''+t.d+'\';C_render()">'+svg(t.k)+t.c+'</button>';}).join('')+'</div>'+
+        '<div class="pad">'+keys.map(function(k){return '<button class="'+(k==='⌫'||k==='.'?'act':'')+'" onclick="C_key(\''+k+'\')">'+k+'</button>';}).join('')+'</div>'+
+      '</div>'+
+      '<div class="foot"><button class="pri" onclick="C_add()">Add '+sym+money(C.cents)+' to claim</button></div>';
+  }
+  function C_key(k){if(k==='⌫'){C.cents=Math.floor(C.cents/10);}else if(k==='.'){/* decimal implied by pence model */}else{if(C.cents<1e13)C.cents=C.cents*10+parseInt(k,10);}C_render();}
+  function C_add(){if(C.cents<=0){alert('Enter an amount');return;}if(!C.type){alert('Pick a type');return;}document.getElementById('CC_done').classList.add('on');}
+  function reset_CC(){C={cents:0,type:null,cur:'GBP'};document.getElementById('CC_done').classList.remove('on');C_render();}
+
+  /* ================= Concept D — Visual Tile Picker ================= */
+  var D={type:null,cur:'GBP',rcpt:false};
+  function D_needR(){var t=TYPES.filter(function(x){return x.d===D.type;})[0];return t?t.req:false;}
+  function D_render(){
+    document.getElementById('CD_in').innerHTML=
+      '<div class="shh"><span class="ttl">Add expense</span></div>'+
+      '<div class="cbody">'+
+        '<label class="fl" style="margin-top:4px">Choose a type</label>'+
+        '<div class="tiles">'+TYPES.slice(0,9).map(function(t){return '<div class="tile '+(D.type===t.d?'sel':'')+'" onclick="D.type=\''+t.d+'\';D_render()">'+svg(t.k)+'<div class="tn">'+t.c+'</div></div>';}).join('')+'</div>'+
+        '<div class="seg"><button class="on">£ GBP</button><button>€ EUR</button><button>₹ INR</button></div>'+
+        '<label class="fl">Amount</label><input class="fi" type="number" inputmode="decimal" placeholder="0.00">'+
+        '<label class="fl">Reason</label><input class="fi" placeholder="e.g. Client dinner">'+
+        '<div class="rcpttile '+(D.rcpt?'ok':'')+'" onclick="D.rcpt=true;D_render()">'+svg(D.rcpt?'accept':'attach')+(D.rcpt?'receipt.jpg attached':'Receipt'+(D_needR()?' — required':' (optional)'))+'</div>'+
+      '</div>'+
+      '<div class="foot"><button class="sec" onclick="reset_CD()">Clear</button><button class="pri" onclick="D_add()">Add</button></div>';
+  }
+  function D_add(){if(!D.type){alert('Pick a type');return;}if(D_needR()&&!D.rcpt){alert('Receipt required for '+D.type);return;}document.getElementById('CD_done').classList.add('on');}
+  function reset_CD(){D={type:null,cur:'GBP',rcpt:false};document.getElementById('CD_done').classList.remove('on');D_render();}
+
+  /* ================= Concept E — Fiori Compact Form ================= */
+  var E={type:'Hotel Accommodation',rcpt:false};
+  function E_needR(){var t=TYPES.filter(function(x){return x.d===E.type;})[0];return t?t.req:false;}
+  function E_render(){
+    document.getElementById('CE_in').innerHTML=
+      '<div class="shh"><span class="b" onclick="reset_CE()">'+rawsvg('back')+'</span><span class="ttl">New Expense Item</span></div>'+
+      '<div class="cbody"><div class="fiForm">'+
+        '<div class="fiRow"><div class="fk">Type<span class="req">*</span></div><div class="fv"><select onchange="E.type=this.value;E_render()">'+TYPES.map(function(t){return '<option '+(E.type===t.d?'selected':'')+'>'+t.d+'</option>';}).join('')+'</select></div></div>'+
+        '<div class="fiRow"><div class="fk">Date<span class="req">*</span></div><div class="fv"><input type="date" value="2026-06-12" max="2026-07-24"></div></div>'+
+        '<div class="fiRow"><div class="fk">Currency</div><div class="fv"><select><option>GBP (£)</option><option>EUR (€)</option><option>INR (₹)</option></select></div></div>'+
+        '<div class="fiRow"><div class="fk">Gross<span class="req">*</span></div><div class="fv"><input type="number" inputmode="decimal" placeholder="0.00"></div></div>'+
+        '<div class="fiRow"><div class="fk">Destination</div><div class="fv"><input placeholder="e.g. Paris"></div></div>'+
+        '<div class="fiRow"><div class="fk">Reason</div><div class="fv"><input placeholder="e.g. Client meeting"></div></div>'+
+        '<div class="fiRow"><div class="fk">Receipt'+(E_needR()?'<span class="req">*</span>':'')+'</div><div class="fv"><span class="rcpttile '+(E.rcpt?'ok':'')+'" style="margin:0;padding:8px 10px" onclick="E.rcpt=true;E_render()">'+svg(E.rcpt?'accept':'attach')+(E.rcpt?'receipt.jpg':'Browse…')+'</span></div></div>'+
+        (E_needR()?'<div class="fiHint">'+svg('alert')+'Receipt required for this expense type.</div>':'')+
+      '</div></div>'+
+      '<div class="foot"><button class="sec" onclick="reset_CE()">Cancel</button><button class="pri" onclick="E_add()">Add to claim</button></div>';
+  }
+  function E_add(){if(E_needR()&&!E.rcpt){alert('Receipt required for '+E.type);return;}document.getElementById('CE_done').classList.add('on');}
+  function reset_CE(){E={type:'Hotel Accommodation',rcpt:false};document.getElementById('CE_done').classList.remove('on');E_render();}
+
+  // fill static icon hosts + first render
+  document.querySelectorAll('.svic[data-ic]').forEach(function(el){el.innerHTML=rawsvg(el.getAttribute('data-ic'));});
+  A_render();B_render();C_render();D_render();E_render();
+</script>
+</body>
+</html>
