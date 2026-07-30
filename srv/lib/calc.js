@@ -4,12 +4,21 @@
 
 const round2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
 
-// Standard tax rate for a country, read from policy:
-//   UK → VAT rate, India (IN) → GST rate. Defaults to UK VAT if unknown.
-function taxRateFor(country, policy = {}) {
-  if (country === 'IN') return Number(policy.gstRate ?? 0.18);
-  return Number(policy.vatRate ?? 0.20); // UK / default
+// Standard tax rate for a country, resolved from the TAX_TYPES config rows: the
+// STD treatment's `rate` for that country (UK VAT / India GST). `taxTypes` is the
+// array of seeded TaxTypes rows ({ country, code, rate }). Falls back to the
+// country default only when config is missing (defensive — config is authoritative).
+function taxRateFor(country, taxTypes = []) {
+  const rows = Array.isArray(taxTypes) ? taxTypes : [];
+  const std = rows.find((t) => t.country === country && t.code === 'STD');
+  if (std && std.rate != null) return Number(std.rate) || 0;
+  return country === 'IN' ? 0.18 : 0.20; // UK / default
 }
+
+// Currency for a country: India → INR, everything else (UK/default) → GBP.
+// Single source of truth for the country→currency mapping used at claim create
+// and on save.
+const currencyForCountry = (country) => (country === 'IN' ? 'INR' : 'GBP');
 
 // Split a tax-inclusive gross amount into net + tax.
 //   taxType 'STD' applies the given standard rate; 'ZR'/'EX' apply 0%.
@@ -41,4 +50,4 @@ function claimTotals(items = [], mileage = []) {
   };
 }
 
-module.exports = { round2, taxRateFor, splitVAT, mileageTotal, claimTotals };
+module.exports = { round2, taxRateFor, currencyForCountry, splitVAT, mileageTotal, claimTotals };

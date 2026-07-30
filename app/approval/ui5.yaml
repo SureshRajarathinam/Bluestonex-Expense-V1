@@ -1,0 +1,15 @@
+specVersion: "3.1"
+metadata:
+  name: com.bluestonex.expense.approval
+type: application
+builder:
+  resources:
+    excludes:
+      - "/test/**"
+      - "/localService/**"
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateCachebusterInfo
+      configuration:
+        archiveName: approval
+        additionalFiles: []

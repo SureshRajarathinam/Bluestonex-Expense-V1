@@ -1,0 +1,7 @@
+country,code,description,rate
+UK,STD,Standard Rate,0.2000
+UK,ZR,Zero Rated,0.0000
+UK,EX,Exempt,0.0000
+IN,STD,GST Standard,0.1800
+IN,ZR,GST Zero Rated,0.0000
+IN,EX,GST Exempt,0.0000

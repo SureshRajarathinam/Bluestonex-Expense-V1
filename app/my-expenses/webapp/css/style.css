@@ -1,0 +1,98 @@
+/* ============================================================================
+   BluestoneX — thin standard-Fiori layer over SAP Horizon
+   Goal: look like native Fiori (minimal header, flat side-nav selection,
+   white titled cards, native buttons + ObjectStatus chips). Keep it light —
+   lean on Horizon defaults; only add page/layout/brand styling.
+   ========================================================================== */
+
+:root {
+  --sapFontFamily: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bsx-blue:   #0070f2;   /* SAP Horizon brand blue           */
+  --bsx-danger: #bb0000;
+  --bsx-bg:     #f5f6f7;
+  --bsx-card:   #ffffff;
+  --bsx-line:   #e5e5e5;
+  --bsx-text:   #32363a;
+  --bsx-muted:  #6a6d70;
+  --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
+  --bsx-lblue:  #5b9bd5;   /* light blue (brand "X") */
+  --bsx-black:  #1d1d1f;   /* near-black text/brand */
+  --bsx-radius: 8px;
+}
+
+html, body, .sapUiBody, .bsxBody,
+.sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
+
+/* ---- Header (minimal: menu + blue brand) --------------------------------- */
+.bsxHeader.sapTntToolHeader {
+  background: var(--bsx-sidenav);
+  border-bottom: 1px solid var(--bsx-line);
+  height: 3rem;
+}
+/* Brand: "Bluestone" black + trailing "X" blue (two sibling Texts in an HBox). */
+/* Logged-in employee greeting (right side of the header) */
+.bsxGreeting { font-weight: 600; color: var(--bsx-black); padding: 0 .5rem 0 0; }
+.bsxGreetIcon { color: var(--bsx-black); padding-right: .25rem; }
+
+/* ---- Side navigation: flat light selected highlight ---------------------- */
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav .sapTntNLI:hover,
+.bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
+.bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
+/* selected — flat light blue-grey, blue text/icon (Horizon-like) */
+.bsxSideNav .sapTntNLISelected,
+.bsxSideNav .sapTntNavLIItemSelected,
+.bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
+  background: #eaf1f8 !important;
+  box-shadow: inset 3px 0 0 var(--bsx-blue);
+}
+.bsxSideNav .sapTntNLISelected .sapTntNLIText,
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon,
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
+.bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: var(--bsx-blue) !important; font-weight: 700; }
+
+/* ---- Content cards ------------------------------------------------------- */
+.bsxCard {
+  background: var(--bsx-card);
+  border: 1px solid var(--bsx-line);
+  border-radius: var(--bsx-radius);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  margin: 0.75rem 1rem;
+}
+.bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
+.bsxCardPad { padding: 0.5rem 1rem; }
+.bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
+
+/* General Information: two fields per row (ColumnLayout), with tightened vertical
+   row spacing so it reads as compact as the old single-column layout. */
+.bsxGenForm .sapUiFormCLElement { padding-top: 0.15rem; padding-bottom: 0.15rem; }
+.bsxGenForm .sapUiFormElement { margin-top: 0.1rem; margin-bottom: 0.1rem; }
+
+/* ---- Destructive icon button (row delete) -------------------------------- */
+.bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
+
+/* ---- Approval-chain cards (Workflow Members tab) ------------------------- */
+.bsxChainNode {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--bsx-blue); color: #fff; font-weight: 700; font-size: .8125rem;
+  flex-shrink: 0;
+}
+.bsxChainConnector { height: 1.25rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
+.bsxChainCard.sapFCard { border-radius: var(--bsx-radius); }
+
+/* ---- Tables -------------------------------------------------------------- */
+.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
+.bsxTable .sapMLIB:hover { background: #f5f8fc; }
+
+/* Date pickers inside item/mileage rows: guarantee a minimum width so the value
+   AND the calendar value-help button are both fully visible. Do NOT override the
+   inner padding-right — that space is where the value-help icon renders; shrinking
+   it clipped/hid the calendar button (the "no value-help" bug). */
+.bsxDateCell { min-width: 10rem; }
+
+/* Compact receipt-attached tick: clickable (opens the receipt) with a little
+   breathing room before the upload button. */
+.bsxReceiptOk { cursor: pointer; margin-right: 0.35rem; }

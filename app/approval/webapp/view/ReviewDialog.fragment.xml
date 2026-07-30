@@ -1,0 +1,96 @@
+<core:FragmentDefinition
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form">
+
+  <Dialog id="reviewDialog" title="{i18n>reviewTitle}" contentWidth="62rem" contentHeight="38rem" verticalScrolling="true">
+    <content>
+      <!-- Soft policy-limit flag: the claim was submitted over a daily limit. Shown
+           so the approver can weigh it and decide (approve anyway or return). -->
+      <MessageStrip
+        visible="{= !!${policyFlags} }"
+        type="Warning" showIcon="true" showCloseButton="false"
+        class="sapUiSmallMarginBottom"
+        text="{= ${i18n>limitCrossed} + ' ' + ${policyFlags} }" />
+      <f:SimpleForm editable="false" layout="ResponsiveGridLayout" columnsM="2" columnsL="2" class="sapUiSmallMarginBottom">
+        <f:content>
+          <Label text="{i18n>colClaimNo}" /><Text text="{claimNumber}" />
+          <Label text="{i18n>lblEmployee}" /><Text text="{employeeName}" />
+          <Label text="{i18n>lblCountry}" /><Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+          <Label text="{i18n>lblLevel}" /><ObjectStatus text="{ parts: ['country','status'], formatter: '.formatter.levelText' }" state="Information" />
+          <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['totalNet','currency'], formatter: '.formatter.money' }" />
+          <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['totalVAT','currency'], formatter: '.formatter.money' }" />
+          <Label text="{i18n>lblTotal}" /><ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" emphasized="true" />
+        </f:content>
+      </f:SimpleForm>
+
+      <Panel headerText="{i18n>secItems}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+        <!-- Bounded layout: fixed column widths keep the money columns aligned and
+             apart even when Reason is very long; Reason has no width so it takes the
+             remaining space and WRAPS instead of squeezing the amounts. Money order
+             is Gross → Net → Tax, right-aligned, grouped via .formatter.money. -->
+        <Table items="{items}" mode="None" class="bsxTable" fixedLayout="true">
+          <columns>
+            <Column width="5rem"><Text text="{i18n>itDate}" /></Column>
+            <Column width="8.5rem"><Text text="{i18n>itType}" /></Column>
+            <Column width="7rem"><Text text="{i18n>itTaxType}" /></Column>
+            <Column><Text text="{i18n>itReason}" /></Column>
+            <Column width="9rem" hAlign="End"><Text text="{i18n>itGross}" /></Column>
+            <Column width="9rem" hAlign="End"><Text text="{i18n>itNet}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Text text="{i18n>itTax}" /></Column>
+            <Column width="3.5rem" hAlign="Center"><Text text="{i18n>itReceipt}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{expenseDate}" />
+                <Text text="{ parts: ['expenseType_code', 'rev>/types'], formatter: '.formatter.lookupText' }" />
+                <Text text="{ parts: ['vatType', 'rev>/taxLabels'], formatter: '.formatter.lookupText' }" />
+                <Text text="{reasonForTrip}" wrapping="true" />
+                <ObjectNumber number="{ parts: ['grossAmount','rev>/currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['netAmount','rev>/currency'], formatter: '.formatter.money' }" />
+                <ObjectNumber number="{ parts: ['vatAmount','rev>/currency'], formatter: '.formatter.money' }" />
+                <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>viewReceipt}" press=".onOpenReceipt" visible="{= !!${receiptAttached} }" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <Panel headerText="{i18n>secMileage}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+        <Table items="{mileageClaims}" mode="None" class="bsxTable">
+          <columns>
+            <Column><Text text="{i18n>mlDate}" /></Column>
+            <Column><Text text="{i18n>itDestination}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlMiles}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlRate}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>mlTotal}" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{tripDate}" />
+                <Text text="{destination}" />
+                <Text text="{milesCount}" />
+                <Text text="{ratePerMile}" />
+                <Text text="{totalAmount}" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <f:SimpleForm editable="true" layout="ResponsiveGridLayout" columnsM="1" columnsL="1">
+        <f:content>
+          <Label text="{i18n>commentLabel}" />
+          <TextArea id="commentArea" rows="2" width="100%" placeholder="{i18n>rejectReasonLabel}" />
+        </f:content>
+      </f:SimpleForm>
+    </content>
+    <buttons>
+      <Button text="{i18n>btnApprove}" type="Accept" icon="sap-icon://accept" class="bsxPill" press=".onApprove" />
+      <Button text="{i18n>btnReject}" type="Reject" icon="sap-icon://decline" class="bsxPill" press=".onReject" />
+      <Button text="{i18n>btnClose}" class="bsxPill" press=".onCloseReview" />
+    </buttons>
+  </Dialog>
+</core:FragmentDefinition>

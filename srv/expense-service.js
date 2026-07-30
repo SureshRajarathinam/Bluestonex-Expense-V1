@@ -2,33 +2,86 @@
 
 const cds = require('@sap/cds');
 const notification = require('./notification');
-const { splitVAT, mileageTotal, claimTotals, taxRateFor } = require('./lib/calc');
+const { splitVAT, mileageTotal, claimTotals, taxRateFor, currencyForCountry } = require('./lib/calc');
 const { validateClaim } = require('./lib/validate');
 const { loadValidationContext, today } = require('./lib/load-claim');
 const audit = require('./lib/audit');
+const { guardPaging } = require('./lib/paging');
+const { resolveEmployee } = require('./lib/identity');
+
+// Title-case an email local-part ("jane.doe" → "Jane Doe") as a last-resort name.
+const nameFromEmail = (email) => String(email || '').split('@')[0]
+  .replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim();
 
 const LOG = cds.log('expense-service');
 
 module.exports = class ExpenseService extends cds.ApplicationService {
 
   async init() {
-    const { ExpenseClaims, Employees, ExpensePolicy } = cds.entities('com.bluestonex.expense');
+    const { CLAIMS, EMPLOYEES, POLICY, WORKFLOW, TAX_TYPES } = cds.entities('EXP');
+
+    // Resolve an email address to its employee full name (FName + LName), falling
+    // back to a title-cased local-part. Used to name the notified approver in the
+    // "email sent to X" toast — recipients are stored as emails, not person rows.
+    const fullNameForEmail = async (email) => {
+      if (!email) return '';
+      const emp = await SELECT.one.from(EMPLOYEES).columns('FName', 'LName').where({ Email: email });
+      const nm = emp ? [emp.FName, emp.LName].filter(Boolean).join(' ').trim() : '';
+      return nm || nameFromEmail(email);
+    };
+
+    // Reject malformed $top/$skip (400) instead of silently ignoring them.
+    this.before('READ', guardPaging);
+
+    // ─── whoami: resolve the logged-in user's display name for the greeting ────
+    // Uses the shared employee source (EXP_EMPLOYEES in dev/test, USERS_MASTER in
+    // prod when EMPLOYEE_SOURCE=USERS_MASTER); falls back to the email local-part.
+    this.on('whoami', async (req) => {
+      const email = req.user?.id || '';
+      let fullName = '';
+      // Employee-master fields for the New Expense Claim header (number/site/
+      // payroll area). Payroll Area is the employee's Base Site (per config).
+      let employeeNumber = '', site = '';
+      try {
+        // Resolve by ANY caller identity — in Work Zone req.user.id is the logon
+        // name, not the email that EXP_EMPLOYEES is keyed on.
+        const emp = await resolveEmployee(req, EMPLOYEES);
+        if (emp) {
+          fullName = [emp.FName, emp.LName].filter(Boolean).join(' ').trim();
+          employeeNumber = emp.EmpID || '';
+          site = emp.BaseSiteKey || '';
+        }
+      } catch (e) { LOG.warn('whoami lookup failed', e.message); }
+      if (!fullName) fullName = nameFromEmail(email);
+      const parts = fullName.trim().split(/\s+/).filter(Boolean);
+      const firstName = parts.shift() || '';
+      const lastName = parts.join(' ');
+      return { email, fullName: fullName.trim(), firstName, lastName, employeeNumber, site, payrollArea: site };
+    });
 
     // ─── Defaults: derive the employee from the logged-in user ─────────────
     // Employees never type their own ID — it comes from $user (the login).
     const applyDefaults = async (req) => {
       req.data.status   = req.data.status || 'Draft';
+      // Currency is provided by the client at create (UI sends it with country) and
+      // is re-derived authoritatively from country in before('SAVE'). We do NOT set
+      // it here: a before-CREATE mutation of this schema-defaulted column does not
+      // stick for a draft insert (CAP re-applies the column default), so it would be
+      // misleading. Keep the schema default 'GBP' as the pre-client fallback.
       req.data.currency = req.data.currency || 'GBP';
-      const emp = await SELECT.one.from(Employees).where({ email: req.user?.id });
-      if (!req.data.employee_ID && emp) {
-        req.data.employee_ID = emp.ID;
-        if (!req.data.payrollArea) req.data.payrollArea = emp.payrollArea;
+      // Resolve by ANY caller identity (Work Zone id = logon name, not email).
+      const emp = await resolveEmployee(req, EMPLOYEES);
+      if (emp) {
+        if (!req.data.employee_ID) req.data.employee_ID = emp.ID;
+        // Payroll Area is fetched from the employee master (Base Site).
+        if (!req.data.payrollArea) req.data.payrollArea = emp.BaseSiteKey;
       }
     };
 
     // 'NEW' fires when a Fiori draft is created; 'CREATE' for non-draft inserts.
     this.before('NEW', 'MyClaims', applyDefaults);
     this.before('CREATE', 'MyClaims', applyDefaults);
+
 
     // ─── Before SAVE: the draft-correct place to compute everything ────────
     // Fires when a draft is activated. req.data holds the full tree (items +
@@ -37,26 +90,48 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.before('SAVE', 'MyClaims', async (req) => {
       const claim = req.data;
 
-      // Fallback: ensure the employee is set even if NEW didn't run
+      // Fallback: ensure the employee (and Base-Site-derived payroll area) are
+      // set even if NEW didn't run.
       if (!claim.employee_ID && req.user?.id) {
-        const emp = await SELECT.one.from(Employees).where({ email: req.user.id });
+        const emp = await resolveEmployee(req, EMPLOYEES);
         if (emp) {
           claim.employee_ID = emp.ID;
-          if (!claim.payrollArea) claim.payrollArea = emp.payrollArea;
+          if (!claim.payrollArea) claim.payrollArea = emp.BaseSiteKey;
         }
-      }
-
-      if (!claim.claimNumber) {
-        const year = new Date().getFullYear();
-        const rows = await SELECT.from(ExpenseClaims).columns('claimNumber');
-        claim.claimNumber = `EXP-${year}-${String(rows.length + 1).padStart(4, '0')}`;
       }
 
       // Country drives tax (VAT for UK, GST for India) and currency
       const country = claim.country || 'UK';
-      claim.currency = country === 'IN' ? 'INR' : 'GBP';
-      const policy = await SELECT.one.from(ExpensePolicy);
-      const stdRate = taxRateFor(country, policy || {});
+
+      if (!claim.claimNumber) {
+        // Config-driven Claim Number: the per-country Policy row carries the
+        // starting value (e.g. 'UKEXP1' / 'INEXP1'). Split it into prefix +
+        // trailing digits; the first claim for the country takes the seed, and
+        // subsequent ones continue from the highest existing suffix for that
+        // prefix (survives deletions; @assert.unique catches a concurrent dup).
+        const startCfg = await SELECT.one.from(POLICY).columns('claimNumberStart').where({ country });
+        const seed = (startCfg && startCfg.claimNumberStart) || `${country}EXP1`;
+        const m = String(seed).match(/^(.*?)(\d+)$/);
+        const prefix = m ? m[1] : seed;
+        const startNum = m ? parseInt(m[2], 10) : 1;
+        const width = m ? m[2].length : 0;
+        const rows = await SELECT.from(CLAIMS).columns('claimNumber').where({ claimNumber: { like: `${prefix}%` } });
+        let max = 0;
+        for (const r of rows) {
+          const s = String(r.claimNumber || '');
+          if (!s.startsWith(prefix)) continue;
+          const n = parseInt(s.slice(prefix.length), 10);
+          if (Number.isFinite(n) && n > max) max = n;
+        }
+        const next = max ? max + 1 : startNum;
+        claim.claimNumber = prefix + String(next).padStart(width, '0');
+      }
+
+      claim.currency = currencyForCountry(country);
+      // Tax rate is config-driven from TAX_TYPES (per country+code). Load the
+      // country's treatments once; the STD rate feeds splitVAT (ZR/EX = 0%).
+      const taxTypes = await SELECT.from(TAX_TYPES).where({ country });
+      const stdRate = taxRateFor(country, taxTypes);
 
       for (const item of claim.items || []) {
         const { netAmount, vatAmount } = splitVAT(item.grossAmount, item.vatType, stdRate);
@@ -74,33 +149,78 @@ module.exports = class ExpenseService extends cds.ApplicationService {
     this.on('submitClaim', 'MyClaims', async (req) => {
       const p = req.params[0];
       const ID = p && typeof p === 'object' ? p.ID : p;
-      const claim = await SELECT.one.from(ExpenseClaims, ID);
+      const claim = await SELECT.one.from(CLAIMS, ID);
 
       if (!claim) return req.error(404, 'Expense claim not found.');
-      if (claim.status !== 'Draft')
+      // Submittable from Draft (first time) OR Returned (approver sent it back
+      // for rework). A resubmit reuses the SAME record + claimNumber → no dup.
+      if (!['Draft', 'Returned'].includes(claim.status))
         return req.error(409, `Claim ${claim.claimNumber} cannot be submitted — current status is '${claim.status}'.`);
+      const wasReturned = claim.status === 'Returned';
       if (!claim.country)
         return req.error(422, 'Please select a country (UK or India) before submitting.');
 
       // Rule 8 — block submission if any critical policy violation exists
       const ctx = await loadValidationContext(ID);
-      const { errors, warnings } = validateClaim({ ...ctx, today: today() });
+      const { errors, warnings, flags } = validateClaim({ ...ctx, today: today() });
       if (errors.length)
         return req.error(422, `This claim cannot be submitted:\n• ${errors.join('\n• ')}`);
-      // Rule 7 — non-blocking warnings (e.g. possible duplicates)
+      // Non-blocking warnings (duplicates + soft daily-limit breaches) shown to the submitter.
       warnings.forEach((w) => req.warn(w));
 
-      await UPDATE(ExpenseClaims, ID).with({
+      await UPDATE(CLAIMS, ID).with({
         status: 'Submitted',
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        // Soft policy flags (daily-limit breaches) for the approver to see and
+        // decide on; cleared to null when a resubmitted claim is within limits.
+        policyFlags: (flags && flags.length) ? flags.join(' • ') : null
       });
 
-      const employee = await SELECT.one.from(Employees).where({ email: req.user.id });
-      await notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, employee || { fullName: req.user.id });
-      await audit.record({ userId: req.user.id, action: 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total £${claim.totalGross}` });
+      const employee = await resolveEmployee(req, EMPLOYEES);
+      const employeeName = employee ? [employee.FName, employee.LName].filter(Boolean).join(' ').trim() : '';
+      const wf = await SELECT.one.from(WORKFLOW).where({ country: claim.country });
+      // The notification goes to the first-level approver — resolve their full name
+      // so the email greeting and the client's "email sent to X" toast can name them.
+      const approverName = await fullNameForEmail(wf?.firstApprover);
+      // Fire-and-forget: email/ANS must NEVER sit in the request's critical path. A
+      // slow/unreachable SMTP would otherwise block the awaited submit long enough for
+      // the approuter to 504. notifyClaimSubmitted is best-effort and self-logs.
+      notification.notifyClaimSubmitted({ ...claim, status: 'Submitted' }, { fullName: employeeName || req.user.id }, wf?.firstApprover, approverName)
+        .catch((e) => LOG.warn('notifyClaimSubmitted failed:', e.message));
+      const sym = claim.currency === 'INR' ? '₹' : '£';
+      // Distinguish a fresh submission from a rework resubmission so the History
+      // timeline (and resubmitCount) can tell the two apart.
+      await audit.record({ userId: req.user.id, action: wasReturned ? 'Resubmitted' : 'Submitted', objectType: 'ExpenseClaim', objectKey: claim.claimNumber, details: `Total ${sym}${claim.totalGross}` });
 
-      LOG.info(`Claim ${claim.claimNumber} submitted by ${req.user.id}`);
-      return SELECT.one.from(ExpenseClaims, ID);
+      LOG.info(`Claim ${claim.claimNumber} ${wasReturned ? 'resubmitted' : 'submitted'} by ${req.user.id}`);
+      return SELECT.one.from(CLAIMS, ID);
+    });
+
+    // ─── Guard: only pre-submission claims may be deleted ──────────────────
+    // The @restrict on MyClaims scopes DELETE to the owner but not by status, so
+    // without this a Submitted/in-flight/Approved claim could be deleted via a
+    // direct request — orphaning the approver queue and audit trail. Draft-discard
+    // (no active row yet, or status 'Draft') passes through untouched.
+    this.before('DELETE', 'MyClaims', async (req) => {
+      const p = req.params[0];
+      const ID = p && typeof p === 'object' ? p.ID : p;
+      if (!ID) return;
+      const claim = await SELECT.one.from(CLAIMS, ID).columns('status', 'claimNumber');
+      if (claim && ['Submitted', 'FirstApproved', 'Approved'].includes(claim.status)) {
+        return req.reject(409, `Claim ${claim.claimNumber} cannot be deleted — it is '${claim.status}'. Only Draft, Returned or Rejected claims can be deleted.`);
+      }
+    });
+
+    // ─── Function: approverFor(country) ────────────────────────────────────
+    // Returns the first-level approver's FULL NAME for a country, so the my-expenses
+    // app can toast "Email notification sent to <name>" after Apply for Approval.
+    // Read-only, Employee-callable; exposes only the recipient of your own claim.
+    this.on('approverFor', async (req) => {
+      const country = req.data.country;
+      if (!country) return null;
+      const wf = await SELECT.one.from(WORKFLOW).where({ country });
+      if (!wf || !wf.firstApprover) return null;
+      return fullNameForEmail(wf.firstApprover);
     });
 
     await super.init();

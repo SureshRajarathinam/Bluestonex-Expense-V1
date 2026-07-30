@@ -1,0 +1,197 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.Claim"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.ui.layout.form"
+  height="100%">
+
+  <Page
+    id="claimPage"
+    class="bsxPage"
+    showNavButton="true"
+    navButtonPress=".onBack"
+    backgroundDesign="Transparent"
+    title="{= ${claimNumber} ? ${claimNumber} : 'New Expense Claim' }">
+
+    <content>
+      <!-- Returned-for-rework banner: shows the approver's reason so the
+           employee knows what to fix before re-applying for approval. -->
+      <MessageStrip
+        visible="{ui>/isReturned}"
+        type="Warning"
+        showIcon="true"
+        class="sapUiSmallMargin"
+        text="{= ${i18n>msgReturnedReason} + ' ' + (${ui>/returnReason} || '—') }" />
+
+      <!-- General information -->
+      <Panel class="bsxCard" headerText="{i18n>sectionGeneral}" expandable="false">
+        <!-- Only these five fields, in a 2-column responsive grid so they lay out
+             side-by-side over three rows:
+               Row 1: Country          | Claim Period
+               Row 2: Employee         | Employee Number
+               Row 3: Site Currency    |
+             Country is auto-derived from the user's site code and always
+             read-only (rendered as Text, never an editable input). -->
+        <f:SimpleForm editable="false" layout="ColumnLayout" columnsM="2" columnsL="2" columnsXL="2" class="bsxGenForm">
+          <f:content>
+            <Label text="{i18n>lblCountry}" />
+            <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+            <Label text="{i18n>lblPeriod}" required="true" />
+            <DateRangeSelection
+              dateValue="{path: 'claimPeriod', type: 'sap.ui.model.odata.type.Date'}"
+              secondDateValue="{path: 'periodEnd', type: 'sap.ui.model.odata.type.Date'}"
+              displayFormat="medium"
+              width="100%"
+              maxDate="{ui>/today}"
+              editable="{ui>/editable}" />
+            <!-- Employee identity for the current (logged-in) user, resolved from
+                 EXP_EMPLOYEES via whoami(). Shown from the ui model so it appears
+                 immediately on a brand-new draft (which has no persisted employee
+                 yet). All MyClaims belong to the caller, so this is always right. -->
+            <Label text="{i18n>lblEmployee}" />
+            <Text text="{ui>/emp/fullName}" />
+            <Label text="{i18n>lblEmpNo}" />
+            <Text text="{ui>/emp/employeeNumber}" />
+            <!-- Site Currency = the claim's country currency (GBP for UK, INR for
+                 India); reuses the existing currency field, just relabelled. -->
+            <Label text="{i18n>lblSiteCurrency}" />
+            <Text text="{currency}" />
+          </f:content>
+        </f:SimpleForm>
+
+        <!-- Corner totals. Net / Tax / Total are recomputed CLIENT-SIDE into the
+             ui model (/live) as items + mileage change, mirroring calc.js
+             claimTotals so they match the server total after Save. Preview only —
+             before('SAVE') stays authoritative. -->
+        <HBox justifyContent="End" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" wrap="Wrap">
+          <VBox class="sapUiSmallMarginEnd" alignItems="End">
+            <Label text="{i18n>lblNet}" /><ObjectNumber number="{ parts: ['ui>/live/net','ui>/currency'], formatter: '.formatter.money' }" />
+          </VBox>
+          <VBox class="sapUiSmallMarginEnd" alignItems="End">
+            <Label text="{i18n>lblTax}" /><ObjectNumber number="{ parts: ['ui>/live/tax','ui>/currency'], formatter: '.formatter.money' }" />
+          </VBox>
+          <VBox alignItems="End">
+            <Label text="{i18n>lblTotal}" /><ObjectNumber emphasized="true" number="{ parts: ['ui>/live/total','ui>/currency'], formatter: '.formatter.money' }" />
+          </VBox>
+        </HBox>
+      </Panel>
+
+      <!-- Expense items -->
+      <Panel class="bsxCard" expandable="false">
+        <headerToolbar>
+          <Toolbar class="bsxCardPad">
+            <core:Icon src="sap-icon://receipt" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionItems}" class="bsxCardTitle" level="H3" />
+            <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{ui>/itemCount}" />
+            <ToolbarSpacer />
+            <Button text="{i18n>btnAddItem}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddItem" />
+          </Toolbar>
+        </headerToolbar>
+        <Table id="itemsTable" class="bsxTable" items="{items}" updateFinished=".onItemsUpdated" mode="None">
+          <columns>
+            <Column width="10.5rem"><Label text="{i18n>itDate}" required="true" /></Column>
+            <Column width="9rem"><Label text="{i18n>itType}" required="true" /></Column>
+            <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itDestination}" /></Column>
+            <Column minScreenWidth="Tablet" demandPopin="true"><Label text="{i18n>itReason}" required="true" /></Column>
+            <Column width="8.5rem"><Label text="{i18n>itTaxType}" /></Column>
+            <Column width="8.5rem" hAlign="End"><Label text="{i18n>itGross}" required="true" /></Column>
+            <Column width="7.5rem" hAlign="End"><Label text="{i18n>itNet}" /></Column>
+            <Column width="7.5rem" hAlign="End"><Label text="{i18n>itVat}" /></Column>
+            <Column width="6.5rem" hAlign="Center"><Label text="{i18n>itAttachment}" /></Column>
+            <Column width="3rem" hAlign="Center"><Text text="" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <DatePicker value="{expenseDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" maxDate="{ui>/today}" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <Select selectedKey="{expenseType_code}" editable="{ui>/editable}" forceSelection="false" width="100%"
+                  items="{ path: '/ExpenseTypes', templateShareable: false }">
+                  <core:Item key="{code}" text="{description}" />
+                </Select>
+                <Input value="{destination}" editable="{ui>/editable}" width="100%" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
+                <!-- Country-aware tax types (VAT for UK, GST for India): the list is
+                     loaded for the claim's country into the ui model by _loadTaxRate. -->
+                <Select selectedKey="{vatType}" editable="{ui>/editable}" forceSelection="false" width="100%"
+                  change=".onLineChange"
+                  items="{ path: 'ui>/taxTypes', templateShareable: false }">
+                  <core:Item key="{ui>code}" text="{ui>label}" />
+                </Select>
+                <!-- No HTML type="Number" (that capped amounts at 3 digits). We
+                     DECLARE the OData Decimal(15,2) model type so the value stored/
+                     previewed is always canonical (no locale grouping) — an untyped
+                     binding leaked grouped strings like "10,000.00", which parsed to
+                     NaN and broke the net/tax preview + header totals for large amounts. -->
+                <Input value="{ path: 'grossAmount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 15, scale: 2 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Text textAlign="End" text="{ parts: [{path: 'netAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.netPreview' }" />
+                <Text textAlign="End" text="{ parts: [{path: 'vatAmount'}, {path: 'grossAmount'}, {path: 'vatType'}, {path: 'ui>/stdRate'}, {path: 'ui>/editable'}, {path: 'ui>/currency'}], formatter: '.formatter.vatPreview' }" />
+                <HBox alignItems="Center" justifyContent="Center">
+                  <!-- Compact receipt status: a small green tick when a receipt is
+                       attached (filename shown as tooltip / via View), nothing when
+                       not. Frees the column so it needs far less width. -->
+                  <core:Icon src="sap-icon://sys-enter-2" color="#107e3e" size="1.15rem"
+                    tooltip="{path: 'receiptFileName'}" visible="{= !!${path: 'receiptFileName', targetType: 'any'} }" press=".onViewReceipt" class="bsxReceiptOk" />
+                  <Button icon="sap-icon://attachment" type="Transparent" tooltip="{i18n>btnUpload}" enabled="{ui>/editable}" press=".onUploadReceipt" />
+                </HBox>
+                <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteItem" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+
+      <!-- Mileage -->
+      <Panel class="bsxCard" expandable="false">
+        <headerToolbar>
+          <Toolbar class="bsxCardPad">
+            <core:Icon src="sap-icon://car-rental" class="sapUiTinyMarginEnd" />
+            <Title text="{i18n>sectionMileage}" class="bsxCardTitle" level="H3" />
+            <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{ui>/mileageCount}" />
+            <ToolbarSpacer />
+            <Button text="{i18n>btnAddMileage}" icon="sap-icon://add" type="Emphasized" class="bsxPill" enabled="{ui>/editable}" press=".onAddMileage" />
+          </Toolbar>
+        </headerToolbar>
+        <Table id="mileageTable" class="bsxTable" items="{mileageClaims}" updateFinished=".onMileageUpdated" mode="None">
+          <columns>
+            <Column width="11rem"><Label text="{i18n>mlDate}" required="true" /></Column>
+            <Column><Label text="{i18n>mlDestination}" required="true" /></Column>
+            <Column><Label text="{i18n>mlReason}" required="true" /></Column>
+            <Column width="9rem"><Label text="{i18n>mlEngine}" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>mlMiles}" required="true" /></Column>
+            <Column width="7rem" hAlign="End"><Label text="{i18n>mlRate}" /></Column>
+            <Column width="3.5rem" hAlign="Center"><Text text="" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <DatePicker value="{tripDate}" valueFormat="yyyy-MM-dd" displayFormat="medium" maxDate="{ui>/today}" editable="{ui>/editable}" width="100%" class="bsxDateCell" />
+                <Input value="{destination}" editable="{ui>/editable}" width="100%" />
+                <Input value="{reasonForTrip}" editable="{ui>/editable}" width="100%" />
+                <Select selectedKey="{engineType}" editable="{ui>/editable}" forceSelection="false" width="100%">
+                  <core:Item key="Petrol" text="Petrol" />
+                  <core:Item key="Diesel" text="Diesel" />
+                  <core:Item key="Hybrid" text="Hybrid" />
+                  <core:Item key="Electric" text="Electric" />
+                </Select>
+                <Input value="{ path: 'milesCount', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 10, scale: 2 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Input value="{ path: 'ratePerMile', type: 'sap.ui.model.odata.type.Decimal', constraints: { precision: 8, scale: 4 } }" change=".onLineChange" textAlign="End" editable="{ui>/editable}" width="100%" />
+                <Button icon="sap-icon://delete" type="Transparent" class="bsxDanger" tooltip="{i18n>btnDelete}" enabled="{ui>/editable}" press=".onDeleteMileage" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </Panel>
+    </content>
+
+    <footer>
+      <OverflowToolbar>
+        <ToolbarSpacer />
+        <Button text="Edit" icon="sap-icon://edit" class="bsxPill" visible="{ui>/canEdit}" press=".onEdit" />
+        <Button text="{i18n>btnDiscard}" type="Transparent" class="bsxPill" visible="{ui>/editable}" press=".onDiscard" />
+        <Button text="{i18n>btnSave}" class="bsxPill" visible="{ui>/editable}" press=".onSave" />
+        <Button text="{i18n>btnSubmit}" type="Emphasized" class="bsxPill" visible="{ui>/canSubmit}" press=".onSubmit" />
+      </OverflowToolbar>
+    </footer>
+  </Page>
+</mvc:View>

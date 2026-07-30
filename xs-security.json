@@ -41,28 +41,6 @@
         "$XSAPPNAME.Employee"
       ]
     }
-  ],
-  "role-collections": [
-    {
-      "name": "Expense_Employee",
-      "description": "BluestoneX Expense — Employee",
-      "role-template-references": [
-        "$XSAPPNAME.Employee"
-      ]
-    },
-    {
-      "name": "Expense_Approver",
-      "description": "BluestoneX Expense — Approver",
-      "role-template-references": [
-        "$XSAPPNAME.Approver"
-      ]
-    },
-    {
-      "name": "Expense_Admin",
-      "description": "BluestoneX Expense — Administrator",
-      "role-template-references": [
-        "$XSAPPNAME.Admin"
-      ]
-    }
   ]
 }
+

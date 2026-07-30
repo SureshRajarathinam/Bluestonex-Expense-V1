@@ -1,0 +1,42 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.myexpenses.controller.App"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:tnt="sap.tnt"
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m"
+  displayBlock="true"
+  height="100%">
+
+  <tnt:ToolPage id="toolPage" class="bsxToolPage" sideExpanded="false">
+
+    <tnt:header>
+      <tnt:ToolHeader class="bsxHeader">
+        <core:Icon src="sap-icon://person-placeholder" class="bsxGreetIcon" visible="{= !!${app>/greeting} }" />
+        <Text text="{app>/greeting}" visible="{= !!${app>/greeting} }" class="bsxGreeting" />
+      </tnt:ToolHeader>
+    </tnt:header>
+
+    <tnt:sideContent>
+      <tnt:SideNavigation id="sideNav" class="bsxSideNav" selectedKey="myExpenses">
+        <tnt:NavigationList>
+          <tnt:NavigationListItem
+            class="bsxNavToggle"
+            tooltip="{= ${app>/sideExpanded} ? 'Collapse menu' : 'Expand menu' }"
+            text="{= ${app>/sideExpanded} ? 'Collapse' : '' }"
+            icon="{= ${app>/sideExpanded} ? 'sap-icon://navigation-left-arrow' : 'sap-icon://navigation-right-arrow' }"
+            select=".onSideToggle" />
+          <tnt:NavigationListItem
+            key="myExpenses"
+            text="{i18n>navMyExpenses}"
+            icon="sap-icon://expense-report"
+            select=".onNavToList" />
+        </tnt:NavigationList>
+      </tnt:SideNavigation>
+    </tnt:sideContent>
+
+    <tnt:mainContents>
+      <App id="pageContainer" />
+    </tnt:mainContents>
+
+  </tnt:ToolPage>
+</mvc:View>

@@ -1,6 +1,17 @@
 node_modules/
 gen/
 dist/
+resources/
 *.mtar
+app/*.zip
 .env
 default-env.json
+
+# graphify generated knowledge graph (rebuilt by hook / /graphify)
+graphify-out/
+
+# macOS
+.DS_Store
+
+# added by cds
+.cdsrc-private.json

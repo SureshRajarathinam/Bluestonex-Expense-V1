@@ -12,20 +12,26 @@ const blank = (s) => s == null || String(s).trim() === '';
 //   claim   : header { claimPeriod, totalGross, ... }
 //   items   : [{ expenseDate, expenseType_code, reasonForTrip, grossAmount, receiptAttached }]
 //   mileage : [{ tripDate, destination, reasonForTrip, milesCount, ratePerMile, totalAmount }]
-//   policy  : { receiptThreshold, mealDailyLimit, hotelDailyLimit, mileageRate }
-//   types   : { CODE: { requiresReceipt } }
+//   policy  : { mealDailyLimit, hotelDailyLimit, mileageRate }
+//   types   : { CODE: { requiresReceipt } }  ← sole driver of the receipt rule
 //   today   : 'YYYY-MM-DD'
-function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, today }) {
+function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, types = {}, vatTypes = new Set(), today }) {
   const errors = [];
   const warnings = [];
+  // Soft policy flags (a subset of warnings) — persisted on the claim so the
+  // approver sees "limit crossed" and decides. Never block submission.
+  const flags = [];
 
-  const threshold = Number(policy.receiptThreshold ?? 25);
   const mealLimit = Number(policy.mealDailyLimit ?? 0);
   const hotelLimit = Number(policy.hotelDailyLimit ?? 0);
   const maxRate = Number(policy.mileageRate ?? 0);
 
   // Rule 1 — required header field
   if (blank(claim.claimPeriod)) errors.push('Claim period is required.');
+
+  // Rule 2 (header) — period end, when given, must not precede the start
+  if (!blank(claim.periodEnd) && !blank(claim.claimPeriod) && ymd(claim.periodEnd) < ymd(claim.claimPeriod))
+    errors.push('Claim period end date cannot be before the start date.');
 
   // Rule 8 — must have at least one line
   if (items.length === 0 && mileage.length === 0) {
@@ -49,11 +55,18 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     if (it.expenseDate && today && ymd(it.expenseDate) > today)
       errors.push(`${n}: date ${ymd(it.expenseDate)} cannot be in the future.`);
 
-    // Rule 4 — receipt mandatory at/above threshold (or when the type requires it)
+    // Rule 4b — tax type must be a known code (STD/ZR/EX); reject typos that
+    // would otherwise be silently zero-rated (fix D4). Skipped when no code list
+    // is supplied (pure unit tests).
+    if (vatTypes.size && !blank(it.vatType) && !vatTypes.has(it.vatType))
+      errors.push(`${n}: invalid tax type '${it.vatType}'.`);
+
+    // Rule 4 — receipt mandatory when the expense type requires it (config-driven
+    // per EXP_EXPENSE_TYPES.requiresReceipt). There is no amount threshold.
     const type = types[it.expenseType_code] || {};
-    const needsReceipt = type.requiresReceipt || (gross > 0 && gross >= threshold);
-    if (needsReceipt && !it.receiptAttached)
-      errors.push(`${n}: a receipt is required (£${round2(gross || 0)} ≥ £${threshold} threshold or policy requires one).`);
+    if (type.requiresReceipt && !it.receiptAttached) {
+      errors.push(`${n}: a receipt is required — this expense type always requires a receipt. Please attach one.`);
+    }
 
     // Rule 7 — duplicate detection (warning)
     if (it.expenseDate && it.expenseType_code && gross > 0) {
@@ -77,12 +90,18 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
     }
   }
 
-  // Rule 5 — daily meal / hotel limits
+  // Rule 5 — daily meal / hotel limits. SOFT (per requirement): a breach does NOT
+  // block submission. It raises a warning (shown to the employee) AND a flag
+  // (persisted on the claim) so the approver sees the overage and decides.
   for (const [d, sums] of Object.entries(perDay)) {
-    if (mealLimit > 0 && (sums.FOOD || 0) > mealLimit)
-      errors.push(`Meals on ${d} (£${round2(sums.FOOD)}) exceed the daily limit of £${mealLimit}.`);
-    if (hotelLimit > 0 && (sums.HOTEL || 0) > hotelLimit)
-      errors.push(`Hotel on ${d} (£${round2(sums.HOTEL)}) exceeds the daily limit of £${hotelLimit}.`);
+    if (mealLimit > 0 && (sums.FOOD || 0) > mealLimit) {
+      const msg = `Meals on ${d} (£${round2(sums.FOOD)}) exceed the daily limit of £${mealLimit}.`;
+      warnings.push(msg); flags.push(msg);
+    }
+    if (hotelLimit > 0 && (sums.HOTEL || 0) > hotelLimit) {
+      const msg = `Hotel on ${d} (£${round2(sums.HOTEL)}) exceeds the daily limit of £${hotelLimit}.`;
+      warnings.push(msg); flags.push(msg);
+    }
   }
 
   // ── Mileage entries ─────────────────────────────────────────────────────────
@@ -116,7 +135,7 @@ function validateClaim({ claim = {}, items = [], mileage = [], policy = {}, type
   if (round2(claim.totalGross || 0) !== expected)
     errors.push(`Claim total (£${round2(claim.totalGross || 0)}) does not match the sum of line items (£${expected}).`);
 
-  return { errors, warnings };
+  return { errors, warnings, flags };
 }
 
 module.exports = { validateClaim };

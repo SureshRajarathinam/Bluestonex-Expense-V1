@@ -4,6 +4,17 @@ description: BluestoneX Expense Reimbursement System
 version: 1.0.0
 
 # ─────────────────────────────────────────────────────────────────────────────
+# BUILD (runs before any module) — generates gen/srv + gen/db from the CAP model
+# so the srv/db-deployer module paths resolve on a fresh clone (e.g. BAS).
+# ─────────────────────────────────────────────────────────────────────────────
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MODULES
 # ─────────────────────────────────────────────────────────────────────────────
 modules:
@@ -18,10 +29,21 @@ modules:
       disk-quota: 512M
     build-parameters:
       builder: npm
+    properties:
+      # Work Zone site base for the email "Review" CTA deep-links. MUST include the
+      # /site/<siteId> path (the FLP shell resolving #Intent-action lives there;
+      # a hash on the bare host 404s). Update if the site host/id changes.
+      LAUNCHPAD_URL: https://bsx-tdd-qq8akzjn.launchpad.cfapps.eu10.hana.ondemand.com/site/MyBSX
     requires:
       - name: expense-management-db
       - name: expense-management-xsuaa
-      - name: expense-management-ans
+      # SMTP service for approver emails. Optional: if 'expense-mail' isn't
+      # created, deploy still succeeds and the mailer safely no-ops.
+      # Create it once with:
+      #   cf cups expense-mail -p '{"host":"smtp.example.com","port":587,"user":"u","pass":"p","from":"noreply@bluestonex.com","secure":false}'
+      - name: expense-management-mail
+        parameters:
+          optional: true
     provides:
       - name: srv-api
         properties:
@@ -33,30 +55,16 @@ modules:
     path: gen/db
     parameters:
       buildpack: nodejs_buildpack
+    properties:
+      # Let HDI undeploy container artifacts that no longer exist in the source.
+      # Needed because EXP-EMPLOYEES.csv/.hdbtabledata were removed (Model B: the
+      # EXP_EMPLOYEES table now deploys empty and is loaded manually in HANA).
+      # Without this, the orphaned .hdbtabledata lingers in the container and its
+      # make fails ("target table EXP_EMPLOYEES does not have a EMPLOYEENUMBER
+      # column"). Only artifacts absent from source are undeployed.
+      HDI_DEPLOY_OPTIONS: '{ "auto_undeploy": true }'
     requires:
       - name: expense-management-db
-
-  # ── AppRouter ──────────────────────────────────────────────────────────────
-  - name: expense-management-approuter
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 128M
-      disk-quota: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: expense-srv-api
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: expense-management-xsuaa
-      - name: expense-management-html5-runtime
-      - name: expense-management-destination
-    provides:
-      - name: app-api
-        properties:
-          app-url: ${default-url}
 
   # ── HTML5 App Content Deployer ─────────────────────────────────────────────
   - name: expense-management-app-deployer
@@ -67,22 +75,20 @@ modules:
         parameters:
           content-target: true
     build-parameters:
-      build-result: app/
+      # Stage into a fresh 'resources/' folder — NOT 'app/'. 'app/' is the source
+      # dir (app/my-expenses, app/approval, .DS_Store), so zipping it produced an
+      # invalid html5-apps-repo payload (CODE 1001). resources/ holds only the two
+      # app zips, so data.zip contains exactly one zip per HTML5 app at its root.
+      build-result: resources/
       requires:
         - name: expense-management-my-expenses
           artifacts: [ my-expenses.zip ]
-          target-path: app/
-        - name: expense-management-approvals
-          artifacts: [ approvals.zip ]
-          target-path: app/
-        - name: expense-management-policy-config
-          artifacts: [ policy-config.zip ]
-          target-path: app/
-        - name: expense-management-workflow-members
-          artifacts: [ workflow-members.zip ]
-          target-path: app/
+          target-path: resources/
+        - name: expense-management-approval
+          artifacts: [ approval.zip ]
+          target-path: resources/
 
-  # ── Fiori App: My Expenses (Employee) ──────────────────────────────────────
+  # ── Freestyle App: My Expenses (Employee) ──────────────────────────────────
   - name: expense-management-my-expenses
     type: html5
     path: app/my-expenses
@@ -94,10 +100,10 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Approvals (Approver) ────────────────────────────────────────
-  - name: expense-management-approvals
+  # ── Freestyle App: Approval (Approver + Admin, 3 tabs) ─────────────────────
+  - name: expense-management-approval
     type: html5
-    path: app/approvals
+    path: app/approval
     build-parameters:
       build-result: dist
       builder: custom
@@ -106,58 +112,52 @@ modules:
         - npm run build:cf
       supported-platforms: []
 
-  # ── Fiori App: Policy Configuration (Admin) ────────────────────────────────
-  - name: expense-management-policy-config
-    type: html5
-    path: app/policy-config
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Fiori App: Approval Workflow Members (Admin) ───────────────────────────
-  - name: expense-management-workflow-members
-    type: html5
-    path: app/workflow-members
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm install
-        - npm run build:cf
-      supported-platforms: []
-
-  # ── Launchpad Content Deployer ─────────────────────────────────────────────
-  - name: expense-management-launchpad-deployer
+  # ── Destination Content Deployer ───────────────────────────────────────────
+  # Registers the app-host with SAP Build Work Zone so the two apps become
+  # DISCOVERABLE (public) in Content Manager, and creates the backend destination
+  # the Work Zone managed approuter uses to reach the CAP service (the apps'
+  # xs-app.json routes /expense,/approval → 'expense-srv-api'). This replaces the
+  # registration the old launchpad-deployer did — WITHOUT any portal/launchpad.
+  - name: expense-management-destination-content
     type: com.sap.application.content
-    path: .
     requires:
-      - name: expense-management-launchpad
+      - name: expense-management-xsuaa
+        parameters:
+          service-key:
+            name: expense-management-xsuaa-key
+      - name: expense-management-html5-host
+        parameters:
+          service-key:
+            name: expense-management-html5-host-key
+      - name: srv-api
+      - name: expense-management-destination
         parameters:
           content-target: true
-          service-key:
-            name: expense-management-launchpad-key
-            config:
-              content-endpoint: developer
     build-parameters:
       no-source: true
     parameters:
       content:
-        instance:
+        # SUBACCOUNT scope (not instance): the BTP Cockpit "HTML5 Applications"
+        # view and Work Zone Content Manager only discover app-hosts via
+        # SUBACCOUNT-level destinations. An instance-level destination on the
+        # destination service is invisible to them, so the apps never surface.
+        subaccount:
           existing_destinations_policy: update
           destinations:
-            - Name: expense-management-html5-host
+            # App-host registration → makes both apps discoverable in Cockpit + Work Zone
+            - Name: expense-management-html5-repo-host
               ServiceInstanceName: expense-management-html5-host
               ServiceKeyName: expense-management-html5-host-key
-              app-host-id: ~{expense-management-html5-host/app-host-id}
-            - Name: expense-management-srv-api
+              sap.cloud.service: com.bluestonex.expense
+            # Backend for the managed approuter (matches app xs-app.json destination name)
+            - Name: expense-srv-api
               Authentication: OAuth2UserTokenExchange
               TokenServiceInstanceName: expense-management-xsuaa
               TokenServiceKeyName: expense-management-xsuaa-key
               URL: ~{srv-api/srv-url}
+              HTML5.DynamicDestination: true
+              HTML5.Timeout: 60000
+              sap.cloud.service: com.bluestonex.expense
 
 # ─────────────────────────────────────────────────────────────────────────────
 # RESOURCES (BTP Service Instances)
@@ -171,6 +171,18 @@ resources:
       service: hana
       service-plan: hdi-shared
 
+  # ── External org-apps HDI container (classic USERS_MASTER) — STAGED ────────
+  # Prepared for reusing the existing USERS_MASTER employee master, NOT active
+  # until the grantor is confirmed and a HANA deploy is approved. To activate,
+  # uncomment this resource, add it to both `expense-management-srv.requires`
+  # and `expense-management-db-deployer.requires`, set the real service-name,
+  # and fill db/src/USERS_MASTER.hdb{synonym,grants}. See db/external/README.md.
+  #
+  # - name: bsx-org-apps-db
+  #   type: org.cloudfoundry.existing-service
+  #   parameters:
+  #     service-name: <EXISTING_HDI_SERVICE_INSTANCE_FOR_hdi_bsx-org-apps-db>
+
   # ── XSUAA (Authentication & Authorization) ────────────────────────────────
   - name: expense-management-xsuaa
     type: org.cloudfoundry.managed-service
@@ -182,41 +194,31 @@ resources:
         xsappname: expense-management-${org}-${space}
         tenant-mode: dedicated
 
-  # ── Alert Notification Service (Email Notifications) ──────────────────────
-  - name: expense-management-ans
-    type: org.cloudfoundry.managed-service
+  # ── SMTP Mail Service (approver emails) ───────────────────────────────────
+  # User-provided service holding SMTP credentials. Optional so a deploy
+  # without it still succeeds (the mailer then no-ops until it's bound).
+  - name: expense-management-mail
+    type: org.cloudfoundry.existing-service
+    optional: true
     parameters:
-      service: alert-notification
-      service-plan: standard
+      service-name: expense-mail
 
   # ── HTML5 Application Repository (Host) ───────────────────────────────────
+  # Stores the two freestyle apps. They become discoverable (public) in Work
+  # Zone's "HTML5 Apps" channel via the app-host registration destination created
+  # by expense-management-destination-content. No launchpad/portal or standalone
+  # approuter — the apps run under Work Zone's managed approuter.
   - name: expense-management-html5-host
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
       service-plan: app-host
-    provides:
-      - name: expense-management-html5-host
-        properties:
-          app-host-id: ${space-guid}
-
-  # ── HTML5 Application Repository (Runtime) ────────────────────────────────
-  - name: expense-management-html5-runtime
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: html5-apps-repo
-      service-plan: app-runtime
 
   # ── Destination Service ───────────────────────────────────────────────────
+  # Holds the design-time destinations created by expense-management-destination-
+  # content: the app-host registration (Work Zone discovery) + the CAP backend.
   - name: expense-management-destination
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
-
-  # ── SAP Launchpad Service ─────────────────────────────────────────────────
-  - name: expense-management-launchpad
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: launchpad
-      service-plan: standard

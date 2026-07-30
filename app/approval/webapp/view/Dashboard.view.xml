@@ -1,0 +1,140 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Dashboard"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  xmlns:dnd="sap.ui.core.dnd"
+  height="100%"
+  busy="{dash>/busy}">
+
+  <ScrollContainer height="100%" vertical="true" horizontal="false">
+
+    <!-- ── Filters (drive every card) ─────────────────────────────────────── -->
+    <VBox class="bsxCard bsxPremiumCard">
+      <OverflowToolbar class="bsxCardPad">
+        <Title text="{i18n>tabDashboard}" class="bsxCardTitle" level="H3" />
+        <ToolbarSpacer />
+        <SegmentedButton selectedKey="{dash>/preset}" selectionChange=".onPreset">
+          <items>
+            <SegmentedButtonItem key="D" text="{i18n>dashDay}" />
+            <SegmentedButtonItem key="W" text="{i18n>dashWeek}" />
+            <SegmentedButtonItem key="M" text="{i18n>dashMonth}" />
+            <SegmentedButtonItem key="Y" text="{i18n>dashYear}" />
+          </items>
+        </SegmentedButton>
+        <DateRangeSelection id="dashRange" dateValue="{dash>/fromDate}" secondDateValue="{dash>/toDate}" displayFormat="dd MMM yyyy" change=".onRange" width="18rem" />
+        <Label text="{i18n>filterCountry}" class="bsxFieldLbl sapUiTinyMarginBegin" />
+        <Select selectedKey="{dash>/country}" change=".onCountry" width="8rem" autoAdjustWidth="false"
+          items="{ path: '/Countries', templateShareable: false }">
+          <core:Item key="{code}" text="{description}" />
+        </Select>
+        <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" tooltip="{i18n>dashRefreshTip}" press=".onRefresh" />
+      </OverflowToolbar>
+    </VBox>
+
+    <MessageStrip visible="{= !${dash>/hasData} || !!${dash>/error} }"
+                  text="{= ${dash>/error} ? ${dash>/error} : ${i18n>dashNoData} }"
+                  type="{= ${dash>/error} ? 'Warning' : 'Information' }"
+                  showIcon="true" class="bsxCardPad" />
+
+    <!-- ── Layer 1 · KPI tiles ────────────────────────────────────────────── -->
+    <!-- Each row shares groupName 'cards' so any card can be dragged to any row. -->
+    <FlexBox id="dashRow0" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="awaiting" /></customData>
+        <Text text="{i18n>dashAwaiting}" class="bsxFieldLbl" />
+        <Title text="{dash>/awaitingTotal}" level="H1" class="bsxKpiNum bsxKpiWait" />
+        <core:HTML content="{dash>/awaitingPills}" />
+      </VBox>
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="approved" /></customData>
+        <Text text="{i18n>dashApproved}" class="bsxFieldLbl" />
+        <Title text="{dash>/approvedTotal}" level="H1" class="bsxKpiNum bsxKpiOk" />
+        <core:HTML content="{dash>/approvedPills}" />
+      </VBox>
+      <VBox class="bsxCard bsxKpi bsxKpiTile bsxDragCard">
+        <customData><core:CustomData key="card" value="rejected" /></customData>
+        <Text text="{i18n>dashRejected}" class="bsxFieldLbl" />
+        <Title text="{dash>/rejectedTotal}" level="H1" class="bsxKpiNum bsxKpiNo" />
+        <core:HTML content="{dash>/rejectedPills}" />
+      </VBox>
+    </FlexBox>
+
+    <!-- ── Row 1 · Total reimbursed spend (donut, left) + Spend by category (right) ── -->
+    <!-- alignItems="Stretch": cards in the row share one (even) height. -->
+    <FlexBox id="dashRow1" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <!-- Total reimbursed spend — donut: multi-colour ring, center = TOTAL
+           reimbursed spend (£/₹), right-side category legend. -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="totalExp" /></customData>
+        <Title text="{i18n>dashTopItems}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/donutHtml}" />
+      </VBox>
+      <!-- Spend by expense category — horizontal bars, category colours. -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="spendCat" /></customData>
+        <Title text="{= ${i18n>dashSpendCat} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/catHtml}" />
+      </VBox>
+    </FlexBox>
+
+    <!-- ── Row 2 · Approved spend trend (wave) — full width ──────────────── -->
+    <FlexBox id="dashRow2" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <!-- Approved spend trend — smooth wave of monthly APPROVED gross total in the
+           active currency (£ UK / ₹ IN). Full-width, scales to fit the card. -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="spendWave" /></customData>
+        <Title text="{= ${i18n>dashSpendWave} + ' (' + ${dash>/curLabel} + ')' }" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/waveHtml}" />
+      </VBox>
+    </FlexBox>
+
+    <!-- ── Row 3 · Trend · submitted · approved · returned — full width ──── -->
+    <FlexBox id="dashRow3" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="trend" /></customData>
+        <Title text="{i18n>dashTrend}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/trendHtml}" />
+        <core:HTML content="{dash>/trendFootHtml}" />
+      </VBox>
+    </FlexBox>
+
+    <!-- ── Row 4 · Top 5 claimants (left) + Policy Violation (right) — share one row ── -->
+    <FlexBox id="dashRow4" wrap="Wrap" alignItems="Stretch" class="bsxCardRow" renderType="Bare">
+      <dragDropConfig>
+        <dnd:DragInfo groupName="cards" sourceAggregation="items" />
+        <dnd:DropInfo groupName="cards" targetAggregation="items" dropPosition="Between" drop=".onCardDrop" />
+      </dragDropConfig>
+      <!-- Top 5 claimants — name (left) + blue-shaded amount bar (right). -->
+      <VBox class="bsxCard bsxPremiumCard bsxChartCard bsxDragCard">
+        <customData><core:CustomData key="card" value="claimants" /></customData>
+        <Title text="{i18n>dashTopClaimants}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/claimantsHtml}" />
+      </VBox>
+      <!-- Policy Violation Rate — flagged claims ÷ all claims in the window. -->
+      <VBox class="bsxCard bsxPremiumCard bsxKpi bsxViolCard bsxDragCard">
+        <customData><core:CustomData key="card" value="violation" /></customData>
+        <Title text="{i18n>dashViolationRate}" class="bsxCardTitle bsxCardPad" level="H3" />
+        <core:HTML content="{dash>/violationHtml}" />
+      </VBox>
+    </FlexBox>
+
+  </ScrollContainer>
+</mvc:View>

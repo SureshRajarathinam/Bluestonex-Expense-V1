@@ -1,0 +1,22 @@
+{
+  "bsx-org-apps-db": {
+    "object_owner": {
+      "object_privileges": [
+        {
+          "schema": "DC573873CB504DC1BAE855BD389B1072",
+          "name": "USERS_MASTER",
+          "privileges": ["SELECT"]
+        }
+      ]
+    },
+    "application_user": {
+      "object_privileges": [
+        {
+          "schema": "DC573873CB504DC1BAE855BD389B1072",
+          "name": "USERS_MASTER",
+          "privileges": ["SELECT"]
+        }
+      ]
+    }
+  }
+}

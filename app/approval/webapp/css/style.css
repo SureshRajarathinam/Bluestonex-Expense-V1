@@ -1,0 +1,371 @@
+/* ============================================================================
+   BluestoneX — thin standard-Fiori layer over SAP Horizon
+   Goal: look like native Fiori (minimal header, flat side-nav selection,
+   white titled cards, native buttons + ObjectStatus chips). Keep it light —
+   lean on Horizon defaults; only add page/layout/brand styling.
+   ========================================================================== */
+
+:root {
+  --sapFontFamily: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bsx-blue:   #0070f2;   /* SAP Horizon brand blue           */
+  --bsx-danger: #bb0000;
+  --bsx-bg:     #f5f6f7;
+  --bsx-card:   #ffffff;
+  --bsx-line:   #e5e5e5;
+  --bsx-text:   #32363a;
+  --bsx-muted:  #6a6d70;
+  --bsx-radius: 8px;
+  --bsx-sidenav: #e4e6ea; /* grey side-nav surface (distinct from white cards + page) */
+  /* ── SAP standard palette (Fiori). Semantic mapping: approved/positive = SAP
+     success green, awaiting/pending/info = Horizon brand blue, returned/rejected/
+     negative = SAP error red, warning = SAP warning orange, headings/primary text
+     = near-black, secondary/borders/tracks = grey. Legacy token names are
+     repointed onto the SAP values so the whole app cascades automatically. ── */
+  --bsx-lblue:  #0070f2;   /* Horizon brand blue accent */
+  --bsx-lgreen: #107e3e;   /* SAP success green accent  */
+  --bsx-lorange:#e9730c;   /* SAP warning orange accent */
+  --bsx-black:  #1d1d1f;   /* near-black text/brand */
+  --bsx-blue:   #0070f2;   /* SAP Horizon brand blue */
+  --bsx-danger: #bb0000;   /* SAP error red */
+  --bsx-green:  #107e3e;   /* SAP success green */
+  --bsx-red:    #bb0000;   /* SAP error red */
+  --bsx-amber:  #e9730c;   /* SAP warning orange */
+  --bsx-navy:   #354a5f;   /* Fiori shell navy */
+  --bsx-teal:   #107e3e;   /* → SAP success green family */
+  --bsx-blue-l: #66b1ff;   /* Horizon blue tint */
+  --bsx-blue-m: #0070f2;   /* Horizon brand blue */
+  --bsx-blue-d: #0040b0;   /* deep Horizon blue */
+}
+
+html, body, .sapUiBody, .bsxBody,
+.sapTntToolPage, .sapTntToolPageContent { background: var(--bsx-bg); }
+
+/* ---- Header (minimal: menu + blue brand) --------------------------------- */
+.bsxHeader.sapTntToolHeader {
+  background: var(--bsx-sidenav);
+  border-bottom: 1px solid var(--bsx-line);
+  height: 3rem;
+}
+/* Brand: "Bluestone" black + trailing "X" blue (two sibling Texts in an HBox). */
+.bsxGreeting { font-weight: 600; color: var(--bsx-black); padding: 0 .5rem 0 0; }
+.bsxGreetIcon { color: var(--bsx-black); padding-right: .25rem; }
+
+/* ---- Side navigation: flat light selected highlight ---------------------- */
+.bsxSideNav.sapTntSideNavigation { background: var(--bsx-sidenav); border-right: 1px solid var(--bsx-line); }
+.bsxSideNav .sapTntNLI:hover,
+.bsxSideNav .sapTntNavLIGroup:hover { background: #f2f3f5; }
+.bsxSideNav .sapTntNLIIcon, .bsxSideNav .sapTntNavLIGroupIcon, .bsxSideNav .sapUiIcon { color: var(--bsx-muted); }
+/* selected — flat light blue-grey, blue text/icon (Horizon-like) */
+.bsxSideNav .sapTntNLISelected,
+.bsxSideNav .sapTntNavLIItemSelected,
+.bsxSideNav li.sapTntNavLIItemSelected > .sapTntNavLIGroup,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected {
+  background: #eaf1f8 !important;
+  box-shadow: inset 3px 0 0 var(--bsx-blue);
+}
+.bsxSideNav .sapTntNLISelected .sapTntNLIText,
+.bsxSideNav .sapTntNLISelected .sapTntNLIIcon,
+.bsxSideNav .sapTntNavLIItemSelected .sapTntNavLIText,
+.bsxSideNav .sapTntNavLIItemSelected .sapUiIcon,
+.bsxSideNav .sapTntNavLIGroup.sapTntNavLIItemSelected .sapMText { color: var(--bsx-blue) !important; font-weight: 700; }
+
+/* ---- Content cards ------------------------------------------------------- */
+.bsxCard {
+  background: var(--bsx-card);
+  border: 1px solid var(--bsx-line);
+  border-radius: var(--bsx-radius);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  margin: 0.75rem 1rem;
+}
+.bsxCardTitle.sapMTitle { color: var(--bsx-text); font-weight: 700; font-size: 1.0625rem; }
+.bsxCardPad { padding: 0.5rem 1rem; }
+/* Card footer strip — sits at the card bottom with a divider, shared by the geo
+   summary and the trend hint so both cards use the same low-footer pattern. */
+.bsxCardFoot {
+  display: block;
+  border-top: 1px solid var(--bsx-line);
+  padding: 0.6rem 1rem; color: var(--bsx-muted); font-size: 0.8125rem;
+}
+/* Trend card: a slim single-row summary bar. Keeps the divider (from .bsxCardFoot)
+   but trims padding/height/text so it stays proportional to the chart. */
+.bsxTrendFoot {
+  display: flex; align-items: center; min-height: 0;
+  padding: 0.35rem 1rem; font-size: 0.75rem; line-height: 1.2;
+}
+.bsxTrendFoot b { color: var(--bsx-text); }
+.bsxFieldLbl.sapMLabel { color: var(--bsx-muted); font-size: .8125rem; }
+
+/* ---- Destructive icon button (row delete) -------------------------------- */
+.bsxDanger.sapMBtn .sapMBtnIcon { color: var(--bsx-danger); }
+
+/* ---- Approval-chain cards (Workflow Members tab) ------------------------- */
+.bsxChainNode {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.5rem; height: 1.5rem; border-radius: 50%;
+  background: var(--bsx-blue); color: #fff; font-weight: 700; font-size: .8125rem;
+  flex-shrink: 0;
+}
+.bsxChainConnector { height: 1.75rem; margin-left: 0.7rem; border-left: 2px solid var(--bsx-line); }
+.bsxChainCard.sapFCard { border-radius: var(--bsx-radius); }
+/* Roomier approver rows in the Workflow detail (less congested) */
+.bsxWfRow { padding: 0.55rem 0; }
+
+/* ---- Premium card (shared "look" across all tabs) ------------------------ */
+/* Additive: composes with .bsxCard / .sapFCard. Adds the blue left accent,
+   a softer elevation and a gentle hover lift — modelled on the reference card. */
+.bsxPremiumCard {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 2px 10px rgba(0, 0, 0, .05);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.bsxPremiumCard::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--bsx-blue);
+}
+.bsxPremiumCard:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .12); transform: translateY(-1px); }
+.bsxChoiceCard { cursor: pointer; }
+
+/* Category tag chip — blue text on a light-blue tint (reference style, in blue) */
+.bsxCardTag.sapMText, .bsxCardTag {
+  display: inline-block; padding: .15rem .55rem; border-radius: 1rem;
+  background: rgba(91, 155, 213, .14); color: var(--bsx-blue);
+  font-size: .75rem; font-weight: 600; line-height: 1.25rem;
+}
+/* Small outlined pill */
+.bsxCardPill.sapMBtn { border-radius: 1rem; }
+
+/* ---- Tables -------------------------------------------------------------- */
+.bsxTable .sapMListTblHeaderCell, .bsxTable .sapMListTblHeader .sapMLabel { color: var(--bsx-muted); }
+.bsxTable .sapMLIB:hover { background: #f5f8fc; }
+
+/* ---- Dashboard KPI tiles ------------------------------------------------- */
+.bsxKpi { padding: .9rem 1rem; }
+.bsxKpiNum.sapMTitle { font-size: 1.9rem; line-height: 1.1; font-weight: 700; margin: .25rem 0; }
+/* Semantic KPI colours (reference palette): approved=emerald, awaiting=blue, returned=coral-red */
+.bsxKpiOk.sapMTitle { color: var(--bsx-green); }
+.bsxKpiNo.sapMTitle { color: var(--bsx-red); }
+.bsxKpiWait.sapMTitle { color: var(--bsx-blue); }
+.bsxKpiSub.sapMText { color: var(--bsx-muted); font-size: .75rem; }
+
+/* ---- Dashboard: stable flex rows (collapse hidden tiles, auto-fit) ------- */
+/* Each row is a flex-wrap container; hidden tiles are removed from flow (no
+   gaps), survivors grow to fill. The .bsxCard margin supplies the gutter. */
+.bsxCardRow { width: 100%; box-sizing: border-box; }
+.bsxKpiTile { flex: 1 1 190px; min-width: 165px; box-sizing: border-box; }
+.bsxChartCard { flex: 1 1 26rem; min-width: 20rem; box-sizing: border-box; }
+/* When chart cards share a row height (alignItems=Stretch), pin the footer strip
+   to the card bottom so a short chart leaves headroom under the chart, not a gap
+   under the footer. Only the Trend card carries a .bsxCardFoot here. */
+.bsxChartCard > .bsxCardFoot { margin-top: auto; }
+/* Draggable dashboard cards: grab affordance + drop-indicator polish */
+.bsxDragCard { cursor: grab; }
+.bsxDragCard:active { cursor: grabbing; }
+
+/* ---- Dashboard: KPI split pills ------------------------------------------ */
+.bsxPills { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .35rem; }
+.bsxPill {
+  display: inline-block; padding: .1rem .5rem; border-radius: 1rem;
+  font-size: .75rem; font-weight: 600; line-height: 1.15rem;
+}
+.bsxPill--uk { background: #eaf1f8; color: var(--bsx-blue); }
+.bsxPill--in { background: #ececf0; color: #1d1d1f; }
+
+/* ---- Dashboard: hand-built chart bodies (in a core:HTML host) ------------ */
+.bsxChart { padding: .25rem 1rem 1rem; }
+.bsxLegend { display: flex; gap: 1.25rem; margin: .25rem 0 .75rem; color: var(--bsx-muted); font-size: .8125rem; }
+.bsxLegend span { display: inline-flex; align-items: center; }
+.bsxDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .4rem; }
+/* Trend palette — semantic (within the allowed set): Submitted = blue,
+   Approved = light-green, Returned = light-red. Shared by the legend dots and
+   the bars below. */
+.bsxDot--sub { background: var(--bsx-blue); }
+.bsxDot--ok  { background: var(--bsx-green); }
+.bsxDot--no  { background: var(--bsx-red); }
+
+/* Grouped vertical bars (Approved vs Rejected · Trend) */
+.bsxVChart { display: flex; align-items: flex-end; gap: 2.5rem; height: 190px; padding: 0 .5rem; }
+/* Trend groups grow to fill the card width evenly — no trailing empty space, no scroll. */
+.bsxVChart--trend { gap: .5rem; justify-content: center; padding-bottom: .25rem; }
+/* Cap each month group so a short range (e.g. 2 months) clusters together in the
+   centre instead of spreading to the card edges; many months still shrink to fill. */
+.bsxVChart--trend .bsxVGroup { flex: 1 1 0; max-width: 7rem; min-width: 0; }
+.bsxVGroup { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; height: 100%; }
+.bsxVBars { display: flex; align-items: flex-end; gap: .5rem; flex: 1 1 auto; width: 100%; justify-content: center; }
+.bsxVChart--trend .bsxVBars { gap: .25rem; }
+.bsxVCol { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 2.4rem; }
+.bsxVChart--trend .bsxVCol { width: 1.1rem; }
+.bsxVVal { font-size: .8125rem; font-weight: 700; color: var(--bsx-text); margin-bottom: .2rem; }
+.bsxVBar { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; transition: height .3s ease; }
+.bsxVBar--sub { background: var(--bsx-blue); }
+.bsxVBar--ok  { background: var(--bsx-green); }
+.bsxVBar--no  { background: var(--bsx-red); }
+.bsxVLabel { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); text-align: center; }
+/* Year stamp under the month, shown only at range start + each year change so a
+   multi-year span (e.g. Jul 2025 → Jul 2026) is recognisable without clutter. */
+.bsxVYear { display: block; font-size: .625rem; font-weight: 500; color: var(--bsx-muted); opacity: .8; margin-top: 1px; }
+
+/* ---- History detail: approval chain + activity timeline ------------------ */
+/* Blue/black palette, consistent with the Dashboard. Zero new library — a
+   hand-built vertical timeline hosted in a sap.ui.core.HTML. */
+.bsxChainNode--no { background: var(--bsx-amber); }
+
+.bsxTlChain { margin: .25rem 0 .5rem; }
+.bsxTlChainRow { display: flex; align-items: flex-start; gap: .6rem; padding: .35rem 0; }
+.bsxTlChainBody { display: flex; flex-direction: column; }
+.bsxTlChainName { font-size: .875rem; font-weight: 600; color: var(--bsx-text); }
+
+.bsxTimeline { position: relative; margin: .25rem 0 .25rem .35rem; padding-left: 1rem; border-left: 2px solid var(--bsx-line); }
+.bsxTlItem { position: relative; padding: .3rem 0 .55rem; }
+.bsxTlDot { position: absolute; left: -1.42rem; top: .45rem; width: .7rem; height: .7rem; border-radius: 50%; box-shadow: 0 0 0 3px var(--bsx-card); }
+.bsxTlDot--ok  { background: var(--bsx-green); }
+.bsxTlDot--no  { background: var(--bsx-amber); }
+.bsxTlDot--sub { background: var(--bsx-blue-l); }
+.bsxTlBody { display: flex; flex-direction: column; }
+.bsxTlHead { font-size: .875rem; font-weight: 600; color: var(--bsx-text); }
+.bsxTlAt   { font-weight: 400; color: var(--bsx-muted); font-size: .8125rem; margin-left: .35rem; }
+.bsxTlSub  { font-size: .8125rem; color: var(--bsx-muted); margin-top: .1rem; }
+.bsxTlEmpty { color: var(--bsx-muted); font-size: .875rem; padding: .5rem 0; }
+
+/* ---- Total reimbursed spend donut (multi-colour ring · centre TOTAL) ------- */
+/* Ring on the left, category legend as a vertical list on the right (image style);
+   wraps to stacked on narrow cards. */
+.bsxDonut { display: flex; flex-flow: row wrap; align-items: center; justify-content: center; gap: 1.25rem 2rem; padding: .75rem 1rem 1rem; }
+.bsxDonutRingWrap { position: relative; width: 220px; height: 220px; flex: 0 0 auto; }
+.bsxDonutSvg { width: 100%; height: 100%; display: block; }
+.bsxDonutArc { cursor: pointer; transition: opacity .15s ease; }
+.bsxDonutArc:hover { opacity: .82; }
+.bsxDonutHole {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 62%; height: 62%; background: var(--bsx-card); border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 1px var(--bsx-line);
+}
+.bsxDonutNum { font-size: 1.6rem; font-weight: 700; color: var(--bsx-text); line-height: 1.05; }
+.bsxDonutLbl { font-size: .8125rem; font-weight: 600; color: var(--bsx-muted); margin-top: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+.bsxDonutLegend { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; }
+.bsxDonutLeg { display: inline-flex; align-items: center; font-size: .875rem; color: var(--bsx-text); }
+.bsxDonutDot { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .55rem; flex-shrink: 0; }
+/* Per-category icon badge sitting on the ring at each segment's mid-angle. */
+.bsxDonutIcon {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bsx-card); box-shadow: 0 1px 5px rgba(20, 43, 69, 0.22);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bsx-blue); font-size: 15px; line-height: 1; pointer-events: none;
+}
+
+/* ---- Approved-spend wave (smooth SVG area + line, replaces the Geo card) --- */
+/* Wave is rendered at width:100% (preserveAspectRatio='none') so it always fits
+   the card for the selected window — no horizontal scroll. */
+.bsxWave { display: block; width: 100%; height: 220px; box-sizing: border-box; padding: .5rem .5rem 1rem; }
+.bsxWaveGridH { stroke: var(--bsx-line); stroke-width: 1; }
+.bsxWaveGridV { stroke: #eef1f6; stroke-width: 1; stroke-dasharray: 2 4; }
+.bsxWaveYlab  { fill: var(--bsx-muted); font-size: 10px; text-anchor: end; }
+.bsxWaveXlab  { fill: var(--bsx-muted); font-size: 11px; font-weight: 600; text-anchor: middle; }
+.bsxWaveXyear { fill: var(--bsx-muted); font-size: 9px; font-weight: 500; }
+.bsxWaveArea  { fill: url(#bsxWaveGrad); }
+.bsxWaveLine  { fill: none; stroke: var(--bsx-blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.bsxWaveDot   { fill: #ffffff; stroke: var(--bsx-blue); stroke-width: 2.5; cursor: pointer; }
+.bsxWaveG0 { stop-color: var(--bsx-blue); stop-opacity: .28; }
+.bsxWaveG1 { stop-color: var(--bsx-blue); stop-opacity: .02; }
+
+/* ---- Policy Violation Rate KPI card (compact tile: rate % + sparkline) ----- */
+.bsxViolCard { flex: 0 1 32rem; max-width: 36rem; }
+.bsxViol { padding: .5rem 1rem 1rem; }
+.bsxViolTop { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.bsxViolNumWrap { display: flex; align-items: baseline; gap: .6rem; }
+.bsxViolNum { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--bsx-text); letter-spacing: -.02em; }
+.bsxViolPct { font-size: 1.3rem; font-weight: 700; color: var(--bsx-muted); margin-left: 2px; }
+.bsxViolDelta { font-size: .8125rem; font-weight: 700; }
+.bsxViolDelta--good { color: var(--bsx-green); }   /* fewer violations = good (SAP success green, matches trend) */
+.bsxViolDelta--bad  { color: var(--bsx-red); }     /* more violations = bad (SAP error red, matches trend) */
+.bsxViolMeta { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin-top: .9rem; padding-top: .75rem;
+  border-top: 1px solid var(--bsx-line); font-size: .8125rem; color: var(--bsx-muted); }
+.bsxViolMeta b { color: var(--bsx-text); font-weight: 700; margin-left: .25rem; }
+.bsxViolSpark { display: block; }
+.bsxViolLine { fill: none; stroke: var(--bsx-blue); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.bsxViolArea { fill: url(#bsxViolGrad); }
+.bsxViolEnd  { fill: var(--bsx-blue-d); }
+.bsxViolG0 { stop-color: var(--bsx-blue); stop-opacity: .26; }
+.bsxViolG1 { stop-color: var(--bsx-blue); stop-opacity: .02; }
+
+/* Horizontal tracked bars (Spend by category / team) */
+.bsxHBars { padding: .5rem 1rem 1rem; }
+.bsxHRow { display: flex; align-items: center; gap: .75rem; padding: .3rem 0; }
+.bsxHLabel { flex: 0 0 8rem; font-size: .875rem; color: var(--bsx-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bsxHTrack { flex: 1 1 auto; height: .85rem; background: #eef0f2; border-radius: 1rem; overflow: hidden; }
+.bsxHFill { display: block; height: 100%; border-radius: 1rem; min-width: 2px; transition: width .3s ease; }
+.bsxHFill--blue   { background: var(--bsx-blue); }
+.bsxHFill--violet { background: var(--bsx-blue-m); }
+.bsxHFill--muted  { background: var(--bsx-blue-l); }
+.bsxHVal { flex: 0 0 auto; font-size: .875rem; font-weight: 700; color: var(--bsx-text); min-width: 4.5rem; text-align: right; }
+
+/* ============================================================================
+   SAP standard semantic colours — align the built-in status/button/strip
+   colours to the official SAP Fiori palette. Horizon's CSS-variables theme
+   reads these `--sap*` params at runtime, so repointing them here recolours
+   ObjectStatus (Success/Warning/Error/Information), Accept/Reject/Emphasized
+   buttons and MessageStrip WITHOUT fighting per-control DOM classes.
+   Mapping (SAP standard): positive → success green #107e3e · negative → error
+   red #bb0000 · critical → warning orange #e9730c · informative → brand blue
+   #0070f2. Backgrounds are the SAP standard tints for each family.
+   ========================================================================== */
+:root, .sapUiBody, .sapUiTheme-sap_horizon {
+  /* Positive (approved / accept) → SAP success green */
+  --sapPositiveColor: #107e3e;
+  --sapPositiveTextColor: #107e3e;
+  --sapPositiveElementColor: #107e3e;
+  --sapPositiveBackgroundColor: #ebf5eb;
+  /* Negative (rejected / error / reject) → SAP error red */
+  --sapNegativeColor: #bb0000;
+  --sapNegativeTextColor: #bb0000;
+  --sapNegativeElementColor: #bb0000;
+  --sapNegativeBackgroundColor: #ffebeb;
+  /* Critical (warning / returned) → SAP warning orange */
+  --sapCriticalColor: #e9730c;
+  --sapCriticalTextColor: #e9730c;
+  --sapCriticalElementColor: #e9730c;
+  --sapCriticalBackgroundColor: #fef7f0;
+  /* Informative (info / pending) → SAP Horizon brand blue */
+  --sapInformativeColor: #0070f2;
+  --sapInformativeTextColor: #0070f2;
+  --sapInformativeElementColor: #0070f2;
+  --sapInformationColor: #0070f2;
+  --sapInformativeBackgroundColor: #ebf3fe;
+  /* Emphasized button → brand blue */
+  --sapButton_Emphasized_Background: #0070f2;
+  --sapButton_Emphasized_BorderColor: #0070f2;
+  --sapButton_Emphasized_TextColor: #ffffff;
+  --sapButton_Emphasized_Hover_Background: #0064d9;
+  --sapButton_Emphasized_Hover_BorderColor: #0064d9;
+  --sapButton_Emphasized_Active_Background: #0040b0;
+  /* Accept button → SAP success green */
+  --sapButton_Accept_Background: #107e3e;
+  --sapButton_Accept_BorderColor: #107e3e;
+  --sapButton_Accept_TextColor: #ffffff;
+  --sapButton_Accept_Hover_Background: #0d6631;
+  --sapButton_Accept_Hover_BorderColor: #0d6631;
+  /* Reject button → SAP error red */
+  --sapButton_Reject_Background: #bb0000;
+  --sapButton_Reject_BorderColor: #bb0000;
+  --sapButton_Reject_TextColor: #ffffff;
+  --sapButton_Reject_Hover_Background: #a20000;
+  --sapButton_Reject_Hover_BorderColor: #a20000;
+}
+
+/* Belt-and-braces for ObjectStatus text+icon (both Horizon class spellings),
+   incl. the inverted (filled) chips used on the Workflow tab. Warning (orange)
+   and Error (red) are kept distinct — the SAP standard treats them separately. */
+.sapMObjStatusSuccess, .sapMObjectStatusSuccess,
+.sapMObjStatusSuccess .sapMObjStatusIcon, .sapMObjectStatusSuccess .sapMObjStatusIcon { color: #107e3e !important; }
+.sapMObjStatusWarning, .sapMObjectStatusWarning,
+.sapMObjStatusWarning .sapMObjStatusIcon, .sapMObjectStatusWarning .sapMObjStatusIcon { color: #e9730c !important; }
+.sapMObjStatusError, .sapMObjectStatusError,
+.sapMObjStatusError .sapMObjStatusIcon, .sapMObjectStatusError .sapMObjStatusIcon { color: #bb0000 !important; }
+.sapMObjStatusInformation, .sapMObjectStatusInformation,
+.sapMObjStatusInformation .sapMObjStatusIcon { color: #0070f2 !important; }
+.sapMObjStatusInvertedSuccess { background-color: #107e3e !important; border-color: #107e3e !important; color: #ffffff !important; }
+.sapMObjStatusInvertedWarning { background-color: #e9730c !important; border-color: #e9730c !important; color: #ffffff !important; }
+.sapMObjStatusInvertedError { background-color: #bb0000 !important; border-color: #bb0000 !important; color: #ffffff !important; }
+.sapMObjStatusInvertedInformation { background-color: #0070f2 !important; border-color: #0070f2 !important; color: #ffffff !important; }

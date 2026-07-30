@@ -1,0 +1,95 @@
+<mvc:View
+  controllerName="com.bluestonex.expense.approval.controller.Approvals"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  height="100%">
+
+  <ScrollContainer height="100%" vertical="true" horizontal="false">
+
+    <!-- ══ Pending claims for the selected country (UK by default) ═════════ -->
+    <VBox>
+
+      <!-- Look up (filters) — country switch lives in the corner -->
+      <VBox class="bsxCard bsxPremiumCard">
+        <OverflowToolbar class="bsxCardPad">
+          <Title text="{ui>/title}" class="bsxCardTitle" level="H3" />
+          <ToolbarSpacer />
+          <Label text="{i18n>filterCountry}" class="bsxFieldLbl sapUiTinyMarginEnd" />
+          <Select selectedKey="{ui>/country}" change=".onSwitchCountry" width="9rem" autoAdjustWidth="false"
+            items="{ path: '/Countries', templateShareable: false }">
+            <core:Item key="{code}" text="{description}" />
+          </Select>
+        </OverflowToolbar>
+        <l:Grid defaultSpan="XL4 L4 M6 S12" hSpacing="1" vSpacing="0" class="bsxCardPad">
+          <VBox>
+            <Label text="{i18n>colPeriod}" class="bsxFieldLbl" />
+            <DateRangeSelection id="fPeriod" width="100%" change=".onGo" />
+          </VBox>
+          <VBox>
+            <Label text="{i18n>freeSearch}" class="bsxFieldLbl" />
+            <SearchField id="fSearch" width="100%" placeholder="{i18n>freeSearchPh}" search=".onGo" />
+          </VBox>
+        </l:Grid>
+      </VBox>
+
+      <!-- Results -->
+      <VBox class="bsxCard bsxPremiumCard">
+        <OverflowToolbar class="bsxCardPad">
+          <Title text="{i18n>approvalsTitle}" class="bsxCardTitle" level="H3" />
+          <ObjectStatus class="sapUiTinyMarginBegin" inverted="true" state="Information" text="{= ${i18n>kpiPending} + ': ' + ${view>/count} }" />
+          <ToolbarSpacer />
+          <Button text="{i18n>btnExport}" icon="sap-icon://pdf-attachment" type="Transparent" tooltip="{i18n>btnExport}" press=".onExportPdf" />
+          <Button text="{i18n>btnRefresh}" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" />
+        </OverflowToolbar>
+
+        <Table
+          id="approvalsTable"
+          class="bsxTable"
+          growing="true"
+          items="{
+            path: '/Approvals',
+            parameters: { '$expand': 'items,mileageClaims', '$count': true },
+            sorter: { path: 'submittedAt' }
+          }"
+          updateFinished=".onUpdateFinished"
+          mode="None">
+          <noData>
+            <IllustratedMessage illustrationType="sapIllus-NoTasks" title="{i18n>noApprovals}" />
+          </noData>
+          <columns>
+            <Column><Text text="{i18n>colClaimNo}" /></Column>
+            <Column><Text text="{i18n>colEmployee}" /></Column>
+            <Column><Text text="{i18n>colCountry}" /></Column>
+            <Column><Text text="{i18n>colPeriod}" /></Column>
+            <Column><Text text="{i18n>colStatus}" /></Column>
+            <Column hAlign="End"><Text text="{i18n>colTotal}" /></Column>
+            <Column hAlign="Center"><Text text="" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <HBox alignItems="Center">
+                  <ObjectIdentifier title="{claimNumber}" />
+                  <!-- Small "limit crossed" mark — over a daily policy limit; hover for detail. -->
+                  <core:Icon src="sap-icon://alert" color="#b9541b" size="0.9rem" class="sapUiTinyMarginBegin"
+                    visible="{= !!${policyFlags} }" tooltip="{policyFlags}" />
+                </HBox>
+                <Text text="{employeeName}" />
+                <Text text="{path: 'country', formatter: '.formatter.countryText'}" />
+                <Text text="{claimPeriod}" />
+                <ObjectStatus
+                  icon="{path: 'status', formatter: '.formatter.statusIcon'}"
+                  text="{path: 'status', formatter: '.formatter.statusText'}"
+                  state="{path: 'statusCriticality', formatter: '.formatter.statusState'}" />
+                <ObjectNumber number="{ parts: ['totalGross','currency'], formatter: '.formatter.money' }" />
+                <Button text="{i18n>btnReview}" type="Emphasized" press=".onReview" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </VBox>
+  </ScrollContainer>
+</mvc:View>

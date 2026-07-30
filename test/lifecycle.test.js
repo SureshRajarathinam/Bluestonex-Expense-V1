@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const calc = require('../srv/lib/calc');
 
 const EMP = { username: 'sabarinathan.chandrasekar@bluestonex.com', password: 'sab' }; // employee (not an approver in workflow)
-const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1 + India L1
+const MGR = { username: 'manager@bluestonex.com', password: 'mgr' };                   // UK L1
 const FIN = { username: 'Dan.Barton@bluestonex.com', password: 'dan' };                // UK L2
+const IN1 = { username: 'suresh.rajarathinam@bluestonex.com', password: 'suresh' };     // India L1 (from EXP-WORKFLOW config)
 const near = (a, b) => Math.abs(a - b) < 0.01;
 
 let baseURL;
@@ -35,10 +36,39 @@ async function submitClaim(country, gross = 120) {
   return id;
 }
 
+test('whoami returns the logged-in employee first + last name', async () => {
+  const r = await GET('/expense/whoami()', { auth: EMP });
+  assert.equal(r.status, 200, `whoami ${r.status}`);
+  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'full name from EXP_EMPLOYEES');
+  assert.equal(r.data.firstName, 'Sabarinathan', 'first name');
+  assert.equal(r.data.lastName, 'Chandrasekar', 'last name');
+  assert.equal(r.data.email, EMP.username, 'email echoes $user');
+});
+
+test('approval app whoami mirrors expense whoami (same identity contract)', async () => {
+  const r = await GET('/approval/whoami()', { auth: EMP });
+  assert.equal(r.status, 200, `approval whoami ${r.status}`);
+  assert.equal(r.data.fullName, 'Sabarinathan Chandrasekar', 'ApprovalService.whoami resolves the same name');
+  assert.equal(r.data.firstName, 'Sabarinathan', 'first name');
+  assert.equal(r.data.lastName, 'Chandrasekar', 'last name');
+  assert.equal(r.data.email, EMP.username, 'email echoes $user');
+});
+
+test('whoami falls back to the email local-part for a user with no employee row', async () => {
+  const r = await GET('/expense/whoami()', { auth: { username: 'nobody.here@bluestonex.com', password: 'x' } });
+  // Unknown creds → 401; a known-but-unseeded authenticated user → titled local-part.
+  if (r.status === 200) {
+    assert.equal(r.data.firstName, 'Nobody', 'fallback first name from email');
+    assert.equal(r.data.lastName, 'Here', 'fallback last name from email');
+  } else {
+    assert.equal(r.status, 401);
+  }
+});
+
 test('A. tax math: UK VAT 20% vs India GST 18%', () => {
-  const uk = calc.splitVAT(120, 'STD', calc.taxRateFor('UK', { vatRate: 0.20 }));
+  const uk = calc.splitVAT(120, 'STD', calc.taxRateFor('UK', [{ country: 'UK', code: 'STD', rate: 0.20 }]));
   assert.ok(near(uk.netAmount, 100) && near(uk.vatAmount, 20), `UK ${JSON.stringify(uk)}`);
-  const ind = calc.splitVAT(118, 'STD', calc.taxRateFor('IN', { gstRate: 0.18 }));
+  const ind = calc.splitVAT(118, 'STD', calc.taxRateFor('IN', [{ country: 'IN', code: 'STD', rate: 0.18 }]));
   assert.ok(near(ind.netAmount, 100) && near(ind.vatAmount, 18), `IN ${JSON.stringify(ind)}`);
 });
 
@@ -73,8 +103,9 @@ test('C. UK = TWO-level approval (L1 then L2 → Approved)', async () => {
 
 test('D. India = SINGLE-level approval (L1 → Approved)', async () => {
   const id = await submitClaim('IN', 118);
+  // India L1 approver is suresh.rajarathinam@ (per Approval Workflow config)
   assert.equal(await statusOf(id), 'Submitted');
-  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: MGR });
+  const a = await POST(`/approval/Approvals(${id})/ApprovalService.approve`, { comment: 'ok' }, { auth: IN1 });
   assert.ok(a.status < 400, `IN approve ${a.status}: ${JSON.stringify(a.data?.error)}`);
   assert.equal(await statusOf(id), 'Approved'); // single level completes it
 });
@@ -121,4 +152,31 @@ test('H. mileage-only claim submits; total = miles × rate', async () => {
   assert.ok(near(claim.totalGross, 25), `mileage total ${claim.totalGross}`);
   const s = await POST(`/expense/MyClaims${active(id)}/ExpenseService.submitClaim`, {}, { auth: EMP });
   assert.ok(s.status < 400, `mileage-only submit ${s.status}: ${JSON.stringify(s.data?.error)}`);
+});
+
+test('I. a Submitted claim cannot be deleted (409); a Draft can', async () => {
+  const id = await submitClaim('UK');
+  assert.equal(await statusOf(id), 'Submitted');
+  const del = await t.axios.delete(`/expense/MyClaims${active(id)}`, { auth: EMP });
+  assert.equal(del.status, 409, `submitted delete got ${del.status}`);
+  assert.equal(await statusOf(id), 'Submitted', 'claim survives the blocked delete');
+
+  // A fresh, still-Draft claim (activated but not submitted) deletes fine.
+  const c = await POST('/expense/MyClaims', { country: 'UK', claimPeriod: '2026-03-05' }, { auth: EMP });
+  const did = c.data.ID;
+  await POST(`/expense/MyClaims${draft(did)}/ExpenseService.draftActivate`, {}, { auth: EMP });
+  const okDel = await t.axios.delete(`/expense/MyClaims${active(did)}`, { auth: EMP });
+  assert.ok(okDel.status < 400, `draft delete got ${okDel.status}`);
+});
+
+test('J. approverFor returns the country first-level approver full name', async () => {
+  // Returns the resolved full name (EMPLOYEES unseeded in test → derived from the
+  // configured workflow email's local-part) — drives the "email sent to X" toast.
+  const uk = await GET(`/expense/approverFor(country='UK')`, { auth: EMP });
+  assert.equal(uk.status, 200, `UK ${uk.status}`);
+  assert.ok(/manager/i.test(uk.data.value || ''), `UK L1 name, got "${uk.data.value}"`);
+  const ind = await GET(`/expense/approverFor(country='IN')`, { auth: EMP });
+  assert.ok(/suresh/i.test(ind.data.value || ''), `India L1 name, got "${ind.data.value}"`);
+  const none = await GET(`/expense/approverFor(country='ZZ')`, { auth: EMP });
+  assert.ok(none.data.value == null, `unknown country → null (${JSON.stringify(none.data)})`);
 });

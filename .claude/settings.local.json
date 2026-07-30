@@ -10,7 +10,17 @@
       "Bash(git commit -q -m 'Add Expense Administration: policy config, user/role mgmt, audit log, health metrics *)",
       "Bash(npx --no-install cds compile srv db -s all --to edmx-v4 -o /tmp/t3)",
       "Bash(npx --no-install cds compile srv db app/my-expenses/annotations.cds -s ExpenseService --to edmx-v4)",
-      "Bash(npx --no-install cds compile srv db app -s all --to edmx-v4 -o /tmp/t6)"
+      "Bash(npx --no-install cds compile srv db app -s all --to edmx-v4 -o /tmp/t6)",
+      "Bash(gh api *)",
+      "Bash(head -5 ~/.claude/skills/prompt-optimizer/SKILL.md)",
+      "Bash(graphify export *)",
+      "Bash(graphify query *)",
+      "Bash(npm test *)",
+      "Bash(npx --no-install cds compile srv db -s all --to edmx-v4 -o /tmp/x)",
+      "Bash(grep -viE \"^$\")",
+      "Bash(node -e ' *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(gh auth *)"
     ]
   }
 }

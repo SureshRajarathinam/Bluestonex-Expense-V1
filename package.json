@@ -6,10 +6,14 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@cap-js/hana": "^1.9.2",
     "@sap/cds": "^8",
     "@sap/xsenv": "^5",
+    "@sap/xssec": "^4",
     "express": "^4",
-    "hdb": "^0.19"
+    "hdb": "^0.19",
+    "nodemailer": "^9.0.3",
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^1",
@@ -21,7 +25,9 @@
     "start": "cds-serve",
     "watch": "cds watch",
     "build": "cds build --production",
-    "test": "node --test"
+    "test": "MAIL_DISABLED=true node --test test/*.test.js",
+    "test:coverage": "MAIL_DISABLED=true node --test --experimental-test-coverage --test-coverage-include='srv/**' test/*.test.js",
+    "test:ui": "echo \"UI5 OPA5/QUnit tests run in a browser/Karma runner, not node — see app/*/webapp/test/ and test/e2e/\""
   },
   "cds": {
     "requires": {
